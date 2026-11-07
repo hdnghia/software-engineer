@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>NexPOS Console</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: fixed left rail of feature groups + scrolling work area; each feature is one hash-routed view. */
+:root{
+  --bg:#F3F5F2; --surface:#FFFFFF; --surface-2:#ECF0EC; --fg:#16201B; --muted:#5D6A63; --line:#DCE3DE;
+  --accent:#0E7C66; --accent-ink:#FFFFFF; --accent-soft:#DAEEE7;
+  --warm:#B8730A; --warm-soft:#FBEFD8; --danger:#C2412D; --danger-soft:#F9E2DC;
+  --info:#2D62C8; --info-soft:#E1E9FA; --ok:#2C7F3E; --ok-soft:#DFF1E2;
+  --ch-grab:#00A85A; --ch-shopee:#EE5A2C; --ch-be:#E5B400; --ch-tiktok:#E0245E; --ch-lazada:#3D3BD8; --ch-zalo:#1A73E8; --ch-momo:#B0006D;
+  --shadow:0 1px 2px rgba(20,40,30,.06),0 6px 24px rgba(20,40,30,.08);
+  --f-ui:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1412; --surface:#161D19; --surface-2:#1E2722; --fg:#E6ECE8; --muted:#93A199; --line:#2A342F;
+  --accent:#3BB797; --accent-ink:#05231B; --accent-soft:#13392F;
+  --warm:#F0A93A; --warm-soft:#3A2C12; --danger:#EE7461; --danger-soft:#3E1F19;
+  --info:#7AA3F0; --info-soft:#1B2A45; --ok:#5CC274; --ok-soft:#173222;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#161D19; --surface-2:#1E2722; --fg:#E6ECE8; --muted:#93A199; --line:#2A342F;
+  --accent:#3BB797; --accent-ink:#05231B; --accent-soft:#13392F;
+  --warm:#F0A93A; --warm-soft:#3A2C12; --danger:#EE7461; --danger-soft:#3E1F19;
+  --info:#7AA3F0; --info-soft:#1B2A45; --ok:#5CC274; --ok-soft:#173222;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.45}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-size:.92em}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:800}
+h2{font-size:16px;font-weight:700}
+h3{font-size:14px;font-weight:700}
+.muted{color:var(--muted)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+
+/* shell */
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100%}
+.rail{background:var(--surface);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto;padding:16px 12px 24px}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:15px}
+.logo b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.nav-group{margin-top:14px}
+.nav-group .eyebrow{padding:0 10px 4px;display:block}
+.nav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--fg);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--surface-2)}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.nav a .k{margin-left:auto;font-size:11px;background:var(--warm-soft);color:var(--warm);border-radius:20px;padding:0 7px;font-weight:700}
+.nav svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));flex-wrap:wrap}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.top .grow{flex:1}
+.menu-btn{display:none}
+.view{padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px;max-width:1360px;width:100%}
+.head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head .grow{flex:1;min-width:200px}
+.head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.svc{font-family:var(--f-mono);font-size:11px;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
+
+/* atoms */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.dng{color:var(--danger);border-color:var(--danger-soft)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.in,select.in,textarea.in{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+.in:focus{border-color:var(--accent);outline:none}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+label.f .in{color:var(--fg);font-weight:400;font-size:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--surface-2);color:var(--muted)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warm{background:var(--warm-soft);color:var(--warm)}
+.chip.dng{background:var(--danger-soft);color:var(--danger)}
+.chip.info{background:var(--info-soft);color:var(--info)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.ch{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel>.ph{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel>.ph h2{flex:1}
+.panel>.pb{padding:14px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-side{grid-template-columns:minmax(0,1fr) 360px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;font-weight:600}
+.up{color:var(--ok)} .down{color:var(--danger)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:9px 12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs .n{font-family:var(--f-mono);font-size:11px;margin-left:4px;opacity:.8}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 11px;border-radius:7px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface-2)}
+.switch{position:relative;width:34px;height:20px;flex:none;display:inline-block}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:20px;cursor:pointer;transition:.15s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--surface);transition:.15s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{transform:translateX(14px)}
+.switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.meter{height:8px;background:var(--surface-2);border-radius:8px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:8px}
+.meter.warm i{background:var(--warm)}
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.li:last-child{border-bottom:0}
+.li .grow{flex:1;min-width:0}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.mono-tile{width:44px;height:44px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
+
+/* POS */
+.pos{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.cats button{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.cats button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;min-width:0}
+.item:hover{border-color:var(--accent)}
+.item.out{opacity:.5;cursor:not-allowed}
+.item .art{height:64px;border-radius:7px;display:grid;place-items:center;font-weight:800;font-size:20px;letter-spacing:-.02em}
+.item b{font-weight:600;font-size:13.5px;line-height:1.3}
+.cart{position:sticky;top:76px;display:flex;flex-direction:column;max-height:calc(100vh - 96px)}
+.cart .lines{overflow-y:auto;flex:1;min-height:80px}
+.cl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.cl small{color:var(--muted);grid-column:1}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px}
+.qty button{border:0;background:none;width:26px;height:26px;cursor:pointer;font-weight:700}
+.qty span{min-width:20px;text-align:center;font-family:var(--f-mono)}
+.sum{padding:12px 14px;display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line)}
+.sum .row{justify-content:space-between}
+.sum .tot{font-size:20px;font-weight:800}
+.pm{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pm button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 4px;font-weight:600;font-size:12px;cursor:pointer}
+.pm button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+/* overlays */
+.scrim{position:fixed;inset:0;background:rgba(10,20,15,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column}
+.modal.wide{width:min(820px,100%)}
+.modal .mh{padding:16px 18px 10px;display:flex;align-items:flex-start;gap:10px}
+.modal .mh h2{flex:1;font-size:18px}
+.modal .mb{padding:4px 18px 16px;display:flex;flex-direction:column;gap:12px}
+.modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;background:var(--surface)}
+.drawer-scrim{justify-content:flex-end;padding:0}
+.drawer{background:var(--surface);height:100%;width:min(520px,100%);overflow-y:auto;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.drawer .mh{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:2}
+.drawer .sec{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.drawer .mf{padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);margin-top:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.steps{display:flex;gap:0;align-items:flex-start}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);text-align:center;position:relative}
+.step::before{content:"";position:absolute;top:9px;left:-50%;right:50%;height:2px;background:var(--line)}
+.step:first-child::before{display:none}
+.step i{width:20px;height:20px;border-radius:50%;background:var(--surface-2);border:2px solid var(--line);z-index:1}
+.step.done i{background:var(--accent);border-color:var(--accent)}
+.step.done::before{background:var(--accent)}
+.step.cur{color:var(--fg);font-weight:700}
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100vw - 32px))}
+.toast{background:var(--fg);color:var(--bg);border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center;animation:in .2s ease}
+.toast .grow{flex:1;min-width:0}
+.toast .btn{background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 35%,transparent)}
+@keyframes in{from{transform:translateY(8px);opacity:.3}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.pop{position:absolute;right:0;top:calc(100% + 6px);width:340px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:40}
+.bell{position:relative}
+.bell .badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:0 5px;line-height:16px}
+
+/* receipt / phone */
+.receipt{font-family:var(--f-mono);font-size:12px;background:#FFFFFF;color:#111111;padding:16px 14px;border-radius:4px;width:100%;max-width:300px;margin:0 auto;box-shadow:0 0 0 1px var(--line);line-height:1.5}
+.receipt.w58{max-width:230px}
+.receipt hr{border:0;border-top:1px dashed #888;margin:7px 0}
+.receipt .c{text-align:center}
+.receipt .lr{display:flex;justify-content:space-between;gap:8px}
+.receipt.big{font-size:14px}
+.qr{width:128px;height:128px;margin:8px auto;display:block;image-rendering:pixelated}
+.phone{width:290px;max-width:100%;border:10px solid var(--fg);border-radius:34px;overflow:hidden;background:var(--surface);margin:0 auto;height:580px;display:flex;flex-direction:column}
+.phone .scr{overflow-y:auto;flex:1}
+.banner{height:120px;background:linear-gradient(120deg,var(--accent),color-mix(in srgb,var(--accent) 50%,var(--warm)));color:var(--accent-ink);padding:14px;display:flex;flex-direction:column;justify-content:flex-end}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:10px}
+.chart .gl{stroke:var(--line)}
+.bar{fill:var(--accent)}
+.bar.alt{fill:var(--warm)}
+.hb{display:grid;grid-template-columns:120px minmax(0,1fr) 92px;gap:8px;align-items:center;font-size:13px}
+.hb .t{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.hb .t i{display:block;height:100%;border-radius:6px}
+.perm td:not(:first-child),.perm th:not(:first-child){text-align:center}
+.denom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hours{display:grid;grid-template-columns:80px auto 1fr 1fr;gap:8px;align-items:center}
+.auth{position:fixed;inset:0;z-index:80;background:var(--bg);display:grid;grid-template-columns:1fr 1fr;overflow:auto}
+.auth .side{background:var(--accent);color:var(--accent-ink);padding:48px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+.auth .side h1{font-size:34px;line-height:1.1;max-width:14ch}
+.auth .form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.auth .card{width:min(380px,100%);display:flex;flex-direction:column;gap:12px}
+
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-side{grid-template-columns:minmax(0,1fr)}.pos{grid-template-columns:minmax(0,1fr)}.cart{position:static;max-height:none}}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:60;transform:translateX(-105%);transition:transform .2s;box-shadow:var(--shadow);padding-top:calc(16px + env(safe-area-inset-top,0px))}
+  .rail.open{transform:none}
+  .menu-btn{display:inline-flex}
+  .g2,.g3{grid-template-columns:minmax(0,1fr)}
+  .auth{grid-template-columns:1fr}.auth .side{padding:28px 20px}
+  .hide-sm{display:none}
+}
+@media (max-width:520px){.g4{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.hb{grid-template-columns:90px minmax(0,1fr) 80px}.hours{grid-template-columns:60px auto 1fr 1fr}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside class="rail" id="rail" aria-label="Features"></aside>
+  <div class="main">
+    <header class="top">
+      <button class="btn ghost menu-btn" data-act="rail" aria-label="Open menu">☰</button>
+      <select class="in" id="hubSel" style="width:auto;max-width:260px" aria-label="Brand and hub">
+        <option>Phở Mộc · Nguyễn Huệ, Q1</option><option>Phở Mộc · Võ Văn Tần, Q3</option><option>Sương Coffee · Thảo Điền</option>
+      </select>
+      <span class="chip ok hide-sm" id="liveChip"><span class="dot" style="background:var(--ok)"></span>POS connected</span>
+      <div class="grow"></div>
+      <button class="btn sm hide-sm" data-act="simOrder">Simulate incoming order</button>
+      <div class="bell" style="position:relative">
+        <button class="btn ghost" data-act="bell" aria-label="Notifications">🔔<span class="badge" id="bellN" hidden>0</span></button>
+        <div class="pop" id="bellPop" hidden></div>
+      </div>
+      <button class="btn ghost" data-act="signout" title="Sign out"><span class="mono-tile" style="width:28px;height:28px;font-size:12px;background:var(--accent-soft);color:var(--accent)">LA</span><span class="hide-sm">Linh Anh</span></button>
+    </header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<div id="overlay"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+/* ---------- data ---------- */
+const $ = s => document.querySelector(s);
+const vnd = n => Math.round(n).toLocaleString('vi-VN') + '₫';
+const kfmt = n => n >= 1e6 ? (n/1e6).toFixed(1).replace('.0','')+'tr' : Math.round(n/1e3)+'k';
+let seed = 7; const rnd = () => { seed = (seed*16807) % 2147483647; return (seed-1)/2147483646 };
+const pick = a => a[Math.floor(rnd()*a.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const CH = {
+  grab:{n:'GrabFood',c:'var(--ch-grab)',p:'GF'}, shopee_food:{n:'ShopeeFood',c:'var(--ch-shopee)',p:'SPF'}, be:{n:'beFood',c:'var(--ch-be)',p:'BE'},
+  take_away:{n:'POS · Take away',c:'var(--accent)',p:'TA'}, pick_up:{n:'POS · Pick up',c:'var(--accent)',p:'PU'}, delivery:{n:'Web order',c:'var(--info)',p:'WEB'},
+  tiktok:{n:'TikTok Shop',c:'var(--ch-tiktok)',p:'TT'}, shopee_ecom:{n:'Shopee',c:'var(--ch-shopee)',p:'SP'}, lazada_ecom:{n:'Lazada',c:'var(--ch-lazada)',p:'LZ'}
+};
+const ST = {
+  DRAFT:['Draft',''], PRE_ORDER:['Pre-order','info'], WAITING_PAYMENT:['Awaiting payment','warm'], PENDING:['New','warm'], DOING:['Preparing','info'],
+  PICK:['Out for delivery','acc'], FINISH:['Completed','ok'], CANCEL:['Canceled','dng'], RETURNING:['Returning','warm'], RETURNED:['Returned','']
+};
+const chip = s => `<span class="chip ${ST[s][1]}">${ST[s][0]}</span>`;
+const chan = c => `<span class="ch"><span class="dot" style="background:${CH[c].c}"></span>${CH[c].n}</span>`;
+
+const CATS = [['all','All'],['pho','Phở & Bún'],['com','Cơm'],['banhmi','Bánh mì'],['cafe','Cà phê'],['tra','Trà & Nước'],['an','Ăn vặt']];
+const CAT_COL = {pho:'var(--warm-soft);color:var(--warm)',com:'var(--danger-soft);color:var(--danger)',banhmi:'var(--warm-soft);color:var(--warm)',cafe:'var(--surface-2);color:var(--fg)',tra:'var(--ok-soft);color:var(--ok)',an:'var(--info-soft);color:var(--info)'};
+const MENU = [
+  {id:1,cat:'pho',n:'Phở bò tái',p:65000,o:'pho',sku:'PHO-BT'},{id:2,cat:'pho',n:'Phở gà ta',p:60000,o:'pho',sku:'PHO-GA'},
+  {id:3,cat:'pho',n:'Bún chả Hà Nội',p:70000,o:'pho',sku:'BUN-CHA'},{id:4,cat:'pho',n:'Bún bò Huế',p:69000,o:'pho',sku:'BUN-BH'},
+  {id:5,cat:'com',n:'Cơm tấm sườn bì chả',p:62000,sku:'COM-SBC'},{id:6,cat:'com',n:'Cơm gà xối mỡ',p:58000,sku:'COM-GXM',out:true},
+  {id:7,cat:'banhmi',n:'Bánh mì thịt nướng',p:35000,sku:'BM-TN'},{id:8,cat:'banhmi',n:'Bánh mì chảo',p:55000,sku:'BM-CHAO'},
+  {id:9,cat:'cafe',n:'Cà phê sữa đá',p:29000,o:'drink',sku:'CF-SD'},{id:10,cat:'cafe',n:'Bạc xỉu',p:32000,o:'drink',sku:'CF-BX'},
+  {id:11,cat:'cafe',n:'Cà phê muối',p:39000,o:'drink',sku:'CF-MUOI'},{id:12,cat:'tra',n:'Trà đào cam sả',p:45000,o:'drink',sku:'TRA-DAO'},
+  {id:13,cat:'tra',n:'Trà sen vàng',p:49000,o:'drink',sku:'TRA-SEN'},{id:14,cat:'tra',n:'Nước ép cam',p:42000,o:'drink',sku:'NE-CAM'},
+  {id:15,cat:'an',n:'Gỏi cuốn tôm thịt',p:45000,sku:'GC-TT'},{id:16,cat:'an',n:'Chè khúc bạch',p:35000,sku:'CHE-KB'}
+];
+const OPTS = {
+  pho:[{g:'Size',one:true,c:[['Tô thường',0],['Tô đặc biệt',15000]]},{g:'Thêm',c:[['Trứng chần',5000],['Quẩy',5000],['Thêm bò',20000]]}],
+  drink:[{g:'Size',one:true,c:[['M',0],['L',6000]]},{g:'Đường',one:true,c:[['100%',0],['70%',0],['50%',0],['0%',0]]},{g:'Topping',c:[['Trân châu',8000],['Thạch đào',8000]]}]
+};
+const NAMES = ['Nguyễn Minh Thư','Trần Quốc Bảo','Lê Hoàng Yến','Phạm Gia Huy','Võ Thanh Tâm','Đặng Khánh Linh','Bùi Đức Anh','Hồ Ngọc Hà','Khách lẻ','Đỗ Mai Phương'];
+const STREETS = ['12 Lê Lợi, Bến Nghé, Q1','88 Pasteur, Q3','41 Thảo Điền, TP Thủ Đức','203 Nguyễn Trãi, Q5','17 Phan Xích Long, Phú Nhuận','5 Hai Bà Trưng, Q1'];
+const DRIVERS = ['Nguyễn Văn Tài · 59X3-128.45','Lê Minh Phúc · 51F2-772.10','Trần Hữu Lộc · 59C1-456.88'];
+
+let orderSeq = 1840;
+function mkOrder(o={}) {
+  const c = o.ch || pick(['grab','grab','shopee_food','be','take_away','take_away','pick_up','delivery','tiktok','shopee_ecom']);
+  const n = 1 + Math.floor(rnd()*3);
+  const items = Array.from({length:n},()=>{const m=pick(MENU);return {n:m.n,p:m.p,q:1+Math.floor(rnd()*2),note:''}});
+  const sub = items.reduce((a,i)=>a+i.p*i.q,0);
+  const disc = rnd()<.35 ? Math.round(sub*.1/1000)*1000 : 0;
+  const ship = ['grab','shopee_food','be','delivery','tiktok','shopee_ecom'].includes(c) ? pick([15000,18000,22000]) : 0;
+  const t = new Date(Date.now() - (o.ago ?? Math.floor(rnd()*600))*60000);
+  const st = o.st || pick(['FINISH','FINISH','FINISH','FINISH','PENDING','DOING','PICK','CANCEL','WAITING_PAYMENT','PRE_ORDER']);
+  const pay = ['take_away','pick_up'].includes(c) ? pick(['CASH','BANK_TRANSFER','MOMO','VNPAY']) : (c==='delivery'?pick(['COD','BANK_TRANSFER']):'WALLET');
+  return {id:++orderSeq, code:`${CH[c].p}-${orderSeq}`, ch:c, cust:pick(NAMES), phone:'09'+Math.floor(10000000+rnd()*89999999), addr: ship?pick(STREETS):'Tại quầy',
+    items, sub, disc, ship, total: sub-disc+ship, st, pay, paid: st==='FINISH'||pay==='WALLET', t,
+    driver: st==='PICK'||(st==='FINISH'&&ship)?pick(DRIVERS):null, prov: ship?(['delivery'].includes(c)?pick(['Ahamove','Grab Express','Viettel Post']):CH[c].n):null,
+    inv: st==='FINISH' && rnd()<.5 ? pick(['issued','issued','submitted','error']) : null, ...o.extra};
+}
+const S = {
+  orders: Array.from({length:46},()=>mkOrder()).sort((a,b)=>b.t-a.t),
+  cart:[], cat:'all', q:'', otype:'take_away', pay:'CASH', promo:null, cust:{name:'',phone:'',addr:''},
+  oTab:'all', oCh:'', oQ:'', notes:[], unread:0,
+  invTab:'bal', repTab:'revenue', tiTab:'inv', teamTab:'users', billTab:'bill_for_complete', yearly:false, wh:'Kho tổng Q1',
+  bill:{logo:true,qr:true,w:80,big:false,footer:'Cảm ơn quý khách! Hẹn gặp lại.'},
+  shift:{open:true,by:'Linh Anh',at:'07:02',cash0:1500000,moves:[{t:'08:14',k:'out',n:'Mua đá viên',a:120000},{t:'10:41',k:'in',n:'Thu nợ khách quen',a:250000},{t:'11:20',k:'out',n:'Trả tiền rau Đà Lạt',a:480000}]},
+  web:{open:true,min:50000,delivery:true,pickup:true,cod:true,banner:'Phở ngon chuẩn vị Bắc — giảm 20% đơn đầu'},
+  promos:[
+    {n:'Giảm 20% đơn đầu tiên',type:'order_discount',v:'20%, tối đa 40.000₫',code:'GIAM20',used:312,lim:1000,on:true,to:'31/12/2026'},
+    {n:'Combo cà phê sáng',type:'fixed_discount',v:'-10.000₫ cà phê',code:'',used:1204,lim:0,on:true,to:'30/11/2026'},
+    {n:'Thứ Hai trà giảm 15%',type:'percent_discount',v:'15% nhóm Trà',code:'',used:88,lim:0,on:true,to:'31/12/2026'},
+    {n:'Mua 2 phở tặng 1 trà',type:'buy_x_discount_y',v:'Mua 2 · tặng 1',code:'',used:41,lim:500,on:false,to:'15/11/2026'},
+    {n:'Tặng chè đơn từ 200k',type:'order_bonus',v:'+1 Chè khúc bạch',code:'',used:57,lim:0,on:true,to:'31/12/2026'},
+    {n:'Freeship bán kính 3km',type:'ship_discount',v:'-15.000₫ phí ship',code:'FREESHIP',used:640,lim:0,on:true,to:'31/12/2026'}
+  ],
+  chans:[
+    {k:'grab',n:'GrabFood',kind:'Food delivery',on:true,stores:2,sync:'2 phút trước',tok:'Hết hạn sau 23 ngày'},
+    {k:'shopee_food',n:'ShopeeFood',kind:'Food delivery',on:true,stores:2,sync:'1 phút trước',tok:'Hết hạn sau 6 ngày',warn:true},
+    {k:'be',n:'beFood',kind:'Food delivery',on:true,stores:1,sync:'4 phút trước',tok:'Hết hạn sau 41 ngày'},
+    {k:'tiktok',n:'TikTok Shop',kind:'E-commerce',on:true,stores:1,sync:'8 phút trước',tok:'Hết hạn sau 12 ngày'},
+    {k:'shopee_ecom',n:'Shopee',kind:'E-commerce',on:true,stores:1,sync:'5 phút trước',tok:'Hết hạn sau 18 ngày'},
+    {k:'lazada_ecom',n:'Lazada',kind:'E-commerce',on:false,stores:0,sync:'—',tok:'Chưa kết nối'},
+    {k:'zalo',n:'Zalo Mini App',kind:'Social ordering',on:false,stores:0,sync:'—',tok:'Chưa kết nối',c:'var(--ch-zalo)'},
+    {k:'momo',n:'MoMo Food',kind:'Wallet ordering',on:false,stores:0,sync:'—',tok:'Chưa kết nối',c:'var(--ch-momo)'}
+  ],
+  users:[
+    {n:'Huỳnh Linh Anh',e:'linhanh@phomoc.vn',r:'Owner',h:'Tất cả',on:true,last:'Đang trực tuyến'},
+    {n:'Trần Văn Khoa',e:'khoa.tv@phomoc.vn',r:'Store manager',h:'Nguyễn Huệ, Q1',on:true,last:'12 phút trước'},
+    {n:'Lê Thị Mai',e:'mai.le@phomoc.vn',r:'Cashier',h:'Nguyễn Huệ, Q1',on:true,last:'Đang trực tuyến'},
+    {n:'Phạm Quốc Việt',e:'viet.pq@phomoc.vn',r:'Kitchen',h:'Nguyễn Huệ, Q1',on:true,last:'3 giờ trước'},
+    {n:'Nguyễn Thảo Vy',e:'vy.nt@phomoc.vn',r:'Accountant',h:'Tất cả',on:true,last:'Hôm qua'},
+    {n:'Đỗ Minh Quân',e:'quan.dm@phomoc.vn',r:'Cashier',h:'Võ Văn Tần, Q3',on:false,last:'Chờ kích hoạt'}
+  ],
+  printers:[
+    {n:'Máy in bếp',ip:'192.168.1.50',t:'bill_for_kitchen',w:80,on:true},
+    {n:'Máy in quầy thu ngân',ip:'192.168.1.51',t:'bill_for_complete',w:80,on:true},
+    {n:'Máy in tem nhãn',ip:'USB · XP-365B',t:'bill_for_label',w:58,on:true}
+  ],
+  stock:[
+    ['Bánh phở tươi','kg',42,8,15],['Thịt bò thăn','kg',9.5,3,10],['Gà ta nguyên con','con',14,4,6],['Bún tươi','kg',25,5,10],
+    ['Hạt cà phê Robusta','kg',18,0,8],['Sữa đặc Ông Thọ','lon',36,0,24],['Trà đào (syrup)','chai',3,1,6],['Đào ngâm','hộp',7,2,6],
+    ['Bánh mì baguette','ổ',60,12,40],['Ly nhựa 500ml','cái',820,0,500],['Hộp giấy take away','cái',140,0,300]
+  ]
+};
+
+/* ---------- icons ---------- */
+const I = {
+  dash:'<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/>',
+  pos:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  orders:'<path d="M6 2h12l2 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M4 6h16M9 11h6M9 15h4"/>',
+  truck:'<path d="M1 4h14v11H1zM15 9h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="18.5" cy="18" r="2"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h10"/>', box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  stock:'<path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-8h10v8M7 17h10"/>', tag:'<path d="M20 12 12 20 3 11V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+  plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>', web:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  inv:'<path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/>', store:'<path d="M3 9 5 3h14l2 6M4 9v12h16V9M3 9h18M9 21v-6h6v6"/>',
+  print:'<path d="M6 9V2h12v7M6 18H4v-7h16v7h-2M6 14h12v8H6z"/>', users:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', cog:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>'
+};
+const NAV = [
+  ['Sell',[['dashboard','Overview','dash'],['pos','Point of sale','pos'],['orders','Orders','orders'],['delivery','Delivery','truck']]],
+  ['Catalog',[['menu','Menu','menu'],['products','Retail products','box'],['inventory','Inventory','stock'],['promotions','Promotions','tag']]],
+  ['Channels',[['channels','Sales channels','plug'],['web-ordering','Web ordering','web']]],
+  ['Operations',[['shifts','Shifts & cash','clock'],['reports','Reports','chart'],['invoices','Tax invoices','inv']]],
+  ['Setup',[['business','Brands & stores','store'],['bills','Bills & printers','print'],['team','Staff & roles','users'],['plan','Plan & billing','card'],['system','System jobs','cog']]]
+];
+function renderRail(){
+  const pend = S.orders.filter(o=>o.st==='PENDING').length;
+  $('#rail').innerHTML = `<div class="logo"><div class="logo-mark">N</div><b>NexPOS</b></div>` + NAV.map(([g,ls])=>`<div class="nav-group"><span class="eyebrow">${g}</span><nav class="nav">${ls.map(([r,l,i])=>
+    `<a href="#${r}" class="${route()===r?'on':''}"><svg viewBox="0 0 24 24">${I[i]}</svg>${l}${r==='orders'&&pend?`<span class="k">${pend}</span>`:''}</a>`).join('')}</nav></div>`).join('');
+}
+
+/* ---------- overlays ---------- */
+function modal(title, body, foot='', cls=''){ $('#overlay').innerHTML = `<div class="scrim" data-act="close"><div class="modal ${cls}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mh"><h2>${title}</h2><button class="btn ghost sm" data-act="x" aria-label="Close">✕</button></div><div class="mb">${body}</div>${foot?`<div class="mf">${foot}</div>`:''}</div></div>`; }
+function drawer(head, body, foot=''){ $('#overlay').innerHTML = `<div class="scrim drawer-scrim" data-act="close"><aside class="drawer" role="dialog" aria-modal="true"><div class="mh">${head}<button class="btn ghost sm" data-act="x" aria-label="Close">✕</button></div>${body}${foot?`<div class="mf">${foot}</div>`:''}</aside></div>`; }
+const closeOv = () => $('#overlay').innerHTML = '';
+function toast(msg, actions=''){ const el = document.createElement('div'); el.className='toast'; el.innerHTML=`<div class="grow">${msg}</div>${actions}`; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), actions?9000:3800); }
+
+/* ---------- shared bits ---------- */
+const head = (t, p, svc, actions='') => `<div class="head"><div class="grow"><div class="row" style="gap:8px"><h1>${t}</h1>${svc?`<span class="svc">${svc}</span>`:''}</div>${p?`<p>${p}</p>`:''}</div><div class="row">${actions}</div></div>`;
+const sw = (id, on, act='', extra='') => `<label class="switch"><input type="checkbox" id="${id}" ${on?'checked':''} ${act?`data-chg="${act}"`:''} ${extra}><span></span></label>`;
+function bars(data, {h=180, fmt=kfmt, alt=null}={}){
+  const W = Math.max(320, data.length*46), pad = 34, max = Math.max(...data.map(d=>d.v))*1.1, bw = (W-pad-10)/data.length;
+  const ticks = [0,.25,.5,.75,1].map(f=>max*f);
+  return `<div class="tw"><svg class="chart" viewBox="0 0 ${W} ${h+24}" width="100%" style="min-width:${Math.min(W,520)}px;display:block" role="img">
+  ${ticks.map(t=>{const y=h-(t/max)*(h-10);return `<line class="gl" x1="${pad}" x2="${W}" y1="${y}" y2="${y}"/><text x="${pad-6}" y="${y+3}" text-anchor="end">${fmt(t)}</text>`}).join('')}
+  ${data.map((d,i)=>{const bh=(d.v/max)*(h-10), x=pad+6+i*bw;return `<rect class="bar ${alt&&alt(d,i)?'alt':''}" x="${x}" y="${h-bh}" width="${bw-12}" height="${bh}" rx="3"><title>${d.l}: ${vnd(d.v)}</title></rect><text x="${x+(bw-12)/2}" y="${h+15}" text-anchor="middle">${d.l}</text>`}).join('')}
+  </svg></div>`;
+}
+const hbar = rows => { const m = Math.max(...rows.map(r=>r.v)); return `<div style="display:flex;flex-direction:column;gap:10px">${rows.map(r=>`<div class="hb"><span class="ell">${r.l}</span><span class="t"><i style="width:${r.v/m*100}%;background:${r.c||'var(--accent)'}"></i></span><span class="num" style="text-align:right">${r.f||vnd(r.v)}</span></div>`).join('')}</div>` };
+function qrSvg(txt){ let h=0; for(const c of txt) h=(h*31+c.charCodeAt(0))>>>0; const n=25; let s=''; const r=()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return (h>>>0)%100};
+  const fin=(x,y)=>`<rect x="${x}" y="${y}" width="7" height="7" fill="#111"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#111"/>`;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){ if((x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16)) continue; if(r()<48) s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#111"/>`; }
+  return `<svg class="qr" viewBox="-1 -1 27 27" style="background:#fff"><rect x="-1" y="-1" width="27" height="27" fill="#fff"/>${s}${fin(0,0)}${fin(18,0)}${fin(0,18)}</svg>`; }
+
+/* ---------- views ---------- */
+const V = {};
+
+V.dashboard = () => {
+  const done = S.orders.filter(o=>o.st==='FINISH'), rev = done.reduce((a,o)=>a+o.total,0), canc = S.orders.filter(o=>o.st==='CANCEL').length;
+  const days = ['T6','T7','CN','T2','T3','T4','T5'].map((l,i)=>({l, v:[9.8,14.2,15.6,8.1,8.9,10.4,0][i]*1e6 || rev}));
+  const byCh = Object.keys(CH).map(k=>({l:CH[k].n,c:CH[k].c,v:S.orders.filter(o=>o.ch===k&&o.st==='FINISH').reduce((a,o)=>a+o.total,0)})).filter(r=>r.v).sort((a,b)=>b.v-a.v);
+  const low = S.stock.filter(s=>s[2]-s[3]<s[4]);
+  return head('Overview','Today at Phở Mộc · Nguyễn Huệ. Orders from every channel land here in one queue.','order-service · /dashboard',`<a class="btn pri" href="#pos">New sale</a>`) +
+  `<div class="grid g4">
+    <div class="panel kpi"><span class="eyebrow">Net revenue today</span><span class="v">${vnd(rev)}</span><span class="d up">▲ 12.4% vs last Thursday</span></div>
+    <div class="panel kpi"><span class="eyebrow">Completed orders</span><span class="v">${done.length}</span><span class="d muted">${S.orders.length} received in total</span></div>
+    <div class="panel kpi"><span class="eyebrow">Average ticket</span><span class="v">${vnd(rev/Math.max(1,done.length))}</span><span class="d up">▲ 3.1%</span></div>
+    <div class="panel kpi"><span class="eyebrow">Cancel rate</span><span class="v">${(canc/S.orders.length*100).toFixed(1)}%</span><span class="d down">${canc} canceled · see report</span></div>
+  </div>
+  <div class="grid g-side">
+    <div class="panel"><div class="ph"><h2>Revenue, last 7 days</h2><span class="chip">Thursday so far highlighted</span></div><div class="pb">${bars(days,{alt:(d,i)=>i===6})}</div></div>
+    <div class="panel"><div class="ph"><h2>Revenue by channel</h2></div><div class="pb">${hbar(byCh)}</div></div>
+  </div>
+  <div class="grid g3">
+    <div class="panel"><div class="ph"><h2>Needs action</h2><a class="btn sm" href="#orders">All orders</a></div><div class="list">${S.orders.filter(o=>['PENDING','WAITING_PAYMENT','DOING'].includes(o.st)).slice(0,6).map(o=>
+      `<div class="li click" data-act="order" data-id="${o.id}" style="cursor:pointer"><div class="grow"><div class="row"><b class="mono">${o.code}</b>${chip(o.st)}</div><small class="muted">${chan(o.ch)} · ${o.t.toTimeString().slice(0,5)}</small></div><span class="num">${vnd(o.total)}</span></div>`).join('')||'<div class="empty">Nothing waiting. Nice.</div>'}</div></div>
+    <div class="panel"><div class="ph"><h2>Low stock</h2><a class="btn sm" href="#inventory">Inventory</a></div><div class="list">${low.map(s=>`<div class="li"><div class="grow"><b>${s[0]}</b><div class="meter warm" style="margin-top:6px"><i style="width:${Math.min(100,(s[2]-s[3])/s[4]*100)}%"></i></div></div><span class="num">${s[2]-s[3]} / ${s[4]} ${s[1]}</span></div>`).join('')}</div></div>
+    <div class="panel"><div class="ph"><h2>Current shift</h2><a class="btn sm" href="#shifts">Open</a></div><div class="pb"><dl class="kv"><dt>Opened by</dt><dd>${S.shift.by} · ${S.shift.at}</dd><dt>Opening cash</dt><dd>${vnd(S.shift.cash0)}</dd><dt>Cash sales</dt><dd>${vnd(cashSales())}</dd><dt>Expected in drawer</dt><dd><b>${vnd(expectedCash())}</b></dd></dl></div></div>
+  </div>`;
+};
+
+/* POS */
+function cartTotals(){
+  const sub = S.cart.reduce((a,l)=>a+l.unit*l.q,0);
+  let disc = 0, ship = S.otype==='delivery' ? 18000 : 0;
+  if (S.promo==='GIAM20') disc = Math.min(40000, Math.round(sub*.2));
+  if (S.promo==='FREESHIP') { disc = Math.min(15000, ship); }
+  return {sub, disc, ship, total: Math.max(0, sub-disc+ship)};
+}
+V.pos = () => {
+  const list = MENU.filter(m=>(S.cat==='all'||m.cat===S.cat) && m.n.toLowerCase().includes(S.q.toLowerCase()));
+  const t = cartTotals();
+  return head('Point of sale','Tap items to build the order. Items with options open a picker. Cash, QR bank transfer, MoMo and VNPay are supported.','order-service · /cart → /checkout') +
+  `<div class="pos"><div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+    <input class="in" id="posQ" placeholder="Search menu by name or SKU" value="${esc(S.q)}" data-inp="posQ">
+    <div class="cats">${CATS.map(([k,l])=>`<button class="${S.cat===k?'on':''}" data-act="cat" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="items">${list.map(m=>`<button class="item ${m.out?'out':''}" data-act="add" data-id="${m.id}" ${m.out?'disabled':''}><span class="art" style="background:${CAT_COL[m.cat]}">${m.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</span><b>${m.n}</b><span class="row" style="justify-content:space-between"><span class="num">${vnd(m.p)}</span>${m.out?'<span class="chip dng">Sold out</span>':m.o?'<span class="chip">Options</span>':''}</span></button>`).join('')}</div>
+  </div>
+  <div class="panel cart"><div class="ph"><h2>Order</h2><button class="btn sm ghost" data-act="clearCart" ${S.cart.length?'':'disabled'}>Clear</button></div>
+    <div class="pb" style="display:flex;flex-direction:column;gap:10px;padding-bottom:8px">
+      <div class="seg" role="tablist">${[['take_away','Take away'],['pick_up','Pick up'],['delivery','Delivery']].map(([k,l])=>`<button class="${S.otype===k?'on':''}" data-act="otype" data-k="${k}">${l}</button>`).join('')}</div>
+      ${S.otype!=='take_away'?`<div class="grid g2" style="gap:8px"><input class="in" id="cName" placeholder="Customer name" value="${esc(S.cust.name)}" data-inp="cName"><input class="in" id="cPhone" placeholder="Phone" value="${esc(S.cust.phone)}" data-inp="cPhone"></div>`:''}
+      ${S.otype==='delivery'?`<div style="position:relative"><input class="in" id="cAddr" placeholder="Delivery address (suggestions from map service)" value="${esc(S.cust.addr)}" data-inp="cAddr" autocomplete="off"><div id="addrSug"></div></div>`:''}
+    </div>
+    <div class="lines">${S.cart.length? S.cart.map((l,i)=>`<div class="cl"><b>${l.n}</b><span class="num">${vnd(l.unit*l.q)}</span>${l.opt?`<small>${l.opt}</small>`:''}<span class="qty" style="grid-column:2;justify-self:end"><button data-act="qty" data-i="${i}" data-d="-1" aria-label="Less">−</button><span>${l.q}</span><button data-act="qty" data-i="${i}" data-d="1" aria-label="More">+</button></span></div>`).join('') : '<div class="empty">No items yet. Tap a dish to start.</div>'}</div>
+    <div class="sum">
+      <div class="row" style="flex-wrap:nowrap"><input class="in" id="promo" placeholder="Promo code · try GIAM20 or FREESHIP" value="${S.promo||''}"><button class="btn" data-act="promo">Apply</button></div>
+      <div class="row"><span class="muted">Subtotal</span><span class="num">${vnd(t.sub)}</span></div>
+      ${t.disc?`<div class="row"><span class="muted">Promotion ${S.promo}</span><span class="num up">−${vnd(t.disc)}</span></div>`:''}
+      ${t.ship?`<div class="row"><span class="muted">Delivery fee (est.)</span><span class="num">${vnd(t.ship)}</span></div>`:''}
+      <div class="row"><b>Total</b><span class="tot num">${vnd(t.total)}</span></div>
+      <div class="pm">${[['CASH','Cash'],['BANK_TRANSFER','QR transfer'],['MOMO','MoMo'],['VNPAY','VNPay'],...(S.otype==='delivery'?[['COD','COD']]:[]),['LATER','Pay later']].map(([k,l])=>`<button class="${S.pay===k?'on':''}" data-act="pay" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="row" style="flex-wrap:nowrap"><button class="btn" data-act="draft" ${S.cart.length?'':'disabled'}>Save draft</button><button class="btn pri" style="flex:1;justify-content:center;padding:11px" data-act="charge" ${S.cart.length?'':'disabled'}>Charge ${vnd(t.total)}</button></div>
+    </div></div></div>`;
+};
+function optModal(m){
+  const groups = OPTS[m.o];
+  modal(m.n, groups.map((g,gi)=>`<div><div class="eyebrow" style="margin-bottom:6px">${g.g}${g.one?' · chọn 1':''}</div><div class="row">${g.c.map((c,ci)=>`<label class="chip" style="cursor:pointer;padding:6px 11px"><input type="${g.one?'radio':'checkbox'}" name="g${gi}" value="${ci}" ${g.one&&ci===0?'checked':''}> ${c[0]}${c[1]?` +${kfmt(c[1])}`:''}</label>`).join('')}</div></div>`).join('') +
+    `<label class="f">Note for kitchen<input class="in" id="optNote" placeholder="Ít hành, không rau mùi…"></label>`,
+    `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="addOpt" data-id="${m.id}">Add to order</button>`);
+}
+function payModal(){
+  const t = cartTotals();
+  if (S.pay==='CASH') {
+    modal('Cash payment', `<div class="kv" style="font-size:16px"><dt>Amount due</dt><dd><b>${vnd(t.total)}</b></dd></div>
+      <label class="f">Cash received<input class="in num" id="cashIn" inputmode="numeric" value="${Math.ceil(t.total/50000)*50000}" data-inp="cash"></label>
+      <div class="row">${[t.total,Math.ceil(t.total/100000)*100000,200000,500000].map(v=>`<button class="btn sm" data-act="cashQuick" data-v="${v}">${vnd(v)}</button>`).join('')}</div>
+      <div class="kv" style="font-size:16px"><dt>Change to give</dt><dd id="change" class="num"><b>${vnd(Math.ceil(t.total/50000)*50000-t.total)}</b></dd></div>`,
+      `<button class="btn" data-act="x">Back</button><button class="btn pri" data-act="complete">Complete & print</button>`);
+  } else if (S.pay==='LATER' || S.pay==='COD') { complete(); }
+  else {
+    const name = {BANK_TRANSFER:'VietQR bank transfer',MOMO:'MoMo',VNPAY:'VNPay'}[S.pay];
+    modal(name, `<p class="muted" style="margin:0">Ask the customer to scan. NexDorPay polls the bank and confirms automatically.</p>
+      <div style="text-align:center">${qrSvg('NP'+orderSeq+t.total)}<div class="num" style="font-size:20px;font-weight:800">${vnd(t.total)}</div><div class="muted mono" style="font-size:12px">Nội dung: NEXPOS ${orderSeq+1}</div></div>
+      <div class="row" style="justify-content:center"><span class="chip warm" id="payState">Waiting for payment…</span></div>`,
+      `<button class="btn" data-act="x">Cancel</button><button class="btn" data-act="sendLink">Send payment link</button><button class="btn pri" data-act="complete">Mark as collected</button>`);
+    setTimeout(()=>{ const s=$('#payState'); if(s){ s.className='chip ok'; s.textContent='Payment received · VCB ****8821'; setTimeout(()=>{ if($('#payState')) complete(); }, 900);} }, 2600);
+  }
+}
+function complete(status){
+  const t = cartTotals();
+  const o = {id:++orderSeq, code:`${CH[S.otype].p}-${orderSeq}`, ch:S.otype, cust:S.cust.name||'Khách lẻ', phone:S.cust.phone, addr:S.otype==='delivery'?(S.cust.addr||'—'):'Tại quầy',
+    items:S.cart.map(l=>({n:l.n+(l.opt?` (${l.opt})`:''),p:l.unit,q:l.q})), sub:t.sub, disc:t.disc, ship:t.ship, total:t.total,
+    st: status || (S.otype==='take_away'?'FINISH':(S.pay==='LATER'?'WAITING_PAYMENT':'DOING')), pay:S.pay==='LATER'?'BANK_TRANSFER':S.pay, paid:!['LATER','COD'].includes(S.pay)&&!status, t:new Date(), driver:null, prov:S.otype==='delivery'?'Ahamove':null, inv:null};
+  S.orders.unshift(o); S.cart=[]; S.promo=null; S.cust={name:'',phone:'',addr:''};
+  if (status==='DRAFT') { closeOv(); toast(`Draft <b class="mono">${o.code}</b> saved`); render(); return; }
+  receiptModal(o, true); render();
+}
+function receipt(o, tpl='bill_for_complete', b=S.bill){
+  const lines = o.items.map(i=>tpl==='bill_for_kitchen'?`<div class="lr"><b>${i.q} × ${i.n}</b></div>`:`<div>${i.n}</div><div class="lr"><span>${i.q} × ${i.p.toLocaleString('vi-VN')}</span><span>${(i.q*i.p).toLocaleString('vi-VN')}</span></div>`).join('');
+  if (tpl==='bill_for_label') return `<div class="receipt w58 ${b.big?'big':''}"><div class="lr"><b>${o.code}</b><span>1/${o.items.reduce((a,i)=>a+i.q,0)}</span></div><hr><b>${o.items[0].n}</b><div>Size L · 50% đường</div><hr><div class="lr"><span>${o.t.toTimeString().slice(0,5)}</span><span>${CH[o.ch].n}</span></div></div>`;
+  return `<div class="receipt ${b.w===58?'w58':''} ${b.big?'big':''}">
+    ${b.logo?'<div class="c"><b style="font-size:15px">PHỞ MỘC</b><br>27 Nguyễn Huệ, Bến Nghé, Q1<br>028 3822 1188</div><hr>':''}
+    <div class="c"><b>${tpl==='bill_for_kitchen'?'PHIẾU BẾP':'HOÁ ĐƠN BÁN HÀNG'}</b></div>
+    <div class="lr"><span>Mã đơn</span><b>${o.code}</b></div><div class="lr"><span>Kênh</span><span>${CH[o.ch].n}</span></div><div class="lr"><span>Giờ</span><span>${o.t.toLocaleString('vi-VN')}</span></div>${o.cust!=='Khách lẻ'?`<div class="lr"><span>Khách</span><span>${o.cust}</span></div>`:''}<hr>
+    ${lines}
+    ${tpl==='bill_for_kitchen'?'':`<hr><div class="lr"><span>Tạm tính</span><span>${o.sub.toLocaleString('vi-VN')}</span></div>${o.disc?`<div class="lr"><span>Khuyến mãi</span><span>-${o.disc.toLocaleString('vi-VN')}</span></div>`:''}${o.ship?`<div class="lr"><span>Phí giao hàng</span><span>${o.ship.toLocaleString('vi-VN')}</span></div>`:''}
+    <div class="lr" style="font-size:1.15em"><b>TỔNG CỘNG</b><b>${o.total.toLocaleString('vi-VN')}₫</b></div><div class="lr"><span>Thanh toán</span><span>${o.pay}</span></div>
+    ${b.qr?`<hr><div class="c">Quét để xuất hoá đơn VAT</div>${qrSvg(o.code)}`:''}<hr><div class="c">${esc(b.footer)}</div>`}</div>`;
+}
+function receiptModal(o, fresh){
+  modal(fresh?`Order ${o.code} ${o.st==='FINISH'?'completed':'created'}`:`Print ${o.code}`, `${fresh?`<div class="row">${chip(o.st)}<span class="muted">Sent to the kitchen printer automatically.</span></div>`:''}<div style="background:var(--surface-2);padding:16px;border-radius:10px">${receipt(o)}</div>`,
+    `<button class="btn" data-act="printK" data-id="${o.id}">Print kitchen ticket</button><button class="btn" data-act="printL" data-id="${o.id}">Print labels</button><button class="btn pri" data-act="printC" data-id="${o.id}">Print receipt</button>`);
+}
+
+/* Orders */
+const TABS = [['all','All'],['PENDING','New'],['WAITING_PAYMENT','Awaiting payment'],['DOING','Preparing'],['PICK','Out for delivery'],['PRE_ORDER','Pre-order'],['FINISH','Completed'],['CANCEL','Canceled'],['DRAFT','Drafts']];
+V.orders = () => {
+  const list = S.orders.filter(o=>(S.oTab==='all'||o.st===S.oTab)&&(!S.oCh||o.ch===S.oCh)&&(o.code+o.cust+o.phone).toLowerCase().includes(S.oQ.toLowerCase()));
+  return head('Orders','POS, web and marketplace orders in one list. Marketplace orders are pulled in by merchant-service every minute.','order-service · /orders',`<button class="btn" data-act="lookup">Public order lookup</button><a class="btn pri" href="#pos">New order</a>`) +
+  `<div class="panel"><div class="tabs">${TABS.map(([k,l])=>`<button class="${S.oTab===k?'on':''}" data-act="oTab" data-k="${k}">${l}<span class="n">${k==='all'?S.orders.length:S.orders.filter(o=>o.st===k).length}</span></button>`).join('')}</div>
+   <div class="pb row"><input class="in" id="oQ" style="max-width:280px" placeholder="Search code, customer, phone" value="${esc(S.oQ)}" data-inp="oQ"><select class="in" id="oCh" style="width:auto" data-chg="oCh"><option value="">All channels</option>${Object.keys(CH).map(k=>`<option value="${k}" ${S.oCh===k?'selected':''}>${CH[k].n}</option>`).join('')}</select><span class="muted">${list.length} orders</span></div>
+   <div class="tw"><table><thead><tr><th>Order</th><th>Channel</th><th>Customer</th><th class="r">Total</th><th>Payment</th><th>Status</th><th>Time</th></tr></thead><tbody>
+   ${list.map(o=>`<tr class="click" data-act="order" data-id="${o.id}"><td><b class="mono">${o.code}</b></td><td>${chan(o.ch)}</td><td><div class="ell" style="max-width:180px">${o.cust}</div></td><td class="r num">${vnd(o.total)}</td><td><span class="chip ${o.paid?'ok':''}">${o.pay}${o.paid?' · paid':''}</span></td><td>${chip(o.st)}</td><td class="muted num">${o.t.toTimeString().slice(0,5)}</td></tr>`).join('') || `<tr><td colspan="7" class="empty">No orders match these filters.</td></tr>`}
+   </tbody></table></div></div>`;
+};
+function orderDrawer(id){
+  const o = S.orders.find(x=>x.id==id); if(!o) return;
+  const flow = ['PENDING','DOING','PICK','FINISH'], idx = flow.indexOf(o.st);
+  const local = ['take_away','pick_up','delivery'].includes(o.ch);
+  let acts = '';
+  if (o.st==='DRAFT') acts = `<button class="btn dng" data-act="ost" data-id="${o.id}" data-s="DELETED">Delete draft</button><button class="btn pri" data-act="ost" data-id="${o.id}" data-s="PENDING">Submit order</button>`;
+  else if (['PENDING','PRE_ORDER','WAITING_PAYMENT'].includes(o.st)) acts = `<button class="btn dng" data-act="cancelO" data-id="${o.id}">Cancel</button><button class="btn pri" data-act="ost" data-id="${o.id}" data-s="DOING">Confirm order</button>`;
+  else if (o.st==='DOING') acts = `<button class="btn dng" data-act="cancelO" data-id="${o.id}">Cancel</button>${o.ship?`<button class="btn pri" data-act="quote" data-id="${o.id}">Book driver</button>`:`<button class="btn pri" data-act="ost" data-id="${o.id}" data-s="FINISH">Mark picked up</button>`}`;
+  else if (o.st==='PICK') acts = `<button class="btn" data-act="ost" data-id="${o.id}" data-s="RETURNING">Start return</button><button class="btn pri" data-act="ost" data-id="${o.id}" data-s="FINISH">Mark delivered</button>`;
+  else if (o.st==='FINISH' && !o.inv) acts = `<button class="btn pri" data-act="issueInv" data-id="${o.id}">Issue e-invoice</button>`;
+  acts = `<button class="btn" data-act="reprint" data-id="${o.id}">Print</button>` + acts;
+  drawer(`<div style="flex:1"><div class="row"><h2 class="mono">${o.code}</h2>${chip(o.st)}</div><div class="muted" style="margin-top:3px">${chan(o.ch)} · ${o.t.toLocaleString('vi-VN')}</div></div>`,
+  `${o.st!=='CANCEL'&&o.st!=='DRAFT'?`<div class="sec"><div class="steps">${['New','Preparing','Delivering','Completed'].map((l,i)=>`<div class="step ${i<=idx?'done':''} ${i===idx?'cur':''}"><i></i>${l}</div>`).join('')}</div></div>`:''}
+   <div class="sec"><span class="eyebrow">Customer</span><b>${o.cust}</b><span class="muted mono">${o.phone||''}</span><span>${o.addr}</span></div>
+   <div class="sec"><span class="eyebrow">Items</span>${o.items.map(i=>`<div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span><b class="num">${i.q}×</b> ${i.n}</span><span class="num">${vnd(i.p*i.q)}</span></div>`).join('')}
+     <dl class="kv" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px"><dt>(1) Revenue before promotion</dt><dd>${vnd(o.sub)}</dd><dt>(5) Total promotion</dt><dd>−${vnd(o.disc)}</dd><dt>(8) Shipping fee</dt><dd>${vnd(o.ship)}</dd><dt><b>(9) Customer paid</b></dt><dd><b>${vnd(o.total)}</b></dd></dl></div>
+   <div class="sec"><div class="row"><span class="eyebrow" style="flex:1">Payment</span><span class="chip ${o.paid?'ok':'warm'}">${o.paid?'Paid':'Unpaid'}</span></div>
+     <div class="row" style="justify-content:space-between"><span>${o.pay}</span><span class="num muted">TXN-${o.id}8821</span></div>
+     ${!o.paid&&o.st!=='CANCEL'?`<div class="row"><button class="btn sm" data-act="sendLink">Send payment link</button><button class="btn sm" data-act="collect" data-id="${o.id}">Record manual collection</button><button class="btn sm ghost" data-act="checkPay">Check status</button></div>`:''}</div>
+   ${o.ship?`<div class="sec"><span class="eyebrow">Delivery</span><dl class="kv"><dt>Provider</dt><dd>${o.prov||'—'}</dd><dt>Driver</dt><dd>${o.driver||'Not assigned'}</dd><dt>Fee</dt><dd>${vnd(o.ship)}</dd></dl>${o.driver&&o.st==='PICK'?`<div class="row"><button class="btn sm" data-act="track">Track driver</button>${local?`<button class="btn sm dng" data-act="cancelShip" data-id="${o.id}">Cancel booking</button>`:''}</div>`:''}</div>`:''}
+   <div class="sec"><span class="eyebrow">Tax invoice</span>${o.inv?`<div class="row"><span class="chip ${o.inv==='issued'?'ok':o.inv==='error'?'dng':'info'}">${o.inv}</span><span class="muted">MISA meInvoice · Ký hiệu 1C26TPM</span></div>`:'<span class="muted">Not issued. Customers can request one by scanning the receipt QR.</span>'}</div>`, acts);
+}
+function cancelModal(id){
+  modal('Cancel order', `<p class="muted" style="margin:0">Marketplace orders are also canceled on the partner app. Stock is returned by the listener service.</p>
+    <div class="list panel">${['Hết món','Khách yêu cầu huỷ','Quán quá tải','Không liên hệ được khách','Khác'].map((r,i)=>`<label class="li" style="cursor:pointer"><input type="radio" name="cr" ${i===0?'checked':''}> ${r}</label>`).join('')}</div>`,
+    `<button class="btn" data-act="order" data-id="${id}">Back</button><button class="btn dng" data-act="ost" data-id="${id}" data-s="CANCEL">Cancel order</button>`);
+}
+function quoteModal(id){
+  const qs = [['Ahamove','Bike · 18 phút',18000],['Grab Express','Instant · 15 phút',21000],['Viettel Post','Same day · 3 giờ',16500],['Ship by shop','Nhân viên quán tự giao',0]];
+  modal('Book a driver', `<div class="muted">From <b>27 Nguyễn Huệ, Q1</b> to <b>${S.orders.find(o=>o.id==id).addr}</b> · 3.2 km</div><div class="panel list">${qs.map((q,i)=>`<label class="li" style="cursor:pointer"><input type="radio" name="q" value="${i}" ${i===0?'checked':''}><div class="grow"><b>${q[0]}</b><div class="muted">${q[1]}</div></div><span class="num">${q[2]?vnd(q[2]):'—'}</span></label>`).join('')}</div>
+    <label class="f">Schedule pickup<select class="in" id="when"><option>Now</option><option>In 15 minutes</option><option>11:30</option><option>12:00</option></select></label>`,
+    `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="book" data-id="${id}">Book driver</button>`);
+}
+
+/* Delivery */
+V.delivery = () => {
+  const act = S.orders.filter(o=>o.ship && ['DOING','PICK'].includes(o.st));
+  return head('Delivery','Quotes and bookings across Ahamove, Grab Express and Viettel Post. Status callbacks from couriers update orders automatically.','order-service · /delivery',`<button class="btn pri" data-act="quickQuote">Get a quote</button>`) +
+  `<div class="grid g4">${[['Waiting for driver',act.filter(o=>o.st==='DOING').length,'warm'],['On the way',act.filter(o=>o.st==='PICK').length,'acc'],['Scheduled today','4','info'],['Delivered today',S.orders.filter(o=>o.ship&&o.st==='FINISH').length,'ok']].map(([l,v,c])=>`<div class="panel kpi"><span class="eyebrow">${l}</span><span class="v">${v}</span><span class="chip ${c}" style="align-self:flex-start">live</span></div>`).join('')}</div>
+  <div class="grid g-side"><div class="panel"><div class="ph"><h2>Active deliveries</h2></div><div class="tw"><table><thead><tr><th>Order</th><th>Provider</th><th>Driver</th><th>Address</th><th>Status</th></tr></thead><tbody>
+  ${act.map(o=>`<tr class="click" data-act="order" data-id="${o.id}"><td class="mono"><b>${o.code}</b></td><td>${o.prov}</td><td>${o.driver||'<span class="muted">Searching…</span>'}</td><td><div class="ell" style="max-width:220px">${o.addr}</div></td><td>${chip(o.st)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No active deliveries.</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><h2>Scheduled shipments</h2><span class="svc">cron-saas-service</span></div><div class="list">${[['11:30','WEB-1702','Ahamove','Văn phòng Bitexco, 30 suất'],['12:00','WEB-1711','Grab Express','88 Pasteur, Q3'],['17:45','PU-1716','Ship by shop','Chung cư Sunrise City'],['18:30','WEB-1720','Viettel Post','Gửi tỉnh: Biên Hoà']].map(r=>`<div class="li"><b class="num">${r[0]}</b><div class="grow"><b class="mono">${r[1]}</b><div class="muted ell">${r[2]} · ${r[3]}</div></div><span class="chip info">Auto-book</span></div>`).join('')}</div></div></div>
+  <div class="panel"><div class="ph"><h2>Provider accounts</h2></div><div class="list">${[['Ahamove','Connected · ví còn 1.240.000₫','ok'],['Grab Express','Connected · trả sau theo tháng','ok'],['Viettel Post','Connected · hợp đồng VTP-HCM-2291','ok']].map(r=>`<div class="li"><b class="grow">${r[0]}</b><span class="muted hide-sm">${r[1]}</span><span class="chip ${r[2]}">Active</span></div>`).join('')}</div></div>`;
+};
+
+/* Menu */
+V.menu = () => {
+  const chs = ['POS','Web','GrabFood','ShopeeFood','beFood'];
+  return head('Menu','One menu per store, published to POS, your web store and every food app. Prices can differ per channel.','brand-service · /site_menu',`<button class="btn" data-act="importMenu">Import Excel</button><button class="btn" data-act="toast" data-m="Exported menu_phomoc_q1.xlsx">Export</button><button class="btn" data-act="copyMenu">Copy to store</button><button class="btn pri" data-act="publish">Publish to channels</button>`) +
+  `<div class="panel"><div class="tabs"><button class="on">Items</button><button data-act="optGroups">Option groups</button><button data-act="templates">Menu templates</button></div>
+  <div class="tw"><table><thead><tr><th>Item</th><th>Category</th><th class="r">POS price</th><th class="r">App price</th>${chs.map(c=>`<th>${c}</th>`).join('')}<th>In stock</th></tr></thead><tbody>
+  ${MENU.map(m=>`<tr><td><div class="row" style="flex-wrap:nowrap"><span class="mono-tile" style="width:32px;height:32px;font-size:12px;background:${CAT_COL[m.cat]}">${m.n[0]}</span><div><b>${m.n}</b><div class="muted mono" style="font-size:11px">${m.sku}${m.o?' · has options':''}</div></div></div></td><td>${CATS.find(c=>c[0]===m.cat)[1]}</td><td class="r num">${vnd(m.p)}</td><td class="r num">${vnd(Math.round(m.p*1.18/1000)*1000)}</td>
+  ${chs.map((c,i)=>`<td>${sw('mc'+m.id+i, !(m.id===8&&i>2)&&!(m.id===16&&i===4))}</td>`).join('')}<td>${sw('ms'+m.id,!m.out,'soldout',`data-id="${m.id}"`)}</td></tr>`).join('')}</tbody></table></div></div>`;
+};
+
+/* Products */
+const PRODUCTS = [
+  ['Cà phê rang xay Phở Mộc 500g','CF-RX-500','Hộp',3,189000,124,['Shopee','TikTok']],['Phin nhôm cao cấp','PHIN-AL','Cái',2,65000,58,['Shopee','Lazada']],
+  ['Gói gia vị phở bò (set 4)','GV-PHO-4','Set',1,79000,210,['Shopee','TikTok','Lazada']],['Trà sen Tây Hồ 100g','TRA-SEN-100','Hộp',2,145000,32,['TikTok']],
+  ['Ly sứ logo Phở Mộc','LY-SU','Cái',3,95000,0,['Shopee']],['Combo quà Tết 2027','COMBO-TET','Hộp',1,650000,40,[]]
+];
+V.products = () => head('Retail products','Packaged goods sold in store and on Shopee, Lazada and TikTok Shop. Link each variant to the marketplace SKU to sync stock.','brand-service · /core_product · /ecom_product',`<button class="btn" data-act="toast" data-m="Template products_import.xlsx ready. Upload when filled.">Import</button><button class="btn" data-act="toast" data-m="Exported products_20261107.xlsx">Export</button><button class="btn pri" data-act="syncStock">Sync stock to marketplaces</button>`) +
+  `<div class="panel"><div class="tw"><table><thead><tr><th>Product</th><th>SKU</th><th>Unit</th><th class="r">Variants</th><th class="r">Price</th><th class="r">Stock</th><th>Linked on</th></tr></thead><tbody>
+  ${PRODUCTS.map((p,i)=>`<tr class="click" data-act="product" data-i="${i}"><td><b>${p[0]}</b></td><td class="mono">${p[1]}</td><td>${p[2]}</td><td class="r num">${p[3]}</td><td class="r num">${vnd(p[4])}</td><td class="r num">${p[5]?p[5]:'<span class="chip dng">Out</span>'}</td><td><div class="row">${p[6].map(c=>`<span class="chip">${c}</span>`).join('')||'<span class="muted">Not linked</span>'}</div></td></tr>`).join('')}</tbody></table></div></div>
+  <div class="grid g3"><div class="panel pb"><span class="eyebrow">Product sources</span><p style="margin:6px 0 0">Tự sản xuất · Nhập từ NCC · Ký gửi</p></div><div class="panel pb"><span class="eyebrow">Units</span><p style="margin:6px 0 0">Cái, Hộp, Set, Kg, Gói. Conversion: 1 Thùng = 24 Hộp</p></div><div class="panel pb"><span class="eyebrow">Categories</span><p style="margin:6px 0 0">Đồ uống đóng gói · Dụng cụ · Quà tặng. TikTok categories synced daily.</p></div></div>`;
+function productModal(i){
+  const p = PRODUCTS[i]; const vs = p[3]===1?[['Mặc định',p[1]]]:[['Size S',p[1]+'-S'],['Size M',p[1]+'-M'],['Size L',p[1]+'-L']].slice(0,p[3]);
+  modal(p[0], `<div class="tw panel"><table><thead><tr><th>Variant</th><th>SKU</th><th class="r">Stock</th><th>Shopee SKU</th><th>TikTok SKU</th></tr></thead><tbody>${vs.map((v,j)=>`<tr><td>${v[0]}</td><td class="mono">${v[1]}</td><td class="r num">${Math.round(p[5]/vs.length)}</td><td>${p[6].includes('Shopee')?`<span class="chip ok mono">2291${j}84</span>`:'<button class="btn sm">Link</button>'}</td><td>${p[6].includes('TikTok')?`<span class="chip ok mono">17299${j}2</span>`:'<button class="btn sm">Link</button>'}</td></tr>`).join('')}</tbody></table></div>
+  <div class="row"><span class="muted">Stock pushes to linked marketplaces every 10 minutes and on every sale.</span></div>`, `<button class="btn" data-act="x">Close</button><button class="btn pri" data-act="syncStock">Sync now</button>`, 'wide');
+}
+
+/* Inventory */
+V.inventory = () => {
+  const t = S.invTab, tabs=[['bal','Stock balances'],['rec','Stock receipts'],['tr','Transfers'],['sup','Suppliers'],['his','History']];
+  let body='';
+  if (t==='bal') body = `<div class="tw"><table><thead><tr><th>Ingredient / goods</th><th>Unit</th><th class="r">On hand</th><th class="r">Reserved</th><th class="r">Available</th><th class="r">Min level</th><th>Status</th></tr></thead><tbody>${S.stock.map(s=>{const a=s[2]-s[3];return `<tr><td><b>${s[0]}</b></td><td>${s[1]}</td><td class="r num">${s[2]}</td><td class="r num">${s[3]}</td><td class="r num"><b>${a}</b></td><td class="r num">${s[4]}</td><td>${a<s[4]?(a<s[4]/2?'<span class="chip dng">Reorder now</span>':'<span class="chip warm">Low</span>'):'<span class="chip ok">OK</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+  if (t==='rec') body = `<div class="tw"><table><thead><tr><th>Receipt</th><th>Supplier</th><th>Date</th><th class="r">Lines</th><th class="r">Value</th><th>Status</th></tr></thead><tbody>${[['PN-2611-014','Lò bún Ba Đình',  '07/11 06:10',3,1240000,'ok','Received'],['PN-2611-013','Bò tươi Long An','06/11 15:42',2,4850000,'ok','Received'],['PN-2611-012','Cà phê Cầu Đất','05/11 09:00',4,7300000,'warm','Partially received'],['PN-2611-015','Bao bì Minh Phát','08/11 (dự kiến)',2,980000,'info','Ordered']].map(r=>`<tr><td class="mono"><b>${r[0]}</b></td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="r num">${r[3]}</td><td class="r num">${vnd(r[4])}</td><td><span class="chip ${r[5]}">${r[6]}</span></td></tr>`).join('')}</tbody></table></div>`;
+  if (t==='tr') body = `<div class="tw"><table><thead><tr><th>Transfer</th><th>From</th><th>To</th><th>Items</th><th>Status</th></tr></thead><tbody>${[['CK-0091','Kho tổng Q1','Võ Văn Tần, Q3','Bánh phở 10kg · Bò thăn 3kg','acc','In transit'],['CK-0090','Kho tổng Q1','Thảo Điền','Hạt cà phê 5kg','ok','Received'],['CK-0089','Võ Văn Tần, Q3','Kho tổng Q1','Ly nhựa 200 cái','ok','Received']].map(r=>`<tr><td class="mono"><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="chip ${r[4]}">${r[5]}</span></td></tr>`).join('')}</tbody></table></div>`;
+  if (t==='sup') body = `<div class="list">${[['Lò bún Ba Đình','0903 112 884','Bún, bánh phở · giao 5h30 hằng ngày'],['Bò tươi Long An','0918 556 120','Thịt bò, xương ống · công nợ 15 ngày'],['Cà phê Cầu Đất','0262 3811 990','Robusta, Arabica rang mộc'],['Bao bì Minh Phát','028 3855 7712','Ly, hộp giấy, túi in logo']].map(r=>`<div class="li"><span class="mono-tile" style="width:36px;height:36px;font-size:13px;background:var(--surface-2)">${r[0][0]}</span><div class="grow"><b>${r[0]}</b><div class="muted ell">${r[2]}</div></div><span class="mono muted hide-sm">${r[1]}</span></div>`).join('')}</div>`;
+  if (t==='his') body = `<div class="tw"><table><thead><tr><th>Time</th><th>Item</th><th class="r">Change</th><th>Reason</th><th>By</th></tr></thead><tbody>${[['10:42','Bánh phở tươi','−0.4 kg','Bán hàng · GF-1831','Hệ thống'],['10:40','Thịt bò thăn','−0.15 kg','Bán hàng · TA-1830','Hệ thống'],['09:15','Trà đào (syrup)','−1 chai','Hao hụt · vỡ chai','Lê Thị Mai'],['06:10','Bánh phở tươi','+20 kg','Nhập kho · PN-2611-014','Trần Văn Khoa'],['06:10','Bún tươi','+15 kg','Nhập kho · PN-2611-014','Trần Văn Khoa']].map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}</td><td class="r num ${r[2][0]==='+'?'up':'down'}">${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</tbody></table></div>`;
+  return head('Inventory','Stock is deducted automatically when orders complete, using each dish\'s recipe. Count, receive and transfer between warehouses here.','brand-service · /warehouse · /stock_entry',`<select class="in" id="whSel" style="width:auto" data-chg="wh">${['Kho tổng Q1','Kho Võ Văn Tần','Kho Thảo Điền'].map(w=>`<option ${S.wh===w?'selected':''}>${w}</option>`).join('')}</select><button class="btn" data-act="newTransfer">New transfer</button><button class="btn pri" data-act="newReceipt">New receipt</button>`) +
+  `<div class="panel"><div class="tabs">${tabs.map(([k,l])=>`<button class="${t===k?'on':''}" data-act="invTab" data-k="${k}">${l}</button>`).join('')}</div>${body}</div>`;
+};
+
+/* Promotions */
+const PTYPES = {order_discount:['Order discount','Giảm giá trên tổng giá trị đơn hàng'],fixed_discount:['Fixed item discount','Giảm số tiền cố định cho danh sách món'],percent_discount:['Percent item discount','Giảm % cho danh sách món'],buy_x_discount_y:['Buy X, get Y','Giảm giá hoặc tặng món khi mua đủ số lượng'],order_bonus:['Free gift','Tặng món trên mỗi đơn hàng'],ship_discount:['Shipping discount','Giảm phí vận chuyển']};
+V.promotions = () => head('Promotions','Six promotion types apply at the POS, on the web store and in the cart API. Codes are optional.','order-service · /promotions',`<button class="btn pri" data-act="newPromo">New promotion</button>`) +
+  `<div class="grid g3">${S.promos.map((p,i)=>`<div class="panel"><div class="ph"><h2>${p.n}</h2>${sw('pr'+i,p.on,'promoOn',`data-i="${i}"`)}</div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
+   <div class="row"><span class="chip acc">${PTYPES[p.type][0]}</span>${p.code?`<span class="chip mono">${p.code}</span>`:'<span class="chip">Automatic</span>'}</div>
+   <div><b>${p.v}</b></div><div class="muted">Valid until ${p.to} · All channels except marketplaces</div>
+   <div class="row" style="justify-content:space-between"><span class="muted">Used</span><span class="num">${p.used}${p.lim?' / '+p.lim:''}</span></div>${p.lim?`<div class="meter"><i style="width:${p.used/p.lim*100}%"></i></div>`:''}</div></div>`).join('')}</div>`;
+function promoModal(){
+  modal('New promotion', `<div class="eyebrow">Choose a type</div><div class="grid g2" style="gap:8px">${Object.entries(PTYPES).map(([k,v],i)=>`<label class="panel pb" style="cursor:pointer;display:flex;gap:10px"><input type="radio" name="pt" value="${k}" ${i===0?'checked':''}><span><b>${v[0]}</b><br><span class="muted">${v[1]}</span></span></label>`).join('')}</div>
+  <div class="grid g2" style="gap:10px"><label class="f">Name<input class="in" id="pName" value="Giảm 10% giờ vàng"></label><label class="f">Code (optional)<input class="in mono" id="pCode" value="GIOVANG"></label><label class="f">Value<input class="in" id="pVal" value="10%"></label><label class="f">Ends<input class="in" id="pEnd" type="date" value="2026-12-31"></label></div>`,
+  `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="savePromo">Create promotion</button>`, 'wide');
+}
+
+/* Channels */
+V.channels = () => head('Sales channels','Connect delivery apps and marketplaces. Orders, menus, finance statements and reviews sync through merchant-service.','brand-service · /site_app · merchant-service') +
+  `<div class="grid g3">${S.chans.map((c,i)=>`<div class="panel"><div class="ph"><span class="dot" style="width:12px;height:12px;background:${c.c||CH[c.k].c}"></span><h2>${c.n}</h2>${c.on?'<span class="chip ok">Connected</span>':'<span class="chip">Not connected</span>'}</div>
+  <div class="pb" style="display:flex;flex-direction:column;gap:8px"><span class="muted">${c.kind}</span>
+  ${c.on?`<dl class="kv"><dt>Stores mapped</dt><dd>${c.stores}</dd><dt>Last order sync</dt><dd>${c.sync}</dd><dt>Access token</dt><dd class="${c.warn?'down':''}">${c.tok}</dd></dl>
+  <div class="row"><button class="btn sm" data-act="chSync" data-n="${c.n}" data-w="orders">Sync orders</button><button class="btn sm" data-act="chSync" data-n="${c.n}" data-w="menu">Push menu</button><button class="btn sm" data-act="chFin" data-n="${c.n}">Finance</button><button class="btn sm" data-act="chFb" data-n="${c.n}">Reviews</button></div>`
+  :`<p class="muted" style="margin:0">Authorize with your ${c.n} merchant account, then pick which stores map to your hubs.</p><button class="btn pri sm" style="align-self:flex-start" data-act="connect" data-i="${i}">Connect</button>`}</div></div>`).join('')}</div>`;
+function connectModal(i, step=1){
+  const c = S.chans[i];
+  if (step===1) modal(`Connect ${c.n}`, `<div class="steps"><div class="step done cur"><i></i>Authorize</div><div class="step"><i></i>Discover stores</div><div class="step"><i></i>Map to hubs</div></div><p>You will be sent to ${c.n} to sign in and approve access for NexPOS to read orders and update menus.</p>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="connect2" data-i="${i}">Authorize on ${c.n}</button>`);
+  else modal(`Connect ${c.n}`, `<div class="steps"><div class="step done"><i></i>Authorize</div><div class="step done cur"><i></i>Discover stores</div><div class="step"><i></i>Map to hubs</div></div><p class="muted" style="margin:0">We found 2 stores on this account.</p>
+    <div class="panel list">${['Phở Mộc - Nguyễn Huệ','Phở Mộc - Võ Văn Tần'].map((s,j)=>`<div class="li"><input type="checkbox" checked aria-label="Use store"><b class="grow">${s}</b><select class="in" style="width:auto" aria-label="Map to hub"><option ${j===0?'selected':''}>Nguyễn Huệ, Q1</option><option ${j===1?'selected':''}>Võ Văn Tần, Q3</option></select></div>`).join('')}</div>`,
+    `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="connect3" data-i="${i}">Finish setup</button>`);
+}
+
+/* Web ordering */
+V['web-ordering'] = () => {
+  const w=S.web;
+  return head('Web ordering','Your own ordering page at phomoc.nexpos.vn. No commission. Customers order, pay by QR and track their order.','brand-service · /web_order_fnb',`<button class="btn" data-act="lookup">Track an order</button><button class="btn pri" data-act="toast" data-m="Link copied: https://phomoc.nexpos.vn">Copy store link</button>`) +
+  `<div class="grid g2" style="align-items:start"><div class="panel"><div class="ph"><h2>Store settings</h2></div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row" style="justify-content:space-between"><b>Accepting orders</b>${sw('wOpen',w.open,'web',`data-k="open"`)}</div>
+    <label class="f">Banner headline<input class="in" id="wBanner" value="${esc(w.banner)}" data-inp="wBanner"></label>
+    <label class="f">Minimum order<input class="in num" id="wMin" value="${w.min}" data-inp="wMin" inputmode="numeric"></label>
+    <div class="row" style="justify-content:space-between"><span>Delivery (Ahamove, Grab Express)</span>${sw('wDel',w.delivery,'web',`data-k="delivery"`)}</div>
+    <div class="row" style="justify-content:space-between"><span>Pick up at store</span>${sw('wPick',w.pickup,'web',`data-k="pickup"`)}</div>
+    <div class="row" style="justify-content:space-between"><span>Cash on delivery</span>${sw('wCod',w.cod,'web',`data-k="cod"`)}</div>
+    <div class="muted">Opening hours and holiday closures come from <a href="#business">Brands &amp; stores</a>.</div></div></div>
+  <div><div class="phone"><div class="scr" id="phoneScr">${phoneScreen()}</div></div><p class="muted" style="text-align:center">Live preview</p></div></div>`;
+};
+function phoneScreen(){
+  const w=S.web;
+  return `<div class="banner"><b style="font-size:17px">Phở Mộc</b><span style="font-size:12px">${esc(w.banner)}</span></div>
+  <div style="padding:10px;display:flex;flex-direction:column;gap:8px">${w.open?`<span class="chip ok" style="align-self:flex-start">Mở cửa · 06:00–22:00</span>`:`<span class="chip dng" style="align-self:flex-start">Tạm ngưng nhận đơn</span>`}
+  <div class="row" style="font-size:12px">${w.delivery?'<span class="chip">Giao hàng</span>':''}${w.pickup?'<span class="chip">Tự đến lấy</span>':''}</div>
+  ${MENU.slice(0,6).map(m=>`<div class="row" style="flex-wrap:nowrap;border-bottom:1px solid var(--line);padding-bottom:8px"><span class="mono-tile" style="width:40px;height:40px;background:${CAT_COL[m.cat]}">${m.n[0]}</span><div style="flex:1;min-width:0"><b style="font-size:13px">${m.n}</b><div class="num" style="font-size:12px">${vnd(m.p)}</div></div><span class="btn sm pri" style="padding:2px 8px">+</span></div>`).join('')}
+  <div class="muted" style="font-size:11px">Đơn tối thiểu ${vnd(w.min)}</div></div>`;
+}
+
+/* Shifts */
+const cashSales = () => S.orders.filter(o=>o.pay==='CASH'&&o.paid&&o.st==='FINISH').reduce((a,o)=>a+o.total,0);
+const expectedCash = () => S.shift.cash0 + cashSales() + S.shift.moves.reduce((a,m)=>a+(m.k==='in'?m.a:-m.a),0);
+V.shifts = () => {
+  const sh=S.shift, byPay = ['CASH','BANK_TRANSFER','MOMO','VNPAY','WALLET','COD'].map(p=>({l:p,v:S.orders.filter(o=>o.pay===p&&o.st==='FINISH').reduce((a,o)=>a+o.total,0)})).filter(r=>r.v);
+  return head('Shifts & cash','Open a shift with a float, record cash in and out, then count the drawer at close. Differences are flagged.','brand-service · /working_shift', sh.open?`<button class="btn" data-act="toast" data-m="Shift report sent to cashier printer">Print X-report</button><button class="btn pri" data-act="closeShift">Close shift</button>`:`<button class="btn pri" data-act="openShift">Open shift</button>`) +
+  (sh.open?`<div class="grid g-side" style="align-items:start"><div class="grid" style="gap:16px">
+  <div class="grid g3"><div class="panel kpi"><span class="eyebrow">Opening float</span><span class="v">${vnd(sh.cash0)}</span><span class="d muted">${sh.by} · ${sh.at}</span></div><div class="panel kpi"><span class="eyebrow">Cash sales</span><span class="v">${vnd(cashSales())}</span></div><div class="panel kpi"><span class="eyebrow">Expected in drawer</span><span class="v">${vnd(expectedCash())}</span></div></div>
+  <div class="panel"><div class="ph"><h2>Sales by payment method</h2></div><div class="pb">${hbar(byPay)}</div></div></div>
+  <div class="panel"><div class="ph"><h2>Cash in / out</h2></div><div class="pb" style="display:flex;flex-direction:column;gap:8px"><div class="seg"><button class="on" id="mvOut" data-act="mvK" data-k="out">Expense</button><button id="mvIn" data-act="mvK" data-k="in">Income</button></div><input class="in" id="mvN" placeholder="Reason, e.g. Mua đá viên"><div class="row" style="flex-wrap:nowrap"><input class="in num" id="mvA" placeholder="Amount" inputmode="numeric"><button class="btn pri" data-act="addMove">Add</button></div></div>
+  <div class="list">${sh.moves.map(m=>`<div class="li"><span class="num muted">${m.t}</span><span class="grow">${esc(m.n)}</span><span class="num ${m.k==='in'?'up':'down'}">${m.k==='in'?'+':'−'}${vnd(m.a)}</span></div>`).join('')}</div></div></div>`
+  :`<div class="panel empty">No open shift. Open one to start taking cash payments.</div>`) +
+  `<div class="panel"><div class="ph"><h2>Shift history</h2></div><div class="tw"><table><thead><tr><th>Date</th><th>Cashier</th><th>Hours</th><th class="r">Revenue</th><th class="r">Expected cash</th><th class="r">Counted</th><th class="r">Difference</th></tr></thead><tbody>
+  ${[['06/11','Lê Thị Mai','06:58–22:10',10420000,4210000,4210000],['05/11','Lê Thị Mai','07:01–22:05',9870000,3880000,3850000],['04/11','Đỗ Minh Quân','07:00–21:58',8110000,3120000,3120000],['03/11','Lê Thị Mai','06:55–22:20',8960000,3540000,3560000]].map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="r num">${vnd(r[3])}</td><td class="r num">${vnd(r[4])}</td><td class="r num">${vnd(r[5])}</td><td class="r num ${r[5]-r[4]<0?'down':r[5]-r[4]>0?'up':''}">${r[5]-r[4]?(r[5]-r[4]>0?'+':'')+vnd(r[5]-r[4]):'0₫'}</td></tr>`).join('')}</tbody></table></div></div>`;
+};
+const DEN = [500000,200000,100000,50000,20000,10000,5000,2000,1000];
+function closeShiftModal(){
+  const def = {500000:4,200000:5,100000:6,50000:8,20000:10,10000:12,5000:8,2000:10,1000:6};
+  modal('Close shift · count the drawer', `<div class="denom">${DEN.map(d=>`<label class="f">${d.toLocaleString('vi-VN')}₫<input class="in num" id="d${d}" type="number" min="0" value="${def[d]}" data-inp="den"></label>`).join('')}</div>
+  <dl class="kv" style="font-size:15px"><dt>Expected</dt><dd class="num">${vnd(expectedCash())}</dd><dt>Counted</dt><dd class="num" id="counted"></dd><dt>Difference</dt><dd class="num" id="diff"></dd></dl><label class="f">Note<input class="in" id="shNote" placeholder="Giải trình chênh lệch (nếu có)"></label>`,
+  `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="doClose">Close shift & print Z-report</button>`);
+  countDen();
+}
+function countDen(){ const c = DEN.reduce((a,d)=>a+d*(+($('#d'+d)?.value)||0),0), diff=c-expectedCash(); if($('#counted')){$('#counted').textContent=vnd(c); const e=$('#diff'); e.textContent=(diff>0?'+':'')+vnd(diff); e.className='num '+(diff<0?'down':diff>0?'up':'');} }
+
+/* Reports */
+const RTYPES = [['revenue','Revenue'],['orders','Completed orders'],['items','Items'],['cancel','Canceled'],['brand','Brands'],['hub','Stores'],['customer','Customers'],['feedback','Feedback'],['stockr','Stock']];
+V.reports = () => {
+  const t=S.repTab, done=S.orders.filter(o=>o.st==='FINISH');
+  let body='', fname='revenue_report';
+  if (t==='revenue'){ const d=Array.from({length:14},(_,i)=>({l:String(25+i>31?i-6:25+i).padStart(2,'0'),v:(7+Math.sin(i*1.3)*2+(i%7>4?4:0))*1e6})); body = `<div class="pb">${bars(d,{alt:(x,i)=>i%7>4})}<p class="muted">Weekends highlighted. Values are net revenue after promotions (6).</p></div>`; }
+  if (t==='orders'){ fname='completed_orders'; body = `<div class="tw"><table><thead><tr><th>Order</th><th>Channel</th><th class="r">(1) Before promo</th><th class="r">(5) Promo</th><th class="r">(6) After promo</th><th class="r">(8) Ship</th><th class="r">(9) Customer paid</th></tr></thead><tbody>${done.slice(0,12).map(o=>`<tr><td class="mono">${o.code}</td><td>${chan(o.ch)}</td><td class="r num">${vnd(o.sub)}</td><td class="r num">${vnd(o.disc)}</td><td class="r num">${vnd(o.sub-o.disc)}</td><td class="r num">${vnd(o.ship)}</td><td class="r num"><b>${vnd(o.total)}</b></td></tr>`).join('')}</tbody></table></div>`; }
+  if (t==='items'){ fname='items_report'; const m={}; S.orders.filter(o=>o.st==='FINISH').forEach(o=>o.items.forEach(i=>{m[i.n]=(m[i.n]||0)+i.q*i.p})); body=`<div class="pb">${hbar(Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([l,v])=>({l,v})))}</div>`; }
+  if (t==='cancel'){ fname='canceled_orders'; body=`<div class="pb">${hbar([{l:'Hết món',v:14,f:'14 đơn',c:'var(--danger)'},{l:'Khách huỷ',v:9,f:'9 đơn',c:'var(--danger)'},{l:'Quá tải',v:5,f:'5 đơn',c:'var(--danger)'},{l:'Tài xế huỷ',v:4,f:'4 đơn',c:'var(--danger)'}])}</div>`; }
+  if (t==='brand'){ fname='brand_report'; body=`<div class="tw"><table><thead><tr><th>Thương hiệu</th><th class="r">(1) Doanh thu trước KM</th><th class="r">(2) Tổng KM</th><th class="r">(3) Doanh thu sau KM</th></tr></thead><tbody><tr><td>Phở Mộc</td><td class="r num">${vnd(212400000)}</td><td class="r num">${vnd(18300000)}</td><td class="r num">${vnd(194100000)}</td></tr><tr><td>Sương Coffee</td><td class="r num">${vnd(96800000)}</td><td class="r num">${vnd(6100000)}</td><td class="r num">${vnd(90700000)}</td></tr><tr><td><b>TỔNG</b></td><td class="r num"><b>${vnd(309200000)}</b></td><td class="r num"><b>${vnd(24400000)}</b></td><td class="r num"><b>${vnd(284800000)}</b></td></tr></tbody></table></div>`; }
+  if (t==='hub'){ fname='hub_report'; body=`<div class="pb">${hbar([{l:'Nguyễn Huệ, Q1',v:128e6},{l:'Võ Văn Tần, Q3',v:84e6},{l:'Thảo Điền',v:96.8e6}])}</div>`; }
+  if (t==='customer'){ fname='customer_report'; body=`<div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th class="r">Orders</th><th class="r">Spent</th><th>Last order</th></tr></thead><tbody>${NAMES.slice(0,7).map((n,i)=>`<tr><td>${n}</td><td class="mono">09${(81234567+i*1371).toString()}</td><td class="r num">${24-i*3}</td><td class="r num">${vnd((24-i*3)*71000)}</td><td class="num">0${7-i%5}/11</td></tr>`).join('')}</tbody></table></div>`; }
+  if (t==='feedback'){ fname='feedback_report'; body=`<div class="list">${[['GrabFood',5,'Phở đậm vị, giao nhanh.'],['ShopeeFood',4,'Ngon nhưng hơi ít hành.'],['beFood',2,'Giao trễ 25 phút, nước dùng nguội.'],['GrabFood',5,'Bạc xỉu chuẩn vị!']].map(r=>`<div class="li"><span class="num" style="color:var(--warm)">${'★'.repeat(r[1])}${'☆'.repeat(5-r[1])}</span><div class="grow"><div>${r[2]}</div><small class="muted">${r[0]}</small></div><button class="btn sm">Reply</button></div>`).join('')}</div>`; }
+  if (t==='stockr'){ fname='stock_report'; body=`<div class="tw"><table><thead><tr><th>Item</th><th class="r">Opening</th><th class="r">In</th><th class="r">Out</th><th class="r">Closing</th></tr></thead><tbody>${S.stock.slice(0,8).map(s=>`<tr><td>${s[0]}</td><td class="r num">${(s[2]*1.4).toFixed(0)}</td><td class="r num">${(s[2]*.6).toFixed(0)}</td><td class="r num">${(s[2]).toFixed(0)}</td><td class="r num"><b>${s[2]}</b></td></tr>`).join('')}</tbody></table></div>`; }
+  S.repFile = fname;
+  return head('Reports','Filter by date, brand and channel. Every report exports to Excel with the same column formulas as the screen.','brand-service · /reports',`<button class="btn pri" data-act="export">Export Excel</button>`) +
+  `<div class="panel pb row"><label class="f">From<input class="in" id="rFrom" type="date" value="2026-10-25"></label><label class="f">To<input class="in" id="rTo" type="date" value="2026-11-07"></label><label class="f">Brand<select class="in" id="rBrand"><option>All brands</option><option>Phở Mộc</option><option>Sương Coffee</option></select></label><label class="f">Channel<select class="in" id="rCh"><option>All channels</option>${Object.values(CH).map(c=>`<option>${c.n}</option>`).join('')}</select></label></div>
+  <div class="panel"><div class="tabs">${RTYPES.map(([k,l])=>`<button class="${t===k?'on':''}" data-act="repTab" data-k="${k}">${l}</button>`).join('')}</div>${body}</div>`;
+};
+
+/* Tax invoices */
+V.invoices = () => {
+  const t=S.tiTab; const inv = S.orders.filter(o=>o.inv);
+  let body='';
+  if (t==='inv') body = `<div class="tw"><table><thead><tr><th>Order</th><th>Buyer</th><th>Tax code</th><th class="r">Amount</th><th>Provider</th><th>Status</th><th></th></tr></thead><tbody>${inv.map((o,i)=>`<tr><td class="mono"><b>${o.code}</b></td><td>${i%3===0?'Công ty TNHH Ánh Dương':o.cust}</td><td class="mono">${i%3===0?'0316 482 917':'—'}</td><td class="r num">${vnd(o.total)}</td><td>${i%2?'Viettel S-Invoice':'MISA meInvoice'}</td><td><span class="chip ${o.inv==='issued'?'ok':o.inv==='error'?'dng':'info'}">${o.inv}</span></td><td>${o.inv==='error'?`<button class="btn sm" data-act="retryInv" data-id="${o.id}">Retry</button>`:o.inv==='submitted'?`<button class="btn sm" data-act="syncInv" data-id="${o.id}">Sync</button>`:`<button class="btn sm ghost" data-act="cancelInv" data-id="${o.id}">Cancel</button>`}</td></tr>`).join('')}</tbody></table></div>`;
+  if (t==='acc') body = `<div class="list">${[['MISA meInvoice','MST 0315 998 122 · Ký hiệu 1C26TPM','ok','Verified'],['Viettel S-Invoice','MST 0315 998 122 · Ký hiệu 1C26TSC','ok','Verified'],['VNPT Invoice','—','','Not set up']].map(r=>`<div class="li"><div class="grow"><b>${r[0]}</b><div class="muted">${r[1]}</div></div><span class="chip ${r[2]}">${r[3]}</span><button class="btn sm" data-act="toast" data-m="${r[0]}: credentials verified">${r[2]?'Verify':'Set up'}</button></div>`).join('')}</div>`;
+  if (t==='tpl') body = `<div class="pb grid g2"><label class="f">Default template<select class="in"><option>01GTKT0/001 · Hoá đơn GTGT</option><option>02GTTT0/001 · Hoá đơn bán hàng</option></select></label><label class="f">VAT rate<select class="in"><option>8% (giảm thuế theo NQ)</option><option>10%</option></select></label>
+    <div class="row" style="justify-content:space-between;grid-column:1/-1"><span><b>Auto-issue for completed orders</b><br><span class="muted">merchant-service submits every 15 minutes and reconciles nightly</span></span>${sw('autoInv',true)}</div>
+    <div class="row" style="justify-content:space-between;grid-column:1/-1"><span><b>Let customers request VAT invoices by QR</b><br><span class="muted">Adds a QR to the printed receipt</span></span>${sw('qrInv',true)}</div></div>`;
+  return head('Tax invoices','Issue Vietnamese e-invoices through MISA meInvoice or Viettel S-Invoice. Create, submit, query, cancel and sync from one place.','order-service · /invoices · user-service · /tax_invoice',`<button class="btn" data-act="toast" data-m="Synced 12 invoices with providers">Sync all</button>`) +
+  `<div class="grid g4">${[['Issued',inv.filter(o=>o.inv==='issued').length,'ok'],['Submitted',inv.filter(o=>o.inv==='submitted').length,'info'],['Errors',inv.filter(o=>o.inv==='error').length,'dng'],['Pending orders',S.orders.filter(o=>o.st==='FINISH'&&!o.inv).length,'warm']].map(r=>`<div class="panel kpi"><span class="eyebrow">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('')}</div>
+  <div class="panel"><div class="tabs">${[['inv','Invoices'],['acc','Provider accounts'],['tpl','Templates & automation']].map(([k,l])=>`<button class="${t===k?'on':''}" data-act="tiTab" data-k="${k}">${l}</button>`).join('')}</div>${body}</div>`;
+};
+
+/* Business */
+V.business = () => {
+  const days=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','CN'];
+  return head('Brands & stores','Brands own menus. Hubs are physical stores. Sites are each store\'s presence on a channel.','brand-service · /brand · /hub · /site',`<button class="btn" data-act="toast" data-m="New brand form opened">Add brand</button><button class="btn pri" data-act="addSite">Add store</button>`) +
+  `<div class="grid g-side" style="align-items:start"><div class="panel"><div class="ph"><h2>Opening hours · Nguyễn Huệ, Q1</h2><span class="chip ok">Open now</span></div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
+    ${days.map((d,i)=>`<div class="hours"><b>${d}</b>${sw('oh'+i,true)}<input class="in num" type="time" value="06:00" aria-label="${d} opens"><input class="in num" type="time" value="${i>4?'23:00':'22:00'}" aria-label="${d} closes"></div>`).join('')}
+    <div class="eyebrow" style="margin-top:8px">Special hours</div>
+    <div class="list panel">${[['01/01/2027','Tết Dương lịch','08:00–14:00'],['16/02/2027 – 20/02/2027','Nghỉ Tết Nguyên Đán','Đóng cửa'],['30/04/2027','Giải phóng miền Nam','06:00–23:30']].map(r=>`<div class="li"><span class="num">${r[0]}</span><span class="grow">${r[1]}</span><span class="chip ${r[2]==='Đóng cửa'?'dng':'info'}">${r[2]}</span></div>`).join('')}</div>
+    <button class="btn sm" style="align-self:flex-start" data-act="toast" data-m="Special hours added. Web store and food apps will follow them.">Add special hours</button></div></div>
+  <div class="panel"><div class="ph"><h2>Structure</h2></div><div class="list">
+    ${[['Phở Mộc','Brand · 2 stores',0],['Nguyễn Huệ, Q1','Hub · 5 sites',1],['Võ Văn Tần, Q3','Hub · 4 sites',1],['Sương Coffee','Brand · 1 store',0],['Thảo Điền','Hub · 3 sites',1]].map(r=>`<div class="li" style="padding-left:${14+r[2]*22}px"><span class="mono-tile" style="width:30px;height:30px;font-size:12px;background:${r[2]?'var(--surface-2)':'var(--accent-soft)'};color:${r[2]?'var(--fg)':'var(--accent)'}">${r[0][0]}</span><div class="grow"><b>${r[0]}</b><div class="muted">${r[1]}</div></div></div>`).join('')}
+  </div><div class="pb" style="border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Store details</span><dl class="kv"><dt>Address</dt><dd>27 Nguyễn Huệ, Bến Nghé, Q1</dd><dt>Phone</dt><dd class="mono">028 3822 1188</dd><dt>Invoice series</dt><dd class="mono">1C26TPM</dd><dt>Staff</dt><dd>4</dd></dl></div></div></div>`;
+};
+
+/* Bills & printers */
+V.bills = () => {
+  const sample = S.orders.find(o=>o.items.length>1) || S.orders[0], b=S.bill;
+  return head('Bills & printers','Design the kitchen ticket, customer receipt and cup labels. The local printer app finds network and USB printers.','brand-service · /bill · /print · printer app',`<button class="btn" data-act="discover">Discover printers</button>`) +
+  `<div class="grid g2" style="align-items:start"><div class="panel"><div class="tabs">${[['bill_for_kitchen','Kitchen ticket'],['bill_for_complete','Receipt'],['bill_for_label','Label']].map(([k,l])=>`<button class="${S.billTab===k?'on':''}" data-act="billTab" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="pb" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row" style="justify-content:space-between"><span>Show store logo &amp; address</span>${sw('bLogo',b.logo,'bill',`data-k="logo"`)}</div>
+      <div class="row" style="justify-content:space-between"><span>Print VAT-request QR</span>${sw('bQr',b.qr,'bill',`data-k="qr"`)}</div>
+      <div class="row" style="justify-content:space-between"><span>Large font</span>${sw('bBig',b.big,'bill',`data-k="big"`)}</div>
+      <label class="f">Paper width<select class="in" id="bW" data-chg="billW"><option value="80" ${b.w===80?'selected':''}>80 mm</option><option value="58" ${b.w===58?'selected':''}>58 mm</option></select></label>
+      <label class="f">Footer message<input class="in" id="bFoot" value="${esc(b.footer)}" data-inp="bFoot"></label>
+    </div></div>
+    <div class="panel"><div class="ph"><h2>Preview</h2><button class="btn sm" data-act="testPrint">Test print</button></div><div class="pb" id="billPrev" style="background:var(--surface-2)">${receipt(sample,S.billTab)}</div></div></div>
+  <div class="panel"><div class="ph"><h2>Printers</h2></div><div class="tw"><table><thead><tr><th>Printer</th><th>Connection</th><th>Prints</th><th>Paper</th><th>Status</th></tr></thead><tbody>${S.printers.map(p=>`<tr><td><b>${p.n}</b></td><td class="mono">${p.ip}</td><td>${{bill_for_kitchen:'Kitchen ticket',bill_for_complete:'Receipt',bill_for_label:'Labels'}[p.t]}</td><td class="num">${p.w} mm</td><td><span class="chip ${p.on?'ok':''}">${p.on?'Online':'Offline'}</span></td></tr>`).join('')}</tbody></table></div></div>`;
+};
+
+/* Team */
+const ROLES = ['Owner','Store manager','Cashier','Kitchen','Accountant'];
+const PERMS = [['Orders',['order:view','order:create','order:update','order:process_payment'],[1,1,1,1,1],[1,1,1,1,1],[1,1,0,1,0],[1,0,1,0,0],[1,0,0,0,0]],
+  ['Menu & products',['menu:manage','product:update'],[1,1],[1,1],[0,0],[0,0],[0,0]],
+  ['Stock',['stock:view','stock:update'],[1,1],[1,1],[1,0],[1,0],[1,0]],
+  ['Reports',['report:view_revenue','report:export'],[1,1],[1,1],[0,0],[0,0],[1,1]],
+  ['Staff',['user:view','user:assign_roles'],[1,1],[1,0],[0,0],[0,0],[0,0]],
+  ['Business',['hub:update','integration:manage','bill:update','settings:update'],[1,1,1,1],[1,0,1,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+  ['Billing',['subscription:manage'],[1],[0],[0],[0],[0]]];
+V.team = () => {
+  const t=S.teamTab; let body='';
+  if (t==='users') body = `<div class="tw"><table><thead><tr><th>Name</th><th>Role</th><th>Store</th><th>Last active</th><th>Status</th></tr></thead><tbody>${S.users.map(u=>`<tr><td><div class="row" style="flex-wrap:nowrap"><span class="mono-tile" style="width:32px;height:32px;font-size:12px;background:var(--surface-2)">${u.n.split(' ').slice(-1)[0][0]}</span><div><b>${u.n}</b><div class="muted" style="font-size:12px">${u.e}</div></div></div></td><td>${u.r}</td><td>${u.h}</td><td class="muted">${u.last}</td><td><span class="chip ${u.on?'ok':'warm'}">${u.on?'Active':'Invited'}</span></td></tr>`).join('')}</tbody></table></div>`;
+  if (t==='roles') body = `<div class="tw"><table class="perm"><thead><tr><th>Permission</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr></thead><tbody>${PERMS.map(([g,ps,...rs])=>`<tr><td colspan="${ROLES.length+1}" style="background:var(--surface-2)"><b>${g}</b></td></tr>`+ps.map((p,pi)=>`<tr><td class="mono" style="font-size:12px">${p}</td>${rs.map((r,ri)=>`<td><input type="checkbox" aria-label="${ROLES[ri]} ${p}" ${r[pi]?'checked':''} ${ri===0?'disabled':''}></td>`).join('')}</tr>`).join('')).join('')}</tbody></table></div>`;
+  if (t==='act') body = `<div class="list">${[['10:42','Lê Thị Mai','completed order TA-1830'],['10:15','Trần Văn Khoa','changed price of Phở bò tái to 65.000₫'],['09:58','Trần Văn Khoa','received stock PN-2611-014'],['09:02','Huỳnh Linh Anh','invited Đỗ Minh Quân as Cashier'],['07:02','Huỳnh Linh Anh','opened shift with 1.500.000₫']].map(r=>`<div class="li"><span class="num muted">${r[0]}</span><span class="grow"><b>${r[1]}</b> ${r[2]}</span></div>`).join('')}</div>`;
+  return head('Staff & roles','Invite staff by email. They activate their account, then see only what their role allows.','user-service · /user_management · /role',`<button class="btn pri" data-act="invite">Invite staff</button>`) +
+  `<div class="panel"><div class="tabs">${[['users','Staff'],['roles','Roles & permissions'],['act','Activity']].map(([k,l])=>`<button class="${t===k?'on':''}" data-act="teamTab" data-k="${k}">${l}</button>`).join('')}</div>${body}</div>`;
+};
+
+/* Plan */
+const PLANS = [['Free',0,0,'2 channels · 3 staff/store · 3 days of reports'],['STARTER',100000,1200000,'6 channels · 3 staff/store · online sellers'],['E-Commerce',100000,1200000,'3 channels · built for Shopee, Lazada, TikTok'],['Basic',200000,2400000,'4 channels · unlimited staff · inventory'],['STANDARD',200000,2400000,'Multichannel chains, online to offline']];
+V.plan = () => head('Plan & billing','Your subscription, what you\'re using, and invoices. Extra stores cost 30.000₫ per month each.','user-service · /subscription',`<button class="btn" data-act="addCap">Add store capacity</button>`) +
+  `<div class="grid g-side" style="align-items:start"><div class="panel"><div class="ph"><h2>STANDARD · yearly</h2><span class="chip ok">Active</span></div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+   <div class="muted">Renews 14/03/2027 · 2.400.000₫ / year · paid by PayOS</div>
+   ${[['Sales channels',7,8],['Stores',3,4],['Staff accounts',6,'∞'],['Orders this month',1834,'∞']].map(([l,u,m])=>`<div><div class="row" style="justify-content:space-between"><span>${l}</span><span class="num">${u} / ${m}</span></div>${m!=='∞'?`<div class="meter ${u/m>.8?'warm':''}" style="margin-top:5px"><i style="width:${u/m*100}%"></i></div>`:''}</div>`).join('')}</div></div>
+   <div class="panel"><div class="ph"><h2>Billing history</h2></div><div class="list">${[['14/03/2026','STANDARD · 1 năm',2400000],['02/09/2026','Thêm 1 cửa hàng',180000],['14/03/2025','Basic · 1 năm',2400000]].map(r=>`<div class="li"><span class="num muted">${r[0]}</span><span class="grow">${r[1]}</span><span class="num">${vnd(r[2])}</span></div>`).join('')}</div></div></div>
+  <div class="row"><h2 style="flex:1">Compare plans</h2><div class="seg"><button class="${S.yearly?'':'on'}" data-act="yearly" data-v="0">Monthly</button><button class="${S.yearly?'on':''}" data-act="yearly" data-v="1">Yearly</button></div></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${PLANS.map(p=>`<div class="panel pb" style="display:flex;flex-direction:column;gap:8px;${p[0]==='STANDARD'?'border-color:var(--accent)':''}"><b>${p[0]}</b><span style="font-size:22px;font-weight:800" class="num">${p[1]?vnd(S.yearly?p[2]:p[1]):'0₫'}</span><span class="muted" style="font-size:12px">${p[1]?(S.yearly?'per year':'per month'):'forever'}</span><span style="flex:1">${p[3]}</span>${p[0]==='STANDARD'?'<span class="chip ok" style="align-self:flex-start">Current plan</span>':`<button class="btn sm" data-act="choosePlan" data-p="${p[0]}">Switch to ${p[0]}</button>`}</div>`).join('')}</div>`;
+function planModal(p){
+  const pl = PLANS.find(x=>x[0]===p), price = S.yearly?pl[2]:pl[1];
+  modal(`Switch to ${p}`, `<dl class="kv"><dt>Plan</dt><dd>${p} · ${S.yearly?'yearly':'monthly'}</dd><dt>Price</dt><dd class="num">${vnd(price)}</dd><dt>Credit from current plan</dt><dd class="num up">−${vnd(Math.min(price,820000))}</dd></dl>
+  <div class="row" style="flex-wrap:nowrap"><input class="in mono" id="voucher" placeholder="Voucher code · try NEXPOS50"><button class="btn" data-act="voucher">Apply</button></div><div id="vMsg" class="muted"></div>
+  <div style="text-align:center">${qrSvg('PLAN'+p)}<div class="muted">Scan with any banking app (PayOS)</div></div>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="toast" data-m="Payment confirmed. Plan changes at your next renewal." data-close="1">I have paid</button>`);
+}
+
+/* System */
+V.system = () => head('System jobs','Background work that keeps channels, invoices and deliveries in sync. Admins can rerun a job or apply database migrations.','merchant-service · cron-saas-service · migration-service') +
+  `<div class="panel"><div class="ph"><h2>Background jobs</h2></div><div class="tw"><table><thead><tr><th>Job</th><th>Service</th><th>Schedule</th><th>Last run</th><th>Result</th><th></th></tr></thead><tbody>
+  ${[['Order ingestion','merchant-service','every 1 min','10:43:02','ok','312 orders'],['Menu sync to channels','merchant-service','on publish + hourly','10:00:11','ok','5 sites'],['Token refresh','merchant-service','every 6 h','06:00:00','ok','8 tokens'],['Finance statements','merchant-service','daily 02:00','02:00:41','ok','3 channels'],['Review sync','merchant-service','every 30 min','10:30:05','ok','4 new'],['E-invoice auto submit','merchant-service','every 15 min','10:30:00','warm','1 failed'],['Invoice reconciliation','merchant-service','daily 01:00','01:00:12','ok','128 matched'],['Scheduled shipments','cron-saas-service','every 5 min','10:40:00','ok','1 booked'],['Bank transaction polling','nexdorpay-service','every 10 s','10:43:10','ok','2 matched'],['Watchdog: stuck orders','merchant-service','every 10 min','10:40:00','dng','2 orders stuck in PENDING']].map(r=>`<tr><td><b>${r[0]}</b></td><td class="mono" style="font-size:12px">${r[1]}</td><td>${r[2]}</td><td class="num">${r[3]}</td><td><span class="chip ${r[4]}">${r[5]}</span></td><td><button class="btn sm" data-act="runJob" data-n="${r[0]}">Run now</button></td></tr>`).join('')}</tbody></table></div></div>
+  <div class="grid g2"><div class="panel"><div class="ph"><h2>Database migrations</h2><button class="btn sm pri" data-act="migrate">Run pending</button></div><div class="list" id="migs">${migList()}</div></div>
+  <div class="panel"><div class="ph"><h2>Live connections</h2><span class="svc">saas-notification-service</span></div><div class="list">${[['POS quầy 1','Nguyễn Huệ, Q1','WebSocket · 42 ms'],['POS quầy 2','Nguyễn Huệ, Q1','WebSocket · 51 ms'],['Kitchen display','Nguyễn Huệ, Q1','WebSocket · 38 ms'],['POS Thảo Điền','Thảo Điền','WebSocket · 66 ms']].map(r=>`<div class="li"><span class="dot" style="background:var(--ok)"></span><div class="grow"><b>${r[0]}</b><div class="muted">${r[1]}</div></div><span class="mono muted" style="font-size:12px">${r[2]}</span></div>`).join('')}</div></div></div>`;
+let migDone=false;
+const migList = () => [['20261020_order_invoices','applied'],['20261028_add_shift_moves','applied'],['20261102_ecom_sku_links','applied'],['20261105_number_to_words',migDone?'applied':'pending'],['20261106_drop_legacy_app_id',migDone?'applied':'pending']].map(m=>`<div class="li"><span class="mono grow" style="font-size:12.5px">${m[0]}</span><span class="chip ${m[1]==='applied'?'ok':'warm'}">${m[1]}</span></div>`).join('');
+
+/* Auth */
+function authScreen(tab='in'){
+  const forms = {
+    in:`<label class="f">Email or phone<input class="in" id="aE" value="linhanh@phomoc.vn"></label><label class="f">Password<input class="in" id="aP" type="password" value="password"></label><button class="btn pri" style="justify-content:center;padding:10px" data-act="signin">Sign in</button><button class="btn ghost" data-act="auth" data-k="forgot">Forgot password?</button>`,
+    up:`<label class="f">Business name<input class="in" id="aB" placeholder="Phở Mộc"></label><label class="f">Email<input class="in" id="aE2" type="email" placeholder="you@business.vn"></label><label class="f">Phone<input class="in" id="aPh" placeholder="09xx xxx xxx"></label><label class="f">Password<input class="in" id="aP2" type="password"></label><button class="btn pri" style="justify-content:center;padding:10px" data-act="auth" data-k="act">Start 14-day trial</button>`,
+    act:`<p style="margin:0">We sent a 6-digit code to your email. Enter it to activate your account.</p><input class="in mono" id="aOtp" style="font-size:22px;letter-spacing:.4em;text-align:center" value="482 913" aria-label="Activation code"><button class="btn pri" style="justify-content:center;padding:10px" data-act="signin">Activate</button>`,
+    forgot:`<p style="margin:0">Enter your email and we'll send a reset link.</p><label class="f">Email<input class="in" id="aE3" value="linhanh@phomoc.vn"></label><button class="btn pri" style="justify-content:center;padding:10px" data-act="toast" data-m="Reset link sent to linhanh@phomoc.vn">Send reset link</button><button class="btn ghost" data-act="auth" data-k="in">Back to sign in</button>`
+  };
+  let el = $('#auth'); if(!el){ el=document.createElement('div'); el.id='auth'; document.body.appendChild(el); }
+  el.className='auth'; el.innerHTML = `<div class="side"><div class="logo" style="padding:0"><div class="logo-mark" style="background:var(--accent-ink);color:var(--accent)">N</div><b>NexPOS</b></div><h1>Every order, every channel, one counter.</h1><p style="max-width:40ch;margin:0">POS, GrabFood, ShopeeFood, beFood, Shopee, TikTok Shop and your own web store, with stock, shifts and e-invoices built in.</p></div>
+  <div class="form"><div class="card"><h1>${{in:'Sign in',up:'Create your account',act:'Activate account',forgot:'Reset password'}[tab]}</h1>${tab==='in'||tab==='up'?`<div class="seg"><button class="${tab==='in'?'on':''}" data-act="auth" data-k="in">Sign in</button><button class="${tab==='up'?'on':''}" data-act="auth" data-k="up">Create account</button></div>`:''}${forms[tab]}<button class="btn" style="justify-content:center" data-act="signin">Continue as guest (web ordering)</button></div></div>`;
+}
+
+/* ---------- router ---------- */
+const route = () => { const h = location.hash.slice(1); return V[h] ? h : 'dashboard'; };
+function render(){ renderRail(); $('#view').innerHTML = V[route()](); }
+window.addEventListener('hashchange', ()=>{ $('#rail').classList.remove('open'); closeOv(); render(); window.scrollTo(0,0); });
+
+/* ---------- notifications ---------- */
+function notify(o){
+  S.notes.unshift({t:new Date(), o}); S.unread++; const b=$('#bellN'); b.hidden=false; b.textContent=S.unread;
+  toast(`New ${CH[o.ch].n} order <b class="mono">${o.code}</b> · ${vnd(o.total)}`, `<button class="btn sm" data-act="speak" data-id="${o.id}">Read aloud</button><button class="btn sm" data-act="order" data-id="${o.id}">Open</button>`);
+}
+function simOrder(){ const o = mkOrder({ch:pick(['grab','shopee_food','be','delivery']), st:'PENDING', ago:0}); S.orders.unshift(o); notify(o); if(['orders','dashboard'].includes(route())) render(); else renderRail(); }
+setInterval(simOrder, 45000);
+
+/* ---------- actions ---------- */
+const A = {
+  rail:()=>$('#rail').classList.toggle('open'),
+  close:(d,el,e)=>{ if(e.target===el) closeOv(); }, x:closeOv,
+  toast:(d)=>{ toast(d.m); if(d.close) closeOv(); },
+  simOrder,
+  bell:()=>{ const p=$('#bellPop'); p.hidden=!p.hidden; S.unread=0; $('#bellN').hidden=true;
+    p.innerHTML = `<div class="ph" style="padding:10px 14px;border-bottom:1px solid var(--line)"><b>Notifications</b></div><div class="list" style="max-height:360px;overflow:auto">${S.notes.map(n=>`<div class="li" data-act="order" data-id="${n.o.id}" style="cursor:pointer"><span class="dot" style="background:${CH[n.o.ch].c}"></span><div class="grow"><b>New order ${n.o.code}</b><div class="muted">${CH[n.o.ch].n} · ${vnd(n.o.total)}</div></div><span class="num muted">${n.t.toTimeString().slice(0,5)}</span></div>`).join('')||'<div class="empty">No new events. Use “Simulate incoming order”.</div>'}</div>`; },
+  speak:(d)=>{ const o=S.orders.find(x=>x.id==d.id); try{ const u=new SpeechSynthesisUtterance(`Có đơn hàng mới từ ${CH[o.ch].n}, mã ${o.code.split('-')[1]}, tổng ${Math.round(o.total/1000)} nghìn đồng`); u.lang='vi-VN'; speechSynthesis.speak(u);}catch(e){ toast('Text-to-speech is not available in this browser'); } },
+  signout:()=>authScreen('in'), auth:(d)=>authScreen(d.k), signin:()=>{ $('#auth')?.remove(); toast('Signed in as Huỳnh Linh Anh'); },
+  cat:(d)=>{S.cat=d.k;render()},
+  add:(d)=>{ const m=MENU.find(x=>x.id==d.id); if(m.o) return optModal(m); const ex=S.cart.find(l=>l.id===m.id&&!l.opt); ex?ex.q++:S.cart.push({id:m.id,n:m.n,unit:m.p,q:1}); render(); },
+  addOpt:(d)=>{ const m=MENU.find(x=>x.id==d.id); let add=0, parts=[]; OPTS[m.o].forEach((g,gi)=>document.querySelectorAll(`[name=g${gi}]:checked`).forEach(i=>{const c=g.c[i.value]; add+=c[1]; if(!(g.one&&i.value==='0'&&g.g!=='Đường')) parts.push(c[0]);})); const note=$('#optNote').value.trim(); if(note) parts.push(note);
+    S.cart.push({id:m.id,n:m.n,unit:m.p+add,q:1,opt:parts.join(', ')}); closeOv(); render(); },
+  qty:(d)=>{ const l=S.cart[d.i]; l.q+= +d.d; if(l.q<=0) S.cart.splice(d.i,1); render(); },
+  clearCart:()=>{S.cart=[];S.promo=null;render()},
+  otype:(d)=>{S.otype=d.k; if(d.k!=='delivery'&&S.pay==='COD') S.pay='CASH'; render()},
+  pay:(d)=>{S.pay=d.k;render()},
+  promo:()=>{ const c=$('#promo').value.trim().toUpperCase(); if(['GIAM20','FREESHIP'].includes(c)){ S.promo=c; toast(`Promotion ${c} applied`);} else { S.promo=null; toast(c?`Code ${esc(c)} is not valid for this order`:'Enter a code first'); } render(); },
+  charge:()=>{ if(S.otype==='delivery'&&!S.cust.addr) { toast('Add a delivery address first'); $('#cAddr')?.focus(); return; } payModal(); },
+  cashQuick:(d)=>{ $('#cashIn').value=d.v; A_inp.cash(); },
+  complete:()=>complete(), draft:()=>complete('DRAFT'),
+  sendLink:()=>toast('Payment link sent by SMS: pay.nexpos.vn/p/8KX2Q'),
+  printK:(d)=>toast('Kitchen ticket sent to Máy in bếp (192.168.1.50)'), printL:()=>toast('3 labels sent to Máy in tem nhãn'), printC:()=>{toast('Receipt sent to Máy in quầy thu ngân'); closeOv();},
+  reprint:(d)=>receiptModal(S.orders.find(o=>o.id==d.id)),
+  oTab:(d)=>{S.oTab=d.k;render()},
+  order:(d)=>{ $('#bellPop').hidden=true; orderDrawer(d.id); },
+  ost:(d)=>{ const o=S.orders.find(x=>x.id==d.id); if(d.s==='DELETED'){ S.orders=S.orders.filter(x=>x!==o); closeOv(); toast('Draft deleted'); render(); return; }
+    o.st=d.s; if(d.s==='FINISH'){o.paid=true;} toast(`${o.code} → ${ST[d.s][0]}`); render(); orderDrawer(o.id); },
+  cancelO:(d)=>cancelModal(d.id),
+  quote:(d)=>quoteModal(d.id),
+  quickQuote:()=>{ const o=S.orders.find(x=>x.ship&&x.st==='DOING')||S.orders.find(x=>x.ship); quoteModal(o.id); },
+  book:(d)=>{ const o=S.orders.find(x=>x.id==d.id), q=document.querySelector('[name=q]:checked').value; o.prov=['Ahamove','Grab Express','Viettel Post','Ship by shop'][q]; o.driver=q==3?'Nhân viên: Phạm Quốc Việt':pick(DRIVERS); o.st='PICK'; toast(`Driver booked with ${o.prov}`); render(); orderDrawer(o.id); },
+  cancelShip:(d)=>{ const o=S.orders.find(x=>x.id==d.id); o.driver=null; o.st='DOING'; toast('Booking canceled. No fee charged.'); render(); orderDrawer(o.id); },
+  track:()=>modal('Driver location', `<div style="height:220px;border-radius:10px;background:repeating-linear-gradient(45deg,var(--surface-2) 0 14px,var(--bg) 14px 28px);position:relative"><span style="position:absolute;left:30%;top:60%" class="chip acc">Quán</span><span style="position:absolute;left:55%;top:35%" class="chip warm">Tài xế · 1.1 km</span><span style="position:absolute;left:78%;top:18%" class="chip info">Khách</span></div><p class="muted" style="margin:0">ETA 7 minutes. Updates arrive from the courier's callback.</p>`),
+  collect:(d)=>{ const o=S.orders.find(x=>x.id==d.id); o.paid=true; toast('Manual collection recorded'); render(); orderDrawer(o.id); },
+  checkPay:()=>toast('Provider says: still pending'),
+  issueInv:(d)=>{ const o=S.orders.find(x=>x.id==d.id); modal('Issue e-invoice', `<div class="grid g2" style="gap:10px"><label class="f">Buyer name<input class="in" id="iB" value="${esc(o.cust)}"></label><label class="f">Tax code (optional)<input class="in mono" id="iT" placeholder="0316 482 917"></label><label class="f" style="grid-column:1/-1">Address<input class="in" id="iA" value="${esc(o.addr)}"></label><label class="f">Provider<select class="in" id="iP"><option>MISA meInvoice</option><option>Viettel S-Invoice</option></select></label><label class="f">Amount<input class="in num" id="iM" value="${o.total}" disabled></label></div>`, `<button class="btn" data-act="order" data-id="${o.id}">Back</button><button class="btn pri" data-act="doInv" data-id="${o.id}">Issue invoice</button>`); },
+  doInv:(d)=>{ const o=S.orders.find(x=>x.id==d.id); o.inv='submitted'; toast('Invoice submitted. Status will update once the provider signs it.'); setTimeout(()=>{o.inv='issued'; if(route()==='invoices') render();},3000); orderDrawer(o.id); },
+  retryInv:(d)=>{ S.orders.find(x=>x.id==d.id).inv='submitted'; toast('Resubmitted to provider'); render(); },
+  syncInv:(d)=>{ S.orders.find(x=>x.id==d.id).inv='issued'; toast('Synced: invoice issued, số 0001284'); render(); },
+  cancelInv:(d)=>modal('Cancel invoice', `<p style="margin:0">Canceling an issued invoice requires a cancellation record (biên bản huỷ). This cannot be undone.</p><label class="f">Reason<input class="in" id="ciR" value="Sai thông tin người mua"></label>`, `<button class="btn" data-act="x">Keep invoice</button><button class="btn dng" data-act="doCancelInv" data-id="${d.id}">Cancel invoice</button>`),
+  doCancelInv:(d)=>{ S.orders.find(x=>x.id==d.id).inv=null; closeOv(); toast('Invoice canceled'); render(); },
+  lookup:()=>modal('Track an order', `<p class="muted" style="margin:0">Customers use this on the web store. No sign-in needed.</p><div class="row" style="flex-wrap:nowrap"><input class="in mono" id="lkQ" value="${S.orders[0].code}"><button class="btn pri" data-act="doLookup">Find</button></div><div id="lkR"></div>`),
+  doLookup:()=>{ const o=S.orders.find(x=>x.code.toLowerCase()===$('#lkQ').value.trim().toLowerCase()); $('#lkR').innerHTML = o?`<div class="panel pb"><div class="row">${chip(o.st)}<b class="mono">${o.code}</b></div><p class="muted" style="margin:6px 0 0">${o.items.length} items · ${vnd(o.total)} · ${o.driver?'Driver '+o.driver.split(' · ')[0]:'Being prepared'}</p></div>`:'<p class="down" style="margin:0">No order with that code. Check the code on your SMS.</p>'; },
+  publish:()=>{ modal('Publish menu', `<div class="list panel">${['POS','Web store','GrabFood','ShopeeFood','beFood'].map((c,i)=>`<div class="li"><b class="grow">${c}</b><span class="chip" id="pub${i}">Queued</span></div>`).join('')}</div>`, `<button class="btn" data-act="x">Close</button>`);
+    ['POS','Web store','GrabFood','ShopeeFood','beFood'].forEach((c,i)=>setTimeout(()=>{const e=$('#pub'+i); if(e){e.className='chip ok'; e.textContent=i===3?'Published · 2 items pending review':'Published';}}, 500+i*600)); },
+  importMenu:()=>modal('Import menu from Excel', `<label class="panel pb" style="border-style:dashed;text-align:center;cursor:pointer;display:block"><input type="file" accept=".xlsx,.csv" hidden data-chg="file"><b>Choose a file</b><br><span class="muted">.xlsx or .csv · columns: Tên món, Danh mục, Giá, SKU</span></label><div id="fileR" class="muted"></div>`, `<button class="btn" data-act="x">Cancel</button><button class="btn" data-act="toast" data-m="Template menu_template.xlsx is ready">Get template</button>`),
+  copyMenu:()=>modal('Copy menu to another store', `<label class="f">From<select class="in"><option>Nguyễn Huệ, Q1</option></select></label><label class="f">To<select class="in"><option>Võ Văn Tần, Q3</option><option>Thảo Điền</option></select></label><label class="row"><input type="checkbox" checked> Keep each store's prices</label>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="toast" data-m="Menu copied: 16 items, 2 option groups" data-close="1">Copy menu</button>`),
+  optGroups:()=>modal('Option groups', `<div class="list panel">${Object.entries(OPTS).flatMap(([k,gs])=>gs.map(g=>`<div class="li"><div class="grow"><b>${g.g}</b> <span class="muted">· ${k==='pho'?'Phở & Bún':'Đồ uống'}</span><div class="muted ell">${g.c.map(c=>c[0]+(c[1]?` +${kfmt(c[1])}`:'')).join(' · ')}</div></div><span class="chip">${g.one?'Pick one':'Pick many'}</span></div>`)).join('')}</div>`),
+  templates:()=>modal('Menu templates', `<p class="muted" style="margin:0">Start a new store from a saved menu.</p><div class="list panel">${['Phở Mộc · Full menu (16 món)','Phở Mộc · Bữa sáng (8 món)','Sương Coffee · Đồ uống (22 món)'].map(t=>`<div class="li"><b class="grow">${t}</b><button class="btn sm">Apply</button></div>`).join('')}</div>`),
+  product:(d)=>productModal(d.i),
+  syncStock:()=>{ closeOv(); toast('Stock pushed: Shopee 9 SKUs, TikTok 6 SKUs, Lazada 3 SKUs'); },
+  invTab:(d)=>{S.invTab=d.k;render()},
+  newReceipt:()=>modal('New stock receipt', `<div class="grid g2" style="gap:10px"><label class="f">Supplier<select class="in"><option>Lò bún Ba Đình</option><option>Bò tươi Long An</option><option>Cà phê Cầu Đất</option></select></label><label class="f">Warehouse<select class="in"><option>${S.wh}</option></select></label></div>
+    <div class="tw panel"><table><thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Unit cost</th></tr></thead><tbody><tr><td>Bánh phở tươi</td><td class="r"><input class="in num" style="width:80px" value="20" aria-label="Qty"></td><td class="r num">18.000₫</td></tr><tr><td>Bún tươi</td><td class="r"><input class="in num" style="width:80px" value="15" aria-label="Qty"></td><td class="r num">16.000₫</td></tr></tbody></table></div>`, `<button class="btn" data-act="x">Cancel</button><button class="btn" data-act="toast" data-m="Saved as draft" data-close="1">Save draft</button><button class="btn pri" data-act="recv">Receive stock</button>`, 'wide'),
+  recv:()=>{ S.stock[0][2]+=20; S.stock[3][2]+=15; closeOv(); toast('Stock received: +20 kg bánh phở, +15 kg bún'); render(); },
+  newTransfer:()=>modal('New transfer', `<div class="grid g2" style="gap:10px"><label class="f">From<select class="in"><option>Kho tổng Q1</option></select></label><label class="f">To<select class="in"><option>Võ Văn Tần, Q3</option><option>Thảo Điền</option></select></label><label class="f">Item<select class="in">${S.stock.map(s=>`<option>${s[0]}</option>`).join('')}</select></label><label class="f">Quantity<input class="in num" value="5"></label></div>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="toast" data-m="Transfer CK-0092 created. Receiving store confirms on arrival." data-close="1">Create transfer</button>`),
+  newPromo:promoModal,
+  savePromo:()=>{ const t=document.querySelector('[name=pt]:checked').value; S.promos.unshift({n:$('#pName').value,type:t,v:$('#pVal').value,code:$('#pCode').value.toUpperCase(),used:0,lim:0,on:true,to:$('#pEnd').value.split('-').reverse().join('/')}); closeOv(); toast('Promotion created'); render(); },
+  connect:(d)=>connectModal(d.i,1), connect2:(d)=>{ toast('Authorized'); connectModal(d.i,2); },
+  connect3:(d)=>{ const c=S.chans[d.i]; Object.assign(c,{on:true,stores:2,sync:'vừa xong',tok:'Hết hạn sau 30 ngày'}); closeOv(); toast(`${c.n} connected. Importing orders from the last 24 hours.`); render(); },
+  chSync:(d)=>toast(d.w==='orders'?`${d.n}: 3 new orders pulled, 0 errors`:`${d.n}: menu pushed (16 items)`),
+  chFin:(d)=>modal(`${d.n} finance`, `<div class="tw panel"><table><thead><tr><th>Period</th><th class="r">Gross</th><th class="r">Commission</th><th class="r">Payout</th></tr></thead><tbody>${[['27/10–02/11',48200000],['20/10–26/10',45100000],['13/10–19/10',41800000]].map(r=>`<tr><td class="num">${r[0]}</td><td class="r num">${vnd(r[1])}</td><td class="r num down">−${vnd(r[1]*.25)}</td><td class="r num"><b>${vnd(r[1]*.75)}</b></td></tr>`).join('')}</tbody></table></div>`,'','wide'),
+  chFb:(d)=>{ S.repTab='feedback'; location.hash='reports'; },
+  repTab:(d)=>{S.repTab=d.k;render()},
+  export:()=>{ const n=new Date(), p=x=>String(x).padStart(2,'0'); toast(`Exported <span class="mono">${S.repFile}_${n.getFullYear()}${p(n.getMonth()+1)}${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}${p(n.getSeconds())}.xlsx</span>`); },
+  tiTab:(d)=>{S.tiTab=d.k;render()},
+  addSite:()=>modal('Add store', `<label class="f">Store name<input class="in" value="Phở Mộc · Phan Xích Long"></label><label class="f">Address<input class="in" id="siteAddr" value="17 Phan Xích Long" data-inp="siteAddr"></label><div id="siteSug"></div><label class="f">Province<select class="in"><option>TP. Hồ Chí Minh</option><option>Hà Nội</option><option>Đà Nẵng</option></select></label><p class="muted" style="margin:0">You're using 3 of 4 stores on STANDARD.</p>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="toast" data-m="Store created. Add its channel sites next." data-close="1">Create store</button>`),
+  billTab:(d)=>{S.billTab=d.k;render()},
+  testPrint:()=>toast('Test page sent'),
+  discover:()=>{ toast('Searching the local network…'); setTimeout(()=>{ if(!S.printers.find(p=>p.ip==='192.168.1.57')) S.printers.push({n:'Epson TM-T82III',ip:'192.168.1.57',t:'bill_for_complete',w:80,on:true}); toast('Found 1 new printer: Epson TM-T82III'); if(route()==='bills') render(); }, 1600); },
+  teamTab:(d)=>{S.teamTab=d.k;render()},
+  invite:()=>modal('Invite staff', `<label class="f">Full name<input class="in" id="ivN" value="Ngô Bảo Châu"></label><label class="f">Email<input class="in" id="ivE" type="email" value="chau.nb@phomoc.vn"></label><div class="grid g2" style="gap:10px"><label class="f">Role<select class="in" id="ivR">${ROLES.slice(1).map(r=>`<option>${r}</option>`).join('')}</select></label><label class="f">Store<select class="in" id="ivH"><option>Nguyễn Huệ, Q1</option><option>Võ Văn Tần, Q3</option><option>Thảo Điền</option></select></label></div>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="doInvite">Send invite</button>`),
+  doInvite:()=>{ S.users.push({n:$('#ivN').value,e:$('#ivE').value,r:$('#ivR').value,h:$('#ivH').value,on:false,last:'Chờ kích hoạt'}); closeOv(); toast('Invite sent. They activate with the emailed code.'); render(); },
+  yearly:(d)=>{S.yearly=d.v==='1';render()},
+  choosePlan:(d)=>planModal(d.p),
+  voucher:()=>{ const ok=$('#voucher').value.trim().toUpperCase()==='NEXPOS50'; $('#vMsg').innerHTML = ok?'<span class="up">Voucher applied: −50% first period</span>':'<span class="down">This voucher is not valid or has been used.</span>'; },
+  addCap:()=>modal('Add store capacity', `<p style="margin:0">Each extra store costs <b>30.000₫ / month</b>, prorated to your renewal on 14/03/2027.</p><label class="f">Extra stores<input class="in num" type="number" min="1" value="1" id="capN"></label>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="toast" data-m="Capacity added: 5 stores" data-close="1">Pay 129.000₫</button>`),
+  runJob:(d)=>{ toast(`${d.n}: started`); setTimeout(()=>toast(`${d.n}: finished`),1400); },
+  migrate:()=>{ migDone=true; $('#migs').innerHTML=migList(); toast('2 migrations applied'); },
+  closeShift:closeShiftModal,
+  doClose:()=>{ S.shift.open=false; closeOv(); toast('Shift closed. Z-report printed.'); render(); },
+  openShift:()=>modal('Open shift', `<label class="f">Opening cash float<input class="in num" id="flt" value="1500000"></label>`, `<button class="btn" data-act="x">Cancel</button><button class="btn pri" data-act="doOpen">Open shift</button>`),
+  doOpen:()=>{ S.shift={open:true,by:'Huỳnh Linh Anh',at:new Date().toTimeString().slice(0,5),cash0:+$('#flt').value||0,moves:[]}; closeOv(); render(); },
+  mvK:(d)=>{ S.mvK=d.k; $('#mvOut').classList.toggle('on',d.k==='out'); $('#mvIn').classList.toggle('on',d.k==='in'); },
+  addMove:()=>{ const a=+$('#mvA').value.replace(/\D/g,''); if(!a){ toast('Enter an amount'); return; } S.shift.moves.unshift({t:new Date().toTimeString().slice(0,5),k:S.mvK||'out',n:$('#mvN').value||'Khác',a}); render(); },
+  sug:(d)=>{ S.cust.addr=d.v; render(); }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) { if(!e.target.closest('.bell')) $('#bellPop').hidden = true; return; }
+  if (el.dataset.act==='close' && e.target!==el) return;
+  A[el.dataset.act]?.(el.dataset, el, e);
+});
+const SUG = ['27 Nguyễn Huệ, Bến Nghé, Quận 1','12 Lê Lợi, Bến Nghé, Quận 1','88 Pasteur, Phường 6, Quận 3','41 Thảo Điền, TP Thủ Đức','17 Phan Xích Long, Phú Nhuận'];
+const A_inp = {
+  posQ:(e)=>{ S.q=e.value; const pos=e.selectionStart; render(); const n=$('#posQ'); n.focus(); n.setSelectionRange(pos,pos); },
+  oQ:(e)=>{ S.oQ=e.value; const pos=e.selectionStart; render(); const n=$('#oQ'); n.focus(); n.setSelectionRange(pos,pos); },
+  cName:(e)=>S.cust.name=e.value, cPhone:(e)=>S.cust.phone=e.value,
+  cAddr:(e)=>{ S.cust.addr=e.value; const q=e.value.toLowerCase(); $('#addrSug').innerHTML = q.length>1 ? `<div class="panel list" style="margin-top:4px">${SUG.filter(s=>s.toLowerCase().includes(q)||q.length<4).slice(0,4).map(s=>`<button class="li btn ghost" style="border-radius:0;justify-content:flex-start;width:100%" data-act="sug" data-v="${s}">${s}</button>`).join('')}</div>`:''; },
+  siteAddr:(e)=>{ $('#siteSug').innerHTML = `<div class="muted" style="font-size:12px">Suggestion: 17 Phan Xích Long, Phường 2, Phú Nhuận · 10.8007, 106.6880</div>`; },
+  cash:()=>{ const v=+($('#cashIn').value.replace(/\D/g,'')), t=cartTotals().total; $('#change').innerHTML = v>=t?`<b>${vnd(v-t)}</b>`:`<span class="down">Short by ${vnd(t-v)}</span>`; },
+  den:countDen,
+  wBanner:(e)=>{ S.web.banner=e.value; $('#phoneScr').innerHTML=phoneScreen(); }, wMin:(e)=>{ S.web.min=+e.value||0; $('#phoneScr').innerHTML=phoneScreen(); },
+  bFoot:(e)=>{ S.bill.footer=e.value; $('#billPrev').innerHTML=receipt(S.orders.find(o=>o.items.length>1)||S.orders[0],S.billTab); }
+};
+document.addEventListener('input', e => { const k=e.target.dataset.inp; if(k&&A_inp[k]) A_inp[k](e.target); });
+const A_chg = {
+  oCh:(e)=>{S.oCh=e.value;render()}, wh:(e)=>{S.wh=e.value;render()},
+  soldout:(e)=>{ const m=MENU.find(x=>x.id==e.dataset.id); m.out=!e.checked; toast(`${m.n} ${m.out?'marked sold out on all channels':'back in stock'}`); },
+  promoOn:(e)=>{ S.promos[e.dataset.i].on=e.checked; toast(e.checked?'Promotion on':'Promotion paused'); },
+  web:(e)=>{ S.web[e.dataset.k]=e.checked; $('#phoneScr').innerHTML=phoneScreen(); },
+  bill:(e)=>{ S.bill[e.dataset.k]=e.checked; render(); }, billW:(e)=>{ S.bill.w=+e.value; render(); },
+  file:(e)=>{ const f=e.files[0]; if(f) $('#fileR').innerHTML=`Read <b>${esc(f.name)}</b>. 16 rows look valid. <button class="btn sm pri" data-act="toast" data-m="Imported 16 items" data-close="1">Import</button>`; }
+};
+document.addEventListener('change', e => { const k=e.target.dataset.chg; if(k&&A_chg[k]) A_chg[k](e.target); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeOv(); });
+
+render();
+</script>
+
+</body>
+</html>

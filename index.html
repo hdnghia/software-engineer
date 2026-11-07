@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academic Library</title>
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #ffffff; --text: #1d1d1f; --muted: #6b6b70;
+    --border: #e3e1da; --accent: #2f6fde; --accent-soft: #e8effc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141416; --surface: #1d1d21; --text: #ececf0; --muted: #9a9aa3;
+            --border: #2c2c32; --accent: #7aa5ff; --accent-soft: #1f2a40; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  input { width: 100%; padding: 12px 14px; font: inherit; color: var(--text);
+          background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+          margin-bottom: 28px; outline: none; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  section { margin-bottom: 28px; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  a.card { display: block; padding: 14px 16px; background: var(--surface);
+           border: 1px solid var(--border); border-radius: 12px; text-decoration: none;
+           color: var(--text); transition: border-color .15s, transform .15s; }
+  a.card:hover, a.card:focus-visible { border-color: var(--accent); transform: translateY(-2px); outline: none; }
+  .t { font-weight: 600; display: block; }
+  .p { font-size: .8rem; color: var(--muted); font-family: ui-monospace, monospace; word-break: break-all; }
+  .d { display: block; font-size: .875rem; color: var(--muted); margin: 2px 0 4px; }
+  .empty { color: var(--muted); display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Academic Library</h1>
+  <p class="sub">Interactive guides and visual atlases — pick a topic.</p>
+  <input id="q" type="search" placeholder="Filter topics…" aria-label="Filter topics">
+  <div id="menu"></div>
+  <p class="empty" id="empty">No matching pages.</p>
+</main>
+<script src="routes.js"></script>
+<script>
+const groups = window.ROUTES || {};
+const menu = document.getElementById("menu");
+for (const [name, items] of Object.entries(groups)) {
+  const s = document.createElement("section");
+  s.innerHTML = `<h2>${name}</h2><div class="grid">` + items.map(r =>
+    `<a class="card" href="${r.path}"><span class="t">${r.title}</span>` +
+    (r.desc ? `<span class="d">${r.desc}</span>` : "") +
+    `<span class="p">${r.path}</span></a>`).join("") + `</div>`;
+  menu.appendChild(s);
+}
+document.getElementById("q").addEventListener("input", e => {
+  const q = e.target.value.toLowerCase().trim();
+  let any = false;
+  menu.querySelectorAll("section").forEach(s => {
+    let vis = 0;
+    s.querySelectorAll("a.card").forEach(a => {
+      const show = a.textContent.toLowerCase().includes(q);
+      a.style.display = show ? "" : "none"; vis += show;
+    });
+    s.style.display = vis ? "" : "none"; any ||= vis > 0;
+  });
+  document.getElementById("empty").style.display = any ? "none" : "block";
+});
+</script>
+</body>
+</html>
