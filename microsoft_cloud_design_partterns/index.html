@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azure Cloud Design Patterns – Visual Guide</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1b2333;--mute:#5b667a;--line:#e0e5ee;--accent:#0f6cbd;--chip:#eaf1fb;
+--c-res:#d13438;--c-msg:#0f6cbd;--c-perf:#107c10;--c-data:#8764b8;--c-sec:#c239b3;--c-des:#ca5010;--c-avail:#038387;--c-mon:#69797e}
+@media(prefers-color-scheme:dark){:root{--bg:#10151f;--card:#18202e;--ink:#e8edf6;--mute:#9aa6bb;--line:#2a3548;--accent:#5aa9f0;--chip:#1f2c42}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:40px 16px 24px;text-align:center;background:linear-gradient(135deg,#0f6cbd,#5b3fa8);color:#fff}
+header h1{margin:0 0 8px;font-size:clamp(1.6rem,4vw,2.4rem)}
+header p{margin:0 auto;max-width:680px;opacity:.92}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.tools{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line)}
+input[type=search]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:1rem}
+.cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.cat{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer;font-size:.85rem}
+.cat[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cat i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.intro{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:20px 0}
+.intro div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.intro b{display:block;margin-bottom:4px}
+.intro span{color:var(--mute);font-size:.9rem}
+.count{color:var(--mute);font-size:.85rem;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:14px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.card h3{margin:0 0 2px;font-size:1.05rem}
+.tag{font-size:.72rem;color:var(--c);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card p{margin:8px 0 0;color:var(--mute);font-size:.9rem}
+.mini{margin-top:10px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:.7rem;color:var(--mute)}
+.mini em{font-style:normal;background:var(--chip);border-radius:6px;padding:2px 6px}
+dialog{border:none;border-radius:16px;padding:0;max-width:760px;width:calc(100% - 24px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.mh{padding:18px 20px;border-bottom:1px solid var(--line);border-top:6px solid var(--c);display:flex;justify-content:space-between;gap:12px}
+.mh h2{margin:0;font-size:1.3rem}
+.x{border:none;background:var(--chip);color:var(--ink);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.1rem}
+.mb{padding:18px 20px 22px}
+.sec{margin-bottom:14px}
+.sec h4{margin:0 0 3px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.sec p{margin:0}
+.analogy{background:var(--chip);border-radius:10px;padding:12px 14px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:14px;background:var(--bg);border:1px dashed var(--line);border-radius:10px}
+.node{padding:7px 11px;border-radius:8px;border:2px solid var(--line);background:var(--card);font-size:.85rem;transition:all .25s}
+.node.on{border-color:var(--c);background:var(--c);color:#fff;transform:scale(1.08)}
+.arr{color:var(--mute)}
+.btn{margin-top:8px;border:1px solid var(--accent);background:none;color:var(--accent);padding:5px 12px;border-radius:8px;cursor:pointer}
+.svc{display:flex;flex-wrap:wrap;gap:6px}
+.svc span{background:var(--chip);padding:3px 10px;border-radius:999px;font-size:.82rem}
+footer{text-align:center;color:var(--mute);font-size:.8rem;padding:30px 16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>☁️ Azure Cloud Design Patterns</h1>
+  <p>43 proven solutions to common cloud problems — each explained with an everyday analogy, an animated flow, and the Azure services that implement it. Click any card.</p>
+</header>
+<main>
+  <section class="intro" id="intro"></section>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search a pattern or a problem… (e.g. retry, queue, cache, security)" aria-label="Search patterns">
+    <div class="cats" id="cats"></div>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</main>
+<dialog id="dlg"></dialog>
+<footer>Based on the Azure Architecture Center “Cloud Design Patterns” catalog. Simplified for learning.</footer>
+
+<script>
+const CATS={
+ "Resiliency":["var(--c-res)","Survive failures and recover gracefully."],
+ "Messaging":["var(--c-msg)","Let services talk without waiting on each other."],
+ "Performance & Scalability":["var(--c-perf)","Stay fast and grow when load grows."],
+ "Data Management":["var(--c-data)","Store, read and share data efficiently."],
+ "Security":["var(--c-sec)","Control who gets in and what they can touch."],
+ "Design & Implementation":["var(--c-des)","Structure code and services cleanly."],
+ "Availability":["var(--c-avail)","Keep the system up, everywhere."],
+ "Management & Monitoring":["var(--c-mon)","Observe, configure and operate at scale."]
+};
+// [name, category, analogy, problem, solution, when, azure services, flow(">" separated)]
+const P=[
+["Ambassador","Design & Implementation","A personal assistant who makes calls for you.","Apps need networking chores (retry, logging, TLS) but you can't edit the legacy client.","Put a helper proxy next to the client that handles outbound network tasks.","Legacy or multi-language apps needing consistent connectivity features.","Envoy / Dapr sidecar, AKS","App>Ambassador proxy>Remote service"],
+["Anti-corruption Layer","Design & Implementation","A translator between two people who speak different languages.","A new system must talk to a legacy one without inheriting its messy model.","Add a façade that translates between the two models.","Migrating step-by-step or integrating with a legacy system.","API Management, Functions","New app>Translator layer>Legacy system"],
+["Asynchronous Request-Reply","Messaging","Ordering food: you get a ticket number and check back later.","A long operation makes the caller wait and time out.","Return 202 Accepted + status URL; client polls until done.","Long-running jobs behind HTTP APIs.","Functions, Service Bus, Storage Queue","Client>API (202 + ticket)>Worker>Status endpoint>Client polls"],
+["Backends for Frontends","Design & Implementation","A custom menu for each type of customer.","One general API doesn't fit web, mobile and IoT needs.","Create a separate backend per frontend type.","Different clients need different payloads and behaviors.","API Management, App Service","Mobile>Mobile BFF>Services"],
+["Bulkhead","Resiliency","Watertight ship compartments: one leak doesn't sink the ship.","One overloaded component eats all resources and drags everything down.","Isolate resources into pools so failures stay contained.","Critical and non-critical workloads share infrastructure.","AKS node pools, separate App Service plans","Request>Pool A (full)>Pool B stays healthy"],
+["Cache-Aside","Data Management","Checking your notes before looking in the library.","Reading the database for every request is slow and costly.","Look in cache first; on miss load from DB and store in cache.","Read-heavy data that changes rarely.","Azure Cache for Redis","App>Cache hit?>Database (on miss)>Fill cache"],
+["Choreography","Messaging","Dancers who react to each other's moves, no conductor.","A central orchestrator becomes a bottleneck and single point of failure.","Services publish events and react to others' events.","Loosely-coupled workflows across microservices.","Event Grid, Service Bus","Order service>Event>Payment service>Event>Shipping"],
+["Circuit Breaker","Resiliency","A home fuse box that trips to prevent a fire.","Calling a failing service repeatedly wastes resources and cascades failures.","Stop calls after N failures, wait, then test with a few trial calls.","Remote calls that may fail for a while.","Polly, Resilience4j, API Management","Call>Breaker (Closed)>Failures>Breaker OPEN>Fail fast>Half-open test"],
+["Claim Check","Messaging","A coat-check ticket instead of carrying your coat around.","Large payloads clog the message bus.","Store payload in storage, send only a reference in the message.","Messages exceed broker size limits.","Blob Storage, Service Bus","Sender>Store payload>Send ticket>Receiver fetches payload"],
+["Compensating Transaction","Resiliency","Cancelling a flight booking when the hotel fails.","Distributed steps can't use one ACID rollback.","Define undo actions that reverse earlier completed steps.","Eventually consistent multi-step operations.","Durable Functions, Logic Apps","Step 1 ✔>Step 2 ✔>Step 3 ✘>Undo 2>Undo 1"],
+["Competing Consumers","Messaging","Many cashiers serving one checkout line.","One consumer can't keep up with a flood of messages.","Multiple workers pull from the same queue in parallel.","Variable, high-volume workloads.","Service Bus, Queue Storage, KEDA","Queue>Worker 1>Worker 2>Worker 3"],
+["Compute Resource Consolidation","Design & Implementation","Sharing one taxi for several passengers going the same way.","Many tiny workloads waste compute.","Combine related tasks into one deployment unit.","Low-utilization services with similar needs.","App Service, AKS, Container Apps","Task A>Shared host<Task B"],
+["CQRS","Data Management","Separate counters for ordering and for picking up.","Reads and writes need different models and scaling.","Split commands (write) from queries (read) into separate models.","Complex domains, read-heavy systems.","Cosmos DB, SQL, Event Hubs","Command>Write model>Sync>Read model>Query"],
+["Deployment Stamps","Availability","Franchise restaurants: same recipe, many locations.","One big deployment limits scale and isolation.","Deploy independent, identical copies (stamps) per region/tenant.","Multi-tenant SaaS, regional scaling.","Bicep/Terraform, Front Door","Router>Stamp EU>Stamp US>Stamp Asia"],
+["Edge Workload Configuration","Management & Monitoring","A central rulebook sent to every branch office.","Edge devices differ in config and connectivity.","Manage configuration centrally with per-edge overrides.","IoT / edge fleets.","Azure Arc, IoT Hub","Config repo>Sync>Edge site A>Edge site B"],
+["Event Sourcing","Data Management","A bank statement: store every transaction, not just the balance.","Only current state is saved; history is lost.","Persist every state change as an immutable event.","Audit trails, replay, time travel.","Event Hubs, Cosmos DB change feed","Action>Event log (append)>Replay>Current state"],
+["External Configuration Store","Management & Monitoring","A central settings board instead of notes on every desk.","Config baked into each app needs redeploys to change.","Keep config in a central store apps read at runtime.","Many services, changing settings.","App Configuration, Key Vault","App starts>Read App Configuration>Apply settings"],
+["Federated Identity","Security","Using your Google account to log in elsewhere.","Managing users in every app is painful and risky.","Delegate authentication to a trusted identity provider.","SSO, partner access, B2C.","Microsoft Entra ID, Entra External ID","User>App>Identity provider>Token>App"],
+["Gatekeeper","Security","A security guard at the building door.","Exposed services are attack targets.","Put a hardened proxy that validates requests before the trusted host.","Sensitive apps handling untrusted traffic.","Application Gateway + WAF, Front Door","Internet>Gatekeeper (validate)>Trusted service"],
+["Gateway Aggregation","Design & Implementation","A waiter bringing all your dishes in one trip.","A client makes many calls to many services.","Gateway combines multiple calls into one response.","Chatty clients, mobile networks.","API Management, Functions","Client>Gateway>Service A+B+C>One response"],
+["Gateway Offloading","Design & Implementation","Reception desk handles check-in so doctors just treat.","Every service re-implements TLS, auth, logging.","Move shared features to the gateway.","Cross-cutting concerns across services.","API Management, Application Gateway","Client>Gateway (TLS, auth, logs)>Services"],
+["Gateway Routing","Design & Implementation","A phone operator forwarding calls to the right department.","Clients must know many service endpoints.","One endpoint routes requests to backends by path/headers.","Multiple services or versions behind one URL.","API Management, Front Door","Client>Gateway>/orders → Orders>/users → Users"],
+["Geode","Availability","Franchise chain where every branch can serve you fully.","Users far from the single region suffer latency & outages.","Deploy active-active backends in many regions.","Global apps with low-latency demands.","Cosmos DB multi-region, Front Door","User>Nearest geode>Replicated data"],
+["Health Endpoint Monitoring","Management & Monitoring","A doctor's check-up: 'how are you feeling?'","Failures are noticed by users first.","Expose /health endpoints that tools probe regularly.","Any production service.","Azure Monitor, Application Insights, Load Balancer probes","Monitor>GET /health>Service reports OK/Fail>Alert"],
+["Index Table","Data Management","A book's index for fast lookup by topic.","Queries on non-key fields scan everything.","Create extra tables indexed on common query fields.","NoSQL stores lacking secondary indexes.","Table Storage, Cosmos DB","Query by city>Index table>Row keys>Fetch rows"],
+["Leader Election","Resiliency","One team member chosen to coordinate the meeting.","Several instances conflict when coordinating work.","Elect one instance as leader, others follow; re-elect on failure.","Distributed tasks needing a single coordinator.","Blob lease, etcd, Zookeeper","Instances>Vote/lease>Leader coordinates>Leader fails>New election"],
+["Materialized View","Data Management","A pre-made summary sheet instead of recalculating totals.","Complex queries over normalized data are slow.","Prepopulate a view shaped for the query.","Repeated heavy aggregations.","Synapse, SQL indexed views, Cosmos DB","Source data>Background job>Prebuilt view>Fast query"],
+["Pipes and Filters","Design & Implementation","An assembly line with stations.","Monolithic processing is hard to reuse and scale.","Break into small filters connected by queues.","Multi-step data processing.","Functions, Service Bus, Data Factory","Input>Decode>Validate>Enrich>Output"],
+["Priority Queue","Messaging","The fast lane at the airport.","Urgent requests wait behind bulk ones.","Process higher-priority messages first.","Differentiated SLAs.","Service Bus topics/multiple queues","Messages>Priority sort>High first>Low later"],
+["Publisher/Subscriber","Messaging","A newsletter: one send, many readers.","Sender shouldn't know all receivers.","Publish events to a topic; subscribers receive copies.","Broadcasting to many consumers.","Event Grid, Service Bus Topics","Publisher>Topic>Subscriber A>Subscriber B"],
+["Quarantine","Security","Holding new arrivals at the border for inspection.","Untrusted artifacts could be malicious.","Isolate and validate assets before use.","Container images, uploaded files.","Defender for Cloud, ACR","Upload>Quarantine zone>Scan>Approved storage"],
+["Queue-Based Load Leveling","Messaging","A waiting room that smooths out a rush.","Traffic spikes overwhelm services.","Buffer requests in a queue; process at steady pace.","Bursty workloads.","Service Bus, Storage Queue","Spike>Queue (buffer)>Steady processing>Service"],
+["Rate Limiting","Performance & Scalability","Max 5 coffee orders per person per minute.","Heavy users exhaust shared quotas.","Cap requests per client/time window.","Public APIs, shared back ends.","API Management policies","Client>Limiter>Under limit? OK : 429>Service"],
+["Retry","Resiliency","Redialing a busy phone number after a short pause.","Transient faults (network blips) fail operations.","Retry with backoff (and jitter) a limited number of times.","Temporary, self-correcting errors.","Polly, SDK retry policies","Call>Fail>Wait 1s>Retry>Wait 2s>Success"],
+["Saga","Resiliency","A multi-city trip where each booking can be cancelled.","No distributed transactions across services.","Chain local transactions with compensations.","Order/payment/stock workflows.","Durable Functions, Service Bus","Order>Payment>Stock>Shipping (or compensate)"],
+["Scheduler Agent Supervisor","Resiliency","A project manager tracking staff tasks and reassigning failures.","Multi-step distributed tasks can fail mid-way.","Scheduler runs steps, agents execute, supervisor recovers.","Orchestrated long-running workflows.","Durable Functions, Logic Apps","Scheduler>Agent runs step>Supervisor monitors>Retry/fix"],
+["Sequential Convoy","Messaging","A train: cars of the same route stay in order.","Related messages must be handled in order.","Group by session/key and process in sequence.","Ordered processing per entity.","Service Bus sessions","Messages>Group by session>Ordered processing"],
+["Sharding","Data Management","Splitting a phone book into A–M and N–Z volumes.","One database hits storage or throughput limits.","Partition data across multiple stores by a key.","Large datasets, scale-out writes.","Cosmos DB, Elastic Pools, SQL Hyperscale","Request>Shard key>Shard 1 / 2 / 3"],
+["Sidecar","Design & Implementation","A motorcycle's sidecar carrying helpful extras.","Cross-cutting features clutter the main app.","Deploy helper container alongside the app.","Logging, config, proxies for any language.","AKS, Container Apps, Dapr","App container<>Sidecar container (same pod)"],
+["Static Content Hosting","Performance & Scalability","Flyers handed out from a stand, not by the chef.","Servers waste CPU serving images/JS.","Serve static files from storage + CDN.","Websites with static assets.","Blob Storage, Front Door CDN, Static Web Apps","Browser>CDN>Blob Storage"],
+["Strangler Fig","Design & Implementation","A vine slowly growing around an old tree until it replaces it.","Big-bang rewrites are risky.","Gradually route features from legacy to new system.","Incremental modernization.","API Management, Front Door","Client>Façade>Old system / New system"],
+["Throttling","Performance & Scalability","A bouncer limiting how many guests enter.","Surges can crash the service.","Limit or reject excess load to protect resources.","Protect SLAs under heavy load.","API Management, Functions scaling","Load spike>Throttle>Accept some>Reject rest (429)"],
+["Valet Key","Security","A car key that only starts the engine, no trunk access.","Proxying big files through your server is slow and risky.","Give clients a time-limited token to access a specific resource.","Direct client uploads/downloads.","Blob SAS tokens","Client>Ask API>SAS token>Direct to storage"]
+];
+const $=s=>document.querySelector(s);
+let active="All",term="";
+const catList=["All",...Object.keys(CATS)];
+$("#cats").innerHTML=catList.map(c=>`<button class="cat" data-c="${c}" aria-pressed="${c==='All'}">${c==='All'?'':`<i style="background:${CATS[c][0]}"></i>`}${c}</button>`).join("");
+$("#intro").innerHTML=Object.entries(CATS).map(([n,[c,d]])=>`<div style="border-top:4px solid ${c}"><b>${n}</b><span>${d}</span></div>`).join("");
+$("#cats").onclick=e=>{const b=e.target.closest(".cat");if(!b)return;active=b.dataset.c;document.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed",x===b));render()};
+$("#q").oninput=e=>{term=e.target.value.toLowerCase();render()};
+function render(){
+  const list=P.filter(p=>(active==="All"||p[1]===active)&&(!term||p.join(" ").toLowerCase().includes(term)));
+  $("#count").textContent=`${list.length} pattern${list.length!==1?'s':''}`;
+  $("#grid").innerHTML=list.map(p=>`<article class="card" tabindex="0" data-n="${p[0]}" style="--c:${CATS[p[1]][0]}">
+   <div class="tag">${p[1]}</div><h3>${p[0]}</h3><p>${p[2]}</p>
+   <div class="mini">${p[7].split(">").slice(0,3).map(x=>`<em>${x.replace("<","")}</em>`).join("→")}…</div></article>`).join("")||"<p>No match.</p>";
+}
+let timer;
+function open(name){
+  const p=P.find(x=>x[0]===name),d=$("#dlg");
+  const nodes=p[7].split(">");
+  d.style.setProperty("--c",CATS[p[1]][0]);
+  d.innerHTML=`<div class="mh"><div><div class="tag" style="color:var(--c)">${p[1]}</div><h2>${p[0]}</h2></div><button class="x" aria-label="Close">✕</button></div>
+  <div class="mb">
+   <div class="sec analogy"><h4>💡 Think of it like…</h4><p>${p[2]}</p></div>
+   <div class="sec"><h4>⚠️ Problem</h4><p>${p[3]}</p></div>
+   <div class="sec"><h4>✅ Solution</h4><p>${p[4]}</p></div>
+   <div class="sec"><h4>🎬 Flow</h4><div class="flow" id="flow">${nodes.map((n,i)=>`<span class="node">${n.replace("<","")}</span>${i<nodes.length-1?'<span class="arr">➜</span>':''}`).join("")}</div>
+   <button class="btn" id="play">▶ Replay</button></div>
+   <div class="sec"><h4>🎯 Use when</h4><p>${p[5]}</p></div>
+   <div class="sec"><h4>🧩 Azure services</h4><div class="svc">${p[6].split(",").map(s=>`<span>${s.trim()}</span>`).join("")}</div></div>
+  </div>`;
+  d.showModal();
+  const play=()=>{clearInterval(timer);const el=[...d.querySelectorAll(".node")];let i=0;el.forEach(n=>n.classList.remove("on"));
+    timer=setInterval(()=>{el.forEach(n=>n.classList.remove("on"));if(i>=el.length){clearInterval(timer);return}el[i++].classList.add("on")},750)};
+  $("#play").onclick=play;play();
+  d.querySelector(".x").onclick=()=>d.close();
+}
+$("#dlg").addEventListener("close",()=>clearInterval(timer));
+$("#dlg").addEventListener("click",e=>{if(e.target.id==="dlg")e.target.close()});
+$("#grid").onclick=e=>{const c=e.target.closest(".card");if(c)open(c.dataset.n)};
+$("#grid").onkeydown=e=>{if(e.key==="Enter"){const c=e.target.closest(".card");if(c)open(c.dataset.n)}};
+render();
+</script>
+</body>
+</html>

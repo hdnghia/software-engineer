@@ -1,0 +1,870 @@
+<title>Postgres Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: persistent left index of 16 modules; each module is one hands-on simulator + a short "remember this" list. */
+:root{
+  --bg:#f1f4f8;--surface:#ffffff;--surface2:#e8eef5;--ink:#122033;--muted:#55657a;--line:#d3dce7;
+  --accent:#2a68a3;--accent-ink:#ffffff;--accent-soft:#d9e8f6;
+  --good:#1b7e54;--good-soft:#d6efe2;--warn:#9a5f08;--warn-soft:#fae9cc;--bad:#b3372b;--bad-soft:#f8dbd7;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1520;--surface:#142130;--surface2:#1b2d41;--ink:#e5edf6;--muted:#93a5ba;--line:#273b52;
+  --accent:#6fb0ea;--accent-ink:#08121d;--accent-soft:#1c3552;
+  --good:#58c796;--good-soft:#173a2d;--warn:#e2a94f;--warn-soft:#3d2f14;--bad:#f0877b;--bad-soft:#41201c;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1520;--surface:#142130;--surface2:#1b2d41;--ink:#e5edf6;--muted:#93a5ba;--line:#273b52;
+  --accent:#6fb0ea;--accent-ink:#08121d;--accent-soft:#1c3552;
+  --good:#58c796;--good-soft:#173a2d;--warn:#e2a94f;--warn-soft:#3d2f14;--bad:#f0877b;--bad-soft:#41201c;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--surface);z-index:30}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}
+code,pre,.mono{font-family:var(--mono);font-size:12.5px}
+pre{margin:0;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre;line-height:1.5}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding-left:max(14px,env(safe-area-inset-left,0px))}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.brand b{font:700 20px var(--display)}
+.logo{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 16px var(--display)}
+.grp{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:16px 8px 4px}
+.nav a{display:block;padding:6px 8px;border-radius:6px;color:var(--ink);text-decoration:none}
+.nav a:hover{background:var(--surface2)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.theme{margin-top:18px;width:100%}
+.mbar{display:none}
+.main{padding:28px 32px 60px;padding-right:max(32px,env(safe-area-inset-right,0px));min-width:0;max-width:1100px}
+.ph{margin-bottom:20px;display:grid;gap:8px}
+.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.ph h1{font-size:34px}
+.lead{color:var(--muted);max-width:68ch;font-size:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel>h3{font-size:16px;margin-bottom:10px}
+.stack{display:grid;gap:14px}
+.cols{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);color:var(--accent-ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:3px 9px;font-size:13px}
+select,input[type=text],input[type=number],textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:100%}
+textarea{width:100%;font-family:var(--mono);font-size:12.5px}
+label.f{display:grid;gap:3px;font-size:13px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.tag.good{background:var(--good-soft);color:var(--good)}.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}.tag.acc{background:var(--accent-soft);color:var(--accent)}
+.tw{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}
+table.t th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+table.t tr.sel td{background:var(--accent-soft)}
+table.t tr.dead td{color:var(--bad)}
+table.t tr.hl td{background:var(--warn-soft)}
+table.t tr.ok td{background:var(--good-soft)}
+.null{color:var(--muted);font-style:italic}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:14px}
+.note.warn{background:var(--warn-soft)}.note.bad{background:var(--bad-soft)}.note.good{background:var(--good-soft)}
+.take{margin-top:24px;border-top:2px solid var(--ink);padding-top:12px}
+.take h3{font-size:15px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.take ul{margin:0;padding-left:20px;display:grid;gap:5px;max-width:78ch}
+.pn{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap}
+.pn a{color:var(--accent);text-decoration:none;font-weight:600}
+.log{font-family:var(--mono);font-size:12px;background:var(--surface2);border-radius:6px;padding:8px 10px;max-height:160px;overflow:auto;display:grid;gap:2px;min-height:44px}
+.log div:first-child{color:var(--ink);font-weight:500}.log div{color:var(--muted)}
+.kpi{display:flex;gap:18px;flex-wrap:wrap}
+.kpi div{display:grid}.kpi b{font:700 22px var(--display);font-variant-numeric:tabular-nums}.kpi span{font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;text-decoration:none;color:var(--ink);display:grid;gap:4px;align-content:start}
+a.card:hover{border-color:var(--accent)}
+.card h3{font-size:16px}.card p{color:var(--muted);font-size:13.5px}
+/* architecture */
+.arch{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.zone{background:var(--surface2);border-radius:10px;padding:10px;display:grid;gap:8px;align-content:start}
+.zone>h4{margin:0;font:600 11px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.node{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;text-align:left;cursor:pointer;font-size:13.5px;transition:.2s}
+.node:hover{border-color:var(--accent)}
+.node.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);transform:translateX(2px)}
+.node.pick{outline:2px solid var(--accent)}
+/* heap */
+.page{display:flex;height:46px;border:1px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface)}
+.page>div{min-width:2px;font-size:10px;display:grid;place-items:center;overflow:hidden;border-right:1px solid var(--surface)}
+.seg-h{background:var(--ink);color:var(--surface)}.seg-i{background:var(--warn)}.seg-f{background:repeating-linear-gradient(45deg,transparent 0 6px,var(--surface2) 6px 12px)}
+.seg-l{background:var(--accent);color:var(--accent-ink)}.seg-d{background:var(--bad);color:#fff}.seg-t{background:var(--good);color:#fff}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+/* mvcc */
+.sess{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;background:var(--surface)}
+.sess h3{display:flex;justify-content:space-between;align-items:center;font-size:16px}
+.out{min-height:38px;font-family:var(--mono);font-size:12.5px;background:var(--surface2);padding:8px;border-radius:6px;white-space:pre-wrap}
+/* btree */
+.tree{display:grid;gap:18px;overflow-x:auto;padding:6px 2px 10px}
+.lvl{display:flex;gap:10px;justify-content:center;min-width:max-content}
+.bn{display:flex;border:1.5px solid var(--ink);border-radius:6px;background:var(--surface);transition:.25s}
+.bn span{padding:4px 8px;font-family:var(--mono);font-size:13px;border-right:1px solid var(--line);min-width:30px;text-align:center}
+.bn span:last-child{border-right:0}
+.bn.leaf{border-color:var(--accent)}
+.bn.leaf+.bn.leaf{position:relative;margin-left:8px}
+.bn.leaf+.bn.leaf::before{content:"→";position:absolute;left:-15px;top:3px;color:var(--accent)}
+.bn.on{background:var(--warn-soft);border-color:var(--warn)}
+.bn span.hit{background:var(--good);color:#fff}.bn span.miss{background:var(--bad);color:#fff}
+/* bars */
+.bars{display:grid;gap:10px}
+.bar{display:grid;gap:3px}
+.bar>div:first-child{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.track{height:14px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.fill{height:100%;background:var(--muted);transition:width .3s}.fill.best{background:var(--good)}
+/* locks */
+.mx{border-collapse:separate;border-spacing:3px;font-size:12px}
+.mx th{font-weight:500;color:var(--muted);padding:2px 4px;text-align:left;max-width:90px}
+.mx td{width:30px;height:28px;text-align:center;border-radius:4px;background:var(--good-soft);color:var(--good);font-weight:700}
+.mx td.x{background:var(--bad-soft);color:var(--bad)}
+.mx td.cur{outline:2px solid var(--ink)}
+/* wal / repl */
+.cell{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:6px;font:500 12px var(--mono);border:1px solid var(--line);background:var(--surface)}
+.rec{display:flex;gap:8px;align-items:center;font:12px var(--mono);padding:2px 6px;border-radius:4px}
+.rec.ram{background:var(--warn-soft)}.rec.old{opacity:.5}
+.sq{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:5px;font:500 11px var(--mono);margin:2px;border:1.5px solid var(--line)}
+.sq.good{background:var(--good);color:#fff;border-color:var(--good)}.sq.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}.sq.wait{border-style:dashed}
+.part{border:1.5px solid var(--line);border-radius:8px;padding:8px;text-align:center;font-size:12.5px;background:var(--surface);transition:.25s}
+.part.scan{background:var(--warn-soft);border-color:var(--warn)}.part.skip{opacity:.4}
+.pgrid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opt{display:block;width:100%;text-align:left;margin-top:6px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer}
+.opt.right{background:var(--good-soft);border-color:var(--good)}.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.pipe{display:flex;gap:6px;flex-wrap:wrap}
+.pipe span{padding:5px 11px;border-radius:99px;border:1px solid var(--line);font-size:13px;background:var(--surface);color:var(--muted)}
+.pipe span.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.pipe span.done{color:var(--ink);border-color:var(--accent)}
+@media (max-width:900px){
+  .app{display:block}
+  .side{position:static;max-height:none;border-right:0;display:none;padding-right:max(14px,env(safe-area-inset-right,0px))}
+  .side.open{display:block}
+  .mbar{display:flex;justify-content:space-between;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);background:var(--surface);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));z-index:20}
+  .main{padding:20px max(16px,env(safe-area-inset-right,0px)) 50px max(16px,env(safe-area-inset-left,0px))}
+  .ph h1{font-size:28px}
+  .arch{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="mbar"><div class="brand" style="margin:0"><span class="logo">Pg</span><b>Postgres Atlas</b></div><button class="btn" id="menu" aria-expanded="false">Modules</button></div>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand"><span class="logo">Pg</span><b>Postgres Atlas</b></div>
+    <nav class="nav" id="nav"></nav>
+    <button class="btn theme" id="theme">Theme: auto</button>
+  </aside>
+  <main class="main"><div id="view"></div></main>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'M':n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'K':String(Math.round(n));
+const num=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
+let cleanups=[];const onLeave=f=>cleanups.push(f);
+function copyText(t,btn){const o=btn.textContent;const done=m=>{btn.textContent=m;setTimeout(()=>btn.textContent=o,1200)};
+  try{navigator.clipboard.writeText(t).then(()=>done('Copied'),()=>done('Select & copy'))}catch(e){done('Select & copy')}}
+function player(n,show,ms){let i=-1,t=null;const stop=()=>{if(t){clearInterval(t);t=null}};
+  const api={next(){if(i<n-1){i++;show(i);return true}return false},prev(){if(i>0){i--;show(i)}},reset(){stop();i=-1;show(-1)},
+    play(){stop();if(i>=n-1)api.reset();t=setInterval(()=>{if(!api.next())stop()},ms)},stop,get i(){return i}};onLeave(stop);return api}
+const ctl=()=>`<div class="row"><button class="btn" data-p="prev">◀ Back</button><button class="btn primary" data-p="next">Next step ▶</button><button class="btn" data-p="play">Autoplay</button><button class="btn" data-p="reset">Reset</button></div>`;
+function bindCtl(w,api){w.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;const a=b.dataset.p;if(a==='next'){api.stop();api.next()}else if(a==='prev'){api.stop();api.prev()}else api[a]()})}
+function P(m,body,take){const i=MODS.findIndex(x=>x.id===m.id),pv=MODS[i-1],nx=MODS[i+1];
+  return `<header class="ph"><div class="eyebrow">${m.group}</div><h1>${m.title}</h1><p class="lead">${m.lead}</p></header><div class="stack">${body}</div>
+  ${take?`<section class="take"><h3>Remember this</h3><ul>${take.map(t=>`<li>${t}</li>`).join('')}</ul></section>`:''}
+  <div class="pn"><span>${pv?`<a href="#${pv.id}">← ${pv.title}</a>`:''}</span><span>${nx?`<a href="#${nx.id}">${nx.title} →</a>`:''}</span></div>`}
+const logHTML=a=>a.slice(0,8).map(x=>`<div>${esc(x)}</div>`).join('')||'<div>Nothing yet. Press a button.</div>';
+
+/* ───────── HOME ───────── */
+function rHome(w,m){
+  const layers=[['Connect','architecture','Clients, the postmaster, one process per connection, shared memory.'],
+  ['Understand the query','lifecycle','Parse, analyze, rewrite, plan, execute.'],
+  ['Store the data','heap','8 KB pages, tuples, TOAST, dead rows and VACUUM.'],
+  ['Keep it consistent','mvcc','Snapshots and isolation levels without readers blocking writers.'],
+  ['Find it fast','indexes','B-tree and friends, and when each one wins.'],
+  ['Choose a strategy','planner','Cost-based planning and how EXPLAIN reads.'],
+  ['Combine tables','joins','Nested loop, hash and merge joins, step by step.'],
+  ['Survive crashes','wal','Write-ahead log, checkpoints and recovery.'],
+  ['Coordinate writers','locks','Table lock modes and why ALTER TABLE hangs.'],
+  ['Stay available','replication','Streaming replicas, sync vs async, failover.'],
+  ['Grow','partitioning','Splitting big tables and pruning.'],
+  ['Run it well','tuning','Memory and planner settings from your hardware.'],
+  ['Write good SQL','sql','Joins, window functions, JSONB operators.'],
+  ['Know the tools','toolbox','psql, system views, extensions, security.'],
+  ['Check yourself','quiz','Ten questions across everything above.']];
+  w.innerHTML=`<header class="ph"><div class="eyebrow">Interactive guide</div><h1>PostgreSQL, from the socket to the disk</h1>
+  <p class="lead">Every module has a small simulator. Click, break things, crash the server, and watch what Postgres does. Follow the path in order or jump to what you need.</p></header>
+  <div class="panel"><h3>PostgreSQL in one paragraph</h3><p style="max-width:75ch">PostgreSQL is an open-source relational database that stores rows in fixed 8 KB pages, never overwrites a row in place (it writes a new version, which is why readers and writers do not block each other), and logs every change to a write-ahead log before it touches the data files (which is why it survives crashes and can feed replicas). A cost-based planner picks the cheapest way to answer each query using statistics about your data.</p></div>
+  <div class="cards">${layers.map((l,i)=>`<a class="card" href="#${l[1]}"><span class="tag acc" style="justify-self:start">${i+1}. ${l[0]}</span><h3>${MODS.find(x=>x.id===l[1]).title}</h3><p>${l[2]}</p></a>`).join('')}</div>`;
+}
+
+/* ───────── ARCHITECTURE ───────── */
+function rArch(w,m){
+  const N={client:['Client application','psql, your app, or a pooler such as PgBouncer. Talks the frontend/backend protocol over TCP (port 5432) or a Unix socket.'],
+  postmaster:['Postmaster','The first process. Listens for connections, checks pg_hba.conf, authenticates, then forks a backend. If a child crashes, it restarts the server to protect shared memory.'],
+  backend:['Backend process','One OS process per connection. Parses, plans and executes your SQL. Private memory: work_mem for sorts and hashes, temp_buffers for temp tables.'],
+  shbuf:['shared_buffers','Cache of 8 KB table and index pages shared by every backend. Reads look here first. Writes change the page here and mark it dirty. Typical size: about 25% of RAM.'],
+  walbuf:['WAL buffers','Small RAM staging area for write-ahead log records before they are flushed to disk.'],
+  lock:['Lock table and commit status','Shared state: heavyweight locks, and the commit/abort status of every transaction (pg_xact), which MVCC visibility checks consult.'],
+  ckpt:['Checkpointer','Periodically writes all dirty pages to disk and records a checkpoint in the WAL. This bounds how much WAL a crash recovery must replay.'],
+  bgw:['Background writer','Trickles dirty pages to disk between checkpoints so backends rarely have to wait for a clean buffer.'],
+  walw:['WAL writer','Flushes WAL buffers regularly (about every 200 ms), so even asynchronous commits reach disk quickly.'],
+  av:['Autovacuum','A launcher and workers that remove dead row versions, refresh the visibility map and statistics, and prevent transaction ID wraparound.'],
+  wals:['WAL sender / archiver','walsender streams WAL to replicas. The archiver copies completed WAL segments to storage for point-in-time recovery.'],
+  data:['Data files','The base/ directory: one file per table or index, split into 1 GB segments made of 8 KB pages.'],
+  walf:['WAL files','pg_wal/: 16 MB sequential segments. fsynced at commit. The source of durability and of replication.']};
+  const MAXC=5;let clients=1,pick='postmaster';
+  const traces={write:[
+   [['client','postmaster','backend'],'Connect. The postmaster authenticates the client and forks a backend (a pooler skips this by reusing one).'],
+   [['client','backend'],'UPDATE arrives at the backend, which parses, plans and executes it.'],
+   [['backend','shbuf'],'The target page is read into shared_buffers (from disk if not cached) and the new row version is written there. The page is now dirty.'],
+   [['backend','walbuf'],'A WAL record describing the change is written to WAL buffers. Rule: log first, data later.'],
+   [['backend','walf'],'COMMIT. The WAL is flushed and fsynced to pg_wal, and only then does the client see "COMMIT". The data file has not changed yet.'],
+   [['bgw','ckpt','data'],'Later, the background writer or checkpointer writes the dirty page to the data file. A crash before this is harmless: the WAL replays the change.'],
+   [['av','wals'],'Autovacuum eventually cleans the old version. A walsender streams the WAL record to any replica.']],
+  read:[
+   [['client','backend'],'SELECT arrives at an existing backend.'],
+   [['backend','shbuf'],'The executor asks shared_buffers for the page. Cache hit: it is returned from RAM, nothing else happens.'],
+   [['shbuf','data'],'Cache miss: the page is read from the data file (or the OS page cache) into shared_buffers, evicting a clean page by clock-sweep.'],
+   [['backend','lock'],'For each row version, the backend checks commit status to decide whether the row is visible to its snapshot.'],
+   [['client','backend'],'Rows are sent to the client. No WAL was written and no locks block writers.']]};
+  w.innerHTML=P(m,`
+  <div class="panel"><div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="row">
+    <label class="f" style="display:flex;gap:6px;align-items:center">Trace a <select id="tr"><option value="write">write (UPDATE + COMMIT)</option><option value="read">read (SELECT)</option></select></label>
+    </div><span class="tag acc" id="cnt"></span></div>
+    <div class="arch">
+      <div class="zone"><h4>Clients</h4><div id="clients" class="stack" style="gap:6px"></div>
+        <div class="row"><button class="btn sm" id="addc">+ Connect</button><button class="btn sm" id="rmc">− Disconnect</button></div></div>
+      <div class="zone"><h4>Server processes</h4>
+        <button class="node" data-n="postmaster">Postmaster</button><button class="node" data-n="backend" id="bk">Backend ×1</button>
+        <button class="node" data-n="ckpt">Checkpointer</button><button class="node" data-n="bgw">Background writer</button>
+        <button class="node" data-n="walw">WAL writer</button><button class="node" data-n="av">Autovacuum</button><button class="node" data-n="wals">WAL sender / archiver</button></div>
+      <div class="zone"><h4>Shared memory</h4><button class="node" data-n="shbuf">shared_buffers</button><button class="node" data-n="walbuf">WAL buffers</button><button class="node" data-n="lock">Locks + commit status</button></div>
+      <div class="zone"><h4>Disk</h4><button class="node" data-n="data">Data files (base/)</button><button class="node" data-n="walf">WAL files (pg_wal/)</button></div>
+    </div></div>
+  <div class="cols"><div class="panel"><h3 id="dt"></h3><p id="dd"></p></div>
+  <div class="panel"><h3>Trace</h3><p id="ti" style="margin-bottom:10px;min-height:66px">Press Next step to follow one operation through the system.</p>${ctl()}</div></div>`,
+  ['Postgres is process-per-connection. Connections are expensive, so use a pooler (PgBouncer) once you have hundreds of clients.',
+   'Shared memory (shared_buffers, WAL buffers, lock and commit state) is how backends cooperate.',
+   'A commit only needs the WAL on disk. Data pages are written lazily by the background writer and checkpointer.']);
+  const q=s=>$(s,w);let api;
+  function setPick(id){pick=id;$$('.node',w).forEach(n=>n.classList.toggle('pick',n.dataset.n===id));q('#dt').textContent=N[id][0];q('#dd').textContent=N[id][1]}
+  function drawClients(){q('#clients').innerHTML=Array.from({length:clients},(_,i)=>`<button class="node" data-n="client">App #${i+1}<br><span class="mono" style="color:var(--muted)">pid ${4100+i} · idle</span></button>`).join('');
+    q('#bk').textContent='Backend ×'+clients;q('#cnt').textContent=`connections ${clients}/${MAXC} (max_connections, demo)`;
+    $$('.node',w).forEach(n=>n.classList.toggle('pick',n.dataset.n===pick))}
+  function mk(){const t=traces[q('#tr').value];api=player(t.length,i=>{const ids=i<0?[]:t[i][0];
+    $$('.node',w).forEach(n=>n.classList.toggle('on',ids.includes(n.dataset.n)));
+    q('#ti').textContent=i<0?'Press Next step to follow one operation through the system.':t[i][1]},1800);
+    q('#ti').textContent='Press Next step to follow one operation through the system.'}
+  w.addEventListener('click',e=>{const n=e.target.closest('.node');if(n)setPick(n.dataset.n);
+    if(e.target.id==='addc'){if(clients>=MAXC){q('#dd').innerHTML='<b style="color:var(--bad)">FATAL: sorry, too many clients already.</b> Each connection is a process. Raise max_connections carefully, or put PgBouncer in front.';q('#dt').textContent='Connection refused'}else{clients++;drawClients()}}
+    if(e.target.id==='rmc'&&clients>0){clients--;drawClients()}});
+  q('#tr').onchange=()=>{api&&api.stop();mk();$$('.node',w).forEach(n=>n.classList.remove('on'))};
+  mk();bindCtl(w,{next:()=>api.next(),prev:()=>api.prev(),reset:()=>api.reset(),play:()=>api.play(),stop:()=>api.stop()});
+  drawClients();setPick('postmaster');
+}
+
+/* ───────── LIFECYCLE ───────── */
+function rLife(w,m){
+  const ST=[['Parse','Text becomes a raw parse tree. Only syntax is checked here; table names are not looked up yet.'],
+   ['Analyze','Names are resolved against the system catalogs, types are checked, functions and operators are chosen, permissions verified.'],
+   ['Rewrite','Rules and views are expanded; row-level security policies are added as extra conditions.'],
+   ['Plan','The planner generates candidate paths, estimates cost from table statistics, and keeps the cheapest.'],
+   ['Execute','The executor runs the plan tree top-down; each node pulls rows from its children one at a time.'],
+   ['Return','Rows (or a command tag) go back to the client over the wire protocol.']];
+  const Q=[{s:'SELECT name FROM users WHERE id = 42;',o:[
+   'SelectStmt\n  targetList: [ColumnRef name]\n  fromClause: [RangeVar users]\n  whereClause: A_Expr(=) ColumnRef id, Const 42',
+   'users   → pg_class OID 16402\nname    → attno 2, type text\nid      → attno 1, type int4\n42      → int4 constant, operator int4eq chosen',
+   'No rules or views involved. Query tree unchanged.\n(If users were a view, its definition would be substituted here.)',
+   'Index Scan using users_pkey on users  (cost=0.29..8.30 rows=1 width=32)\n  Index Cond: (id = 42)',
+   '1. B-tree descent in users_pkey → TID (7,3)\n2. Fetch heap page 7 through shared_buffers\n3. MVCC check: is tuple (7,3) visible to my snapshot?\n4. Project the column "name"',
+   ' name\n--------------\n Ada Lovelace\n(1 row)']},
+  {s:'SELECT u.name, count(*) FROM users u JOIN orders o ON o.user_id = u.id GROUP BY u.name;',o:[
+   'SelectStmt\n  targetList: [u.name, count(*)]\n  fromClause: JoinExpr(users u, orders o) ON o.user_id = u.id\n  groupClause: [u.name]',
+   'Aliases u and o resolved to pg_class entries\ncount(*) → aggregate count("any")\nGROUP BY covers every non-aggregated column',
+   'No rules. With row-level security on, each table would get its policy expression added here.',
+   'HashAggregate  (cost=2791.00..2891.00 rows=10000)\n  Group Key: u.name\n  -> Hash Join  (cost=290.00..2541.00 rows=100000)\n       Hash Cond: (o.user_id = u.id)\n       -> Seq Scan on orders o\n       -> Hash\n            -> Seq Scan on users u',
+   '1. Scan users, build an in-memory hash table on id (uses work_mem)\n2. Scan orders, probe the hash table for every row\n3. Feed matches to HashAggregate: one counter per name\n4. Emit one row per group',
+   ' name         | count\n--------------+-------\n Ada Lovelace |    12\n Grace Hopper |     7\n ... (10000 rows)']},
+  {s:'UPDATE accounts SET balance = balance - 50 WHERE id = 1;',o:[
+   'UpdateStmt\n  relation: accounts\n  targetList: balance = (balance - 50)\n  whereClause: id = 1',
+   'accounts.balance → numeric, expression type-checked\nPermission check: UPDATE on accounts, SELECT on balance',
+   'Nothing to rewrite here (triggers are not rewrites). RLS policies and rules would be applied now.',
+   'Update on accounts  (cost=0.15..8.17 rows=1)\n  -> Index Scan using accounts_pkey on accounts\n       Index Cond: (id = 1)',
+   '1. Find the current row version through the index\n2. Lock it: set its xmax to my transaction ID\n3. Insert a NEW version with balance - 50 (same page if room: a HOT update)\n4. Write a WAL record\n5. Run AFTER triggers, if any',
+   'UPDATE 1\n(other sessions see the change only after COMMIT)']}];
+  w.innerHTML=P(m,`<div class="panel stack"><div class="row"><label class="f">Query<select id="q">${Q.map((x,i)=>`<option value="${i}">${esc(x.s)}</option>`).join('')}</select></label></div>
+  <pre id="sql"></pre><div class="pipe" id="pp">${ST.map(s=>`<span>${s[0]}</span>`).join('')}</div>
+  <p id="what" style="min-height:44px;color:var(--muted)">Step through the stages to see what each one produces for this query.</p><pre id="o" style="min-height:96px">—</pre>${ctl()}</div>`,
+  ['Parsing is pure syntax. Analysis is where "relation does not exist" and type errors come from.',
+   'The planner never runs your query. It estimates with statistics, so stale statistics (run ANALYZE) mean bad plans.',
+   'Every query, even a SELECT, goes through all six stages. Prepared statements skip parse and sometimes plan on reuse.']);
+  const q=s=>$(s,w);let api;
+  function mk(){const qi=+q('#q').value;q('#sql').textContent=Q[qi].s;
+    api=player(6,i=>{$$('#pp span',w).forEach((s,j)=>s.className=j===i?'on':j<i?'done':'');
+      q('#what').textContent=i<0?'Step through the stages to see what each one produces for this query.':ST[i][1];q('#o').textContent=i<0?'—':Q[qi].o[i]},1800);api.reset()}
+  q('#q').onchange=()=>{api.stop();mk()};mk();bindCtl(w,{next:()=>api.next(),prev:()=>api.prev(),reset:()=>api.reset(),play:()=>api.play(),stop:()=>api.stop()});
+}
+
+/* ───────── HEAP PAGE ───────── */
+function rHeap(w,m){
+  const NAMES=['Ada','Ben','Chi','Dev','Eli','Fay','Gus','Hana','Ivo','Jun'];let S,sel=null;
+  const init=()=>{S={slots:[],tx:100,log:[],pagesFull:false};sel=null;for(let i=0;i<3;i++)ins(70+i*12,true);S.log=[]};
+  const used=()=>24+4*S.slots.length+S.slots.reduce((a,t)=>a+(t?t.sz:0),0);
+  function ins(sz,quiet,name){const toast=sz>2000;const real=toast?24:sz;const need=real+(S.slots.includes(null)?0:4);
+    if(used()+need>8192){S.log.unshift('Page is full (8192 B). Postgres would add a new 8 KB page to the table file.');return null}
+    const t={sz:real,xmin:++S.tx,xmax:0,name:name||NAMES[Math.floor(Math.random()*NAMES.length)],toast:toast,raw:sz};
+    const free=S.slots.indexOf(null);if(free>=0)S.slots[free]=t;else S.slots.push(t);
+    if(!quiet)S.log.unshift(toast?`INSERT ${sz} B value: too big for a page, TOASTed. Only a 24 B tuple with a pointer stays on this page.`:`INSERT: new tuple of ${sz} B at line pointer ${S.slots.indexOf(t)+1}, xmin=${t.xmin}.`);return t}
+  const live=t=>t&&t.xmax===0;
+  function draw(){const U=used();const segs=[`<div class="seg-h" style="flex:24" title="Header 24 B"></div>`];
+    if(S.slots.length)segs.push(`<div class="seg-i" style="flex:${4*S.slots.length}" title="Line pointers ${4*S.slots.length} B"></div>`);
+    segs.push(`<div class="seg-f" style="flex:${8192-U}" title="Free ${8192-U} B"></div>`);
+    for(let i=S.slots.length-1;i>=0;i--){const t=S.slots[i];if(t)segs.push(`<div class="${t.toast?'seg-t':live(t)?'seg-l':'seg-d'}" style="flex:${t.sz}" title="(0,${i+1}) ${t.sz} B">${t.sz>200?i+1:''}</div>`)}
+    const dead=S.slots.filter(t=>t&&!live(t)).length,rows=S.slots.filter(live).length;
+    $('#pg',w).innerHTML=segs.join('');
+    $('#kp',w).innerHTML=`<div><b>${8192-U}</b><span>free bytes</span></div><div><b>${rows}</b><span>live rows</span></div><div><b>${dead}</b><span>dead versions</span></div><div><b>${S.slots.length}</b><span>line pointers</span></div>`;
+    $('#tb',w).innerHTML=S.slots.map((t,i)=>t?`<tr data-i="${i}" class="${!live(t)?'dead':''} ${sel===i?'sel':''}"><td>(0,${i+1})</td><td>${esc(t.name)}${t.toast?' <span class="tag good">TOAST ptr</span>':''}</td><td>${t.xmin}</td><td>${t.xmax||'—'}</td><td>${t.toast?t.raw+' → 24':t.sz} B</td><td>${live(t)?'<span class="tag good">live</span>':'<span class="tag bad">dead</span>'}</td></tr>`
+      :`<tr><td>(0,${i+1})</td><td colspan="5" class="null">unused line pointer, can be reused</td></tr>`).join('');
+    $('#lg',w).innerHTML=logHTML(S.log);
+    const r=+$('#ar',w).value;$('#av',w).textContent=`Autovacuum fires when dead tuples exceed 50 + 0.2 × ${fmt(r)} = ${fmt(50+0.2*r)} rows`}
+  w.innerHTML=P(m,`<div class="panel stack"><div class="kpi" id="kp"></div><div class="page" id="pg"></div>
+   <div class="legend"><span><i style="background:var(--ink)"></i>page header</span><span><i style="background:var(--warn)"></i>line pointers (grow →)</span><span><i style="background:var(--surface2);border:1px solid var(--line)"></i>free space</span><span><i style="background:var(--accent)"></i>live tuple</span><span><i style="background:var(--bad)"></i>dead tuple</span><span><i style="background:var(--good)"></i>TOAST pointer</span><span>tuples grow ← from the end</span></div>
+   <div class="row"><button class="btn primary" data-a="ins">INSERT row</button><button class="btn" data-a="big">INSERT 5 KB value</button><button class="btn" data-a="upd">UPDATE selected</button><button class="btn danger" data-a="del">DELETE selected</button><button class="btn" data-a="vac">VACUUM</button><button class="btn" data-a="reset">Reset</button></div>
+   <div class="tw"><table class="t"><thead><tr><th>ctid</th><th>row</th><th>xmin</th><th>xmax</th><th>size</th><th>state</th></tr></thead><tbody id="tb"></tbody></table></div>
+   <div class="log" id="lg"></div></div>
+   <div class="cols"><div class="panel"><h3>Autovacuum threshold</h3><label class="f">Rows in table <input id="ar" type="number" value="100000" min="0"></label><p id="av" style="margin-top:8px"></p><p style="margin-top:6px;color:var(--muted);font-size:13.5px">Controlled by autovacuum_vacuum_threshold (50) and autovacuum_vacuum_scale_factor (0.2). Lower the scale factor for very large, hot tables.</p></div>
+   <div class="panel"><h3>Try this</h3><ol style="margin:0;padding-left:18px;display:grid;gap:4px"><li>Click a row, press UPDATE twice. Watch old versions pile up as dead.</li><li>Press VACUUM. Dead space is reclaimed, line pointers become reusable.</li><li>Insert the 5 KB value: the page barely grows.</li></ol></div></div>`,
+  ['An UPDATE never edits a row in place. It marks the old version dead (sets xmax) and writes a new version. A DELETE only sets xmax.',
+   'Dead versions keep taking space until VACUUM removes them. Heavy updates without vacuum cause table bloat.',
+   'Values over about 2 KB are compressed or moved to a TOAST table, so wide columns do not bloat the main heap.',
+   'ctid = (page number, line pointer). Indexes store ctids that point at heap tuples.']);
+  init();draw();
+  w.addEventListener('click',e=>{const r=e.target.closest('tr[data-i]');if(r){sel=+r.dataset.i;draw();return}
+    const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='ins')ins(60+Math.floor(Math.random()*120));
+    if(a==='big')ins(5000,false,'blob');
+    if(a==='upd'||a==='del'){const t=S.slots[sel];if(!t||!live(t)){S.log.unshift('Select a live row first.')}else{
+      const id=++S.tx;t.xmax=id;if(a==='upd'){const n=ins(t.toast?5000:t.sz,true,t.name);
+        if(n){n.xmin=id;S.log.unshift(`UPDATE: old version (0,${sel+1}) gets xmax=${id}; new version written at (0,${S.slots.indexOf(n)+1}).`)}else{t.xmax=0;S.log.unshift('No room for the new version: the update would go to another page.')}}
+      else S.log.unshift(`DELETE: (0,${sel+1}) gets xmax=${id}. The bytes stay on the page.`)}}
+    if(a==='vac'){let n=0,b=0;S.slots=S.slots.map(t=>{if(t&&!live(t)){n++;b+=t.sz;return null}return t});
+      while(S.slots.length&&S.slots[S.slots.length-1]===null)S.slots.pop();
+      S.log.unshift(`VACUUM: removed ${n} dead versions, reclaimed ${b} B, line pointers marked reusable.`);sel=null}
+    if(a==='reset'){init()}
+    draw()});
+  $('#ar',w).oninput=draw;
+}
+
+/* ───────── MVCC ───────── */
+function rMvcc(w,m){
+  let S;
+  const blank=()=>({tx:null,snap:null,auto:false,pending:null,failed:false,out:''});
+  function init(iso){S={iso:iso||(S&&S.iso)||'rc',next:100,status:{1:'c'},vers:[{k:'alice',bal:100,xmin:1,xmax:0},{k:'bob',bal:50,xmin:1,xmax:0}],ss:{A:blank(),B:blank()},log:[]}}
+  const L=t=>{S.log.unshift(t)};
+  const fresh=()=>new Set(Object.keys(S.status).filter(k=>S.status[k]==='c').map(Number));
+  const snapOf=s=>S.iso==='rc'?fresh():(s.snap=s.snap||fresh());
+  const vis=(v,me,sn)=>(v.xmin===me||sn.has(v.xmin))&&!(v.xmax&&(v.xmax===me||sn.has(v.xmax)));
+  function ensure(s,n){if(s.failed){L(`${n}: ERROR current transaction is aborted. Press ROLLBACK.`);return false}
+    if(!s.tx){s.tx=++S.next;S.status[s.tx]='p';s.auto=true}return true}
+  const done=(s,n)=>{if(s.auto&&s.tx&&!s.pending)commit(n)};
+  function begin(n){const s=S.ss[n];if(s.tx){L(`${n}: already in a transaction.`);return}s.tx=++S.next;S.status[s.tx]='p';s.auto=false;s.snap=null;L(`${n}: BEGIN (txid ${s.tx}, ${S.iso==='rc'?'Read Committed':'Repeatable Read'}).`)}
+  function sel(n){const s=S.ss[n];if(s.pending){L(`${n}: waiting on a lock.`);return}if(!ensure(s,n))return;const sn=snapOf(s);
+    const rows=S.vers.filter(v=>vis(v,s.tx,sn));s.out=rows.map(v=>`${v.k.padEnd(6)} ${v.bal}`).join('\n');L(`${n}: SELECT → alice=${(rows.find(v=>v.k==='alice')||{}).bal}.`);done(s,n)}
+  function upd(n){const s=S.ss[n];if(s.pending){L(`${n}: still waiting.`);return}if(!ensure(s,n))return;const sn=snapOf(s);
+    const v=S.vers.find(x=>x.k==='alice'&&vis(x,s.tx,sn));if(!v){L(`${n}: row not visible.`);done(s,n);return}
+    if(v.xmax&&v.xmax!==s.tx&&S.status[v.xmax]==='p'){s.pending=v.xmax;L(`${n}: UPDATE blocked. Row is locked by txid ${v.xmax}. Waiting…`);return}
+    if(v.xmax&&v.xmax!==s.tx&&S.status[v.xmax]==='c'){S.status[s.tx]='a';s.failed=true;s.pending=null;L(`${n}: ERROR could not serialize access due to concurrent update.`);return}
+    v.xmax=s.tx;S.vers.push({k:'alice',bal:v.bal+10,xmin:s.tx,xmax:0});L(`${n}: UPDATE alice SET bal = bal + 10 → ${v.bal+10} (new version, txid ${s.tx}).`);done(s,n)}
+  function commit(n){const s=S.ss[n];if(!s.tx){L(`${n}: no transaction.`);return}
+    if(s.failed){S.status[s.tx]='a';L(`${n}: ROLLBACK (transaction had failed).`)}else{S.status[s.tx]='c';L(`${n}: COMMIT txid ${s.tx}.`)}
+    S.ss[n]=Object.assign(blank(),{out:s.out});resolve()}
+  function rollback(n){const s=S.ss[n];if(!s.tx){L(`${n}: no transaction.`);return}S.status[s.tx]='a';L(`${n}: ROLLBACK txid ${s.tx}. Its row versions become invisible.`);S.ss[n]=Object.assign(blank(),{out:s.out});resolve()}
+  function resolve(){['A','B'].forEach(n=>{const s=S.ss[n];if(s.pending&&S.status[s.pending]!=='p'){s.pending=null;L(`${n}: lock released, retrying UPDATE.`);upd(n)}})}
+  const ACT={begin,sel,upd,commit,rollback};
+  const SC={nr:{t:'Non-repeatable read',iso:'rc',st:[['A','begin'],['A','sel'],['B','upd'],['A','sel'],['A','commit']]},
+    rr:{t:'Snapshot stays stable',iso:'rr',st:[['A','begin'],['A','sel'],['B','upd'],['A','sel'],['A','commit'],['A','sel']]},
+    lk:{t:'Writers wait for writers',iso:'rc',st:[['A','begin'],['A','upd'],['B','begin'],['B','upd'],['A','commit'],['B','commit']]},
+    ser:{t:'Concurrent update error',iso:'rr',st:[['A','begin'],['A','sel'],['B','begin'],['B','upd'],['A','upd'],['B','commit'],['A','rollback']]},
+    dirty:{t:'No dirty reads',iso:'rc',st:[['A','begin'],['A','upd'],['B','sel'],['A','rollback'],['B','sel']]}};
+  let timers=[];onLeave(()=>timers.forEach(clearTimeout));
+  w.innerHTML=P(m,`<div class="panel row" style="justify-content:space-between"><label class="f">Isolation level<select id="iso"><option value="rc">Read Committed (default)</option><option value="rr">Repeatable Read</option></select></label>
+    <div class="row"><span style="color:var(--muted);font-size:13px">Guided scenarios:</span>${Object.entries(SC).map(([k,v])=>`<button class="btn sm" data-sc="${k}">${v.t}</button>`).join('')}<button class="btn sm" data-sc="reset">Reset</button></div></div>
+   <div class="cols">${['A','B'].map(n=>`<div class="sess"><h3>Session ${n} <span class="tag" id="st${n}"></span></h3>
+     <div class="row"><button class="btn sm" data-s="${n}" data-a="begin">BEGIN</button><button class="btn sm" data-s="${n}" data-a="sel">SELECT</button><button class="btn sm" data-s="${n}" data-a="upd">UPDATE alice +10</button><button class="btn sm primary" data-s="${n}" data-a="commit">COMMIT</button><button class="btn sm" data-s="${n}" data-a="rollback">ROLLBACK</button></div>
+     <div class="out" id="o${n}"></div></div>`).join('')}</div>
+   <div class="note">Without BEGIN, a statement is its own transaction (autocommit). The table below is the physical heap: every version of every row, with the txids that created (xmin) and ended (xmax) it.</div>
+   <div class="cols"><div class="panel"><h3>Row versions on disk</h3><div class="tw"><table class="t"><thead><tr><th>row</th><th>bal</th><th>xmin</th><th>xmax</th><th>A would see</th><th>B would see</th></tr></thead><tbody id="vt"></tbody></table></div></div>
+   <div class="panel"><h3>Event log</h3><div class="log" id="lg" style="max-height:220px"></div></div></div>`,
+  ['Readers never block writers and writers never block readers: each statement or transaction reads from a snapshot of committed data.',
+   'Read Committed takes a fresh snapshot per statement, so repeated reads can change. Repeatable Read keeps one snapshot for the whole transaction.',
+   'Two writers on the same row do conflict: the second waits. Under Repeatable Read it then fails with a serialization error and must retry.',
+   'Postgres has no true "Read Uncommitted": asking for it gives Read Committed. Serializable adds predicate tracking to prevent write skew.']);
+  function draw(){
+    const st=(n)=>{const s=S.ss[n];return s.failed?['aborted','bad']:s.pending?[`blocked by ${s.pending}`,'warn']:s.tx?[`in txn ${s.tx}`,'acc']:['idle','']};
+    ['A','B'].forEach(n=>{const [t,c]=st(n);const e=$('#st'+n,w);e.textContent=t;e.className='tag '+c;$('#o'+n,w).textContent=S.ss[n].out||'(no result yet)'});
+    const stat=x=>x?`<span class="tag ${S.status[x]==='c'?'good':S.status[x]==='a'?'bad':'warn'}">${x} ${S.status[x]==='c'?'committed':S.status[x]==='a'?'aborted':'in progress'}</span>`:'—';
+    const seen=n=>{const s=S.ss[n];const sn=S.iso==='rr'&&s.snap?s.snap:fresh();return v=>vis(v,s.tx||-1,sn)?'<span class="tag good">visible</span>':'<span class="tag">hidden</span>'};
+    const a=seen('A'),b=seen('B');
+    $('#vt',w).innerHTML=S.vers.map(v=>`<tr><td>${v.k}</td><td>${v.bal}</td><td>${stat(v.xmin)}</td><td>${stat(v.xmax)}</td><td>${a(v)}</td><td>${b(v)}</td></tr>`).join('');
+    $('#lg',w).innerHTML=logHTML(S.log);$('#iso',w).value=S.iso}
+  init('rc');draw();
+  w.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b){ACT[b.dataset.a](b.dataset.s);draw();return}
+    const c=e.target.closest('[data-sc]');if(!c)return;timers.forEach(clearTimeout);timers=[];const k=c.dataset.sc;
+    if(k==='reset'){init();draw();return}const sc=SC[k];init(sc.iso);draw();
+    sc.st.forEach((s,i)=>timers.push(setTimeout(()=>{ACT[s[1]](s[0]);draw()},700*(i+1))))});
+  $('#iso',w).onchange=e=>{init(e.target.value);draw()};
+}
+
+/* ───────── INDEXES ───────── */
+function rIdx(w,m){
+  const MAX=3;let nid=0,splits,root,hl={n:new Set(),k:new Map()},timers=[];onLeave(()=>timers.forEach(clearTimeout));
+  const mkn=leaf=>({id:++nid,leaf,keys:[],children:[]});
+  function ins(n,k){
+    if(n.leaf){if(n.keys.includes(k))return 'dup';let i=n.keys.findIndex(x=>x>k);if(i<0)i=n.keys.length;n.keys.splice(i,0,k);
+      if(n.keys.length>MAX){const mid=Math.ceil(n.keys.length/2),r=mkn(true);r.keys=n.keys.splice(mid);splits++;return {sep:r.keys[0],right:r}}return null}
+    let i=n.keys.filter(x=>x<=k).length;const res=ins(n.children[i],k);if(res==='dup')return 'dup';
+    if(res){n.keys.splice(i,0,res.sep);n.children.splice(i+1,0,res.right);
+      if(n.keys.length>MAX){const mid=Math.floor(n.keys.length/2),sep=n.keys[mid],r=mkn(false);r.keys=n.keys.splice(mid+1);n.keys.pop();r.children=n.children.splice(mid+1);splits++;return {sep,right:r}}}return null}
+  function insert(k){const r=ins(root,k);if(r==='dup')return false;if(r){const nr=mkn(false);nr.keys=[r.sep];nr.children=[root,r.right];root=nr}return true}
+  const path=k=>{let n=root;const p=[n];while(!n.leaf){n=n.children[n.keys.filter(x=>x<=k).length];p.push(n)}return p};
+  const lv=()=>{const L=[];let c=[root];while(c.length){L.push(c);c=c.flatMap(n=>n.leaf?[]:n.children)}return L};
+  const reset=()=>{nid=0;root=mkn(true);[10,20,30,40,50,60,70,80].forEach(insert);hl={n:new Set(),k:new Map()}};
+  function draw(msg){const L=lv();$('#tr',w).innerHTML=L.map(l=>`<div class="lvl">${l.map(n=>`<div class="bn ${n.leaf?'leaf':''} ${hl.n.has(n.id)?'on':''}">${n.keys.map(k=>`<span class="${hl.k.get(k)||''}">${k}</span>`).join('')}</div>`).join('')}</div>`).join('');
+    const total=L[L.length-1].reduce((a,n)=>a+n.keys.length,0);
+    $('#st',w).innerHTML=`<div><b>${L.length}</b><span>levels (pages read per lookup)</span></div><div><b>${total}</b><span>keys</span></div><div><b>${total}</b><span>rows a seq scan would check</span></div>`;
+    if(msg)$('#ms',w).innerHTML=msg}
+  function animate(p,final,msg){timers.forEach(clearTimeout);hl={n:new Set(),k:new Map()};draw();
+    p.forEach((n,i)=>timers.push(setTimeout(()=>{hl.n.add(n.id);draw(i<p.length-1?`Visiting level ${i+1}: pick the child whose range covers the key…`:msg);if(i===p.length-1)final()},550*(i+1))))}
+  const IT=[['id = 42','B-tree','Equality and range on sortable values. The default, and right for most columns.'],
+   ['price BETWEEN 10 AND 50 ORDER BY price','B-tree','Range scans walk the linked leaf level, already in sorted order.'],
+   ['tags @> ARRAY[\'sql\']  or  doc @> \'{"a":1}\'','GIN','Inverted index: value → list of rows. Built for arrays, jsonb and full-text search.'],
+   ['to_tsvector(body) @@ to_tsquery(\'postgres\')','GIN','Full-text search. GiST also works but GIN is faster to read, slower to update.'],
+   ['name ILIKE \'%arlo%\'','GIN + pg_trgm','Trigram indexes make substring and fuzzy matches indexable.'],
+   ['ST_DWithin(geom, point, 500)','GiST','Balanced tree over bounding boxes. Geometry, ranges, nearest-neighbor, exclusion constraints.'],
+   ['created_at > now() - interval \'1 day\' on a huge append-only table','BRIN','Stores min/max per block range. Tiny, perfect when values correlate with physical order.'],
+   ['token = \'abc123\' only equality, huge keys','Hash','Equality only. Smaller than B-tree for long keys, rarely needed.'],
+   ['embedding <-> query ORDER BY ... LIMIT 10','pgvector HNSW / IVFFlat','Approximate nearest-neighbor search over vectors (extension).']];
+  w.innerHTML=P(m,`<div class="panel stack"><h3>B+tree explorer</h3>
+   <div class="row"><input id="kv" type="number" value="35" style="width:90px" aria-label="key"><button class="btn primary" data-a="ins">Insert</button><button class="btn" data-a="rnd">Insert 8 random</button><button class="btn" data-a="find">Search</button>
+   <span style="color:var(--muted)">range</span><input id="lo" type="number" value="25" style="width:70px" aria-label="low"><input id="hi" type="number" value="55" style="width:70px" aria-label="high"><button class="btn" data-a="rng">Range scan</button><button class="btn" data-a="reset">Reset</button></div>
+   <div class="tree" id="tr"></div><div class="kpi" id="st"></div><div class="note" id="ms">Insert enough keys to force a split and watch the tree grow upward. Leaves are chained, which is what makes range scans cheap.</div></div>
+   <div class="panel stack"><h3>Which index for which query?</h3><label class="f">Query pattern<select id="iq">${IT.map((x,i)=>`<option value="${i}">${esc(x[0])}</option>`).join('')}</select></label><div id="ia"></div></div>
+   <div class="cols">${[['B-tree','=, <, >, BETWEEN, ORDER BY, LIKE \'abc%\''],['Hash','= only'],['GIN','contains / overlaps / full-text'],['GiST','geometry, ranges, nearest-neighbor'],['SP-GiST','tries, quadtrees, IP ranges'],['BRIN','huge tables ordered by the indexed column']].map(c=>`<div class="card"><h3>${c[0]}</h3><p>${c[1]}</p></div>`).join('')}</div>`,
+  ['An index trades write cost and disk space for read speed. Every INSERT and UPDATE must maintain every index on the table.',
+   'A B-tree lookup touches a handful of pages even for billions of rows, because each level multiplies fan-out by hundreds.',
+   'Multicolumn index (a, b) helps filters on a, or a and b, but not on b alone. Partial and expression indexes shrink and target the hot subset.',
+   'Create indexes on busy tables with CREATE INDEX CONCURRENTLY to avoid blocking writes.']);
+  function ia(){const x=IT[+$('#iq',w).value];$('#ia',w).innerHTML=`<div class="note good"><b>${x[1]}</b>. ${x[2]}</div>`}
+  reset();splits=0;draw();ia();$('#iq',w).onchange=ia;
+  w.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,k=parseInt($('#kv',w).value);timers.forEach(clearTimeout);hl={n:new Set(),k:new Map()};
+    if(a==='ins'){if(isNaN(k))return;splits=0;const ok=insert(k);hl.k.set(k,'hit');draw(!ok?`<b>Duplicate key value violates unique constraint.</b> ${k} already exists.`:splits?`Inserted ${k}. A node overflowed (more than ${MAX} keys) so it <b>split</b> ${splits} time${splits>1?'s':''}, pushing a separator key upward.`:`Inserted ${k} into the correct leaf. No split needed.`)}
+    if(a==='rnd'){splits=0;for(let i=0;i<8;i++)insert(1+Math.floor(Math.random()*99));hl={n:new Set(),k:new Map()};draw(`Inserted 8 random keys, causing ${splits} split${splits===1?'':'s'}. Notice the tree stays balanced: all leaves are at the same depth.`)}
+    if(a==='reset'){reset();draw('Reset.')}
+    if(a==='find'){const p=path(k),leaf=p[p.length-1],f=leaf.keys.includes(k);animate(p,()=>{hl.k.set(k,f?'hit':'miss');draw()},f?`<b>Found ${k}</b> after reading ${p.length} pages. A sequential scan would have checked up to ${lv().pop().reduce((a,n)=>a+n.keys.length,0)} keys.`:`<b>${k} is not in the index</b>, determined after reading ${p.length} pages.`)}
+    if(a==='rng'){const lo=parseInt($('#lo',w).value),hi=parseInt($('#hi',w).value);const p=path(lo),leaves=lv().pop();const start=leaves.indexOf(p[p.length-1]);const vis=[];const keys=[];
+      for(let i=start;i<leaves.length;i++){const ks=leaves[i].keys.filter(x=>x>=lo&&x<=hi);if(i>start&&leaves[i].keys[0]>hi)break;vis.push(leaves[i]);keys.push(...ks)}
+      animate(p.concat(vis.slice(1)),()=>{keys.forEach(x=>hl.k.set(x,'hit'));draw()},`<b>Range scan ${lo}..${hi}</b>: descended once, then followed leaf links. Found ${keys.length} keys (${keys.join(', ')||'none'}). No re-descent needed.`)}
+  });
+}
+
+/* ───────── PLANNER ───────── */
+function rPlan(w,m){
+  w.innerHTML=P(m,`<div class="cols"><div class="panel stack"><h3>Table and query</h3>
+   <label class="f">Rows in table: <b id="vr"></b><input id="rows" type="range" min="2" max="8" step="0.1" value="6"></label>
+   <label class="f">Selectivity (rows returned): <b id="vs"></b><input id="sel" type="range" min="-7" max="0" step="0.1" value="-3"></label>
+   <label class="f">Physical order correlation with index: <b id="vc"></b><input id="cor" type="range" min="0" max="1" step="0.05" value="0"></label>
+   <label class="f">random_page_cost: <b id="vp"></b><input id="rpc" type="range" min="1" max="6" step="0.1" value="4"></label>
+   <label><input type="checkbox" id="hasi" checked> Index exists on the filtered column</label>
+   <label><input type="checkbox" id="only"> Query needs only indexed columns (index-only scan)</label></div>
+   <div class="panel stack"><h3>Planner's estimate</h3><div class="bars" id="bars"></div><pre id="ex"></pre><div class="note" id="why"></div></div></div>`,
+  ['The planner picks the lowest estimated cost. Costs are unitless: one sequential page read = 1, a random page read = random_page_cost (4 by default, ~1.1 on SSD).',
+   'An index wins when few rows match. Returning a large fraction of the table is cheaper with a sequential scan.',
+   'Bitmap scans sit in between: collect matching row locations, then read heap pages in order.',
+   'Use EXPLAIN (ANALYZE, BUFFERS) to compare estimated rows with actual rows. A big mismatch usually means stale statistics: run ANALYZE.']);
+  function calc(){
+    const rows=Math.round(10**+$('#rows',w).value),sf=10**+$('#sel',w).value,corr=+$('#cor',w).value,rpc=+$('#rpc',w).value,hasI=$('#hasi',w).checked,only=$('#only',w).checked;
+    const pages=Math.max(1,Math.ceil(rows/100)),matched=Math.max(1,Math.round(rows*sf)),sel=matched/rows;
+    $('#vr',w).textContent=fmt(rows);$('#vs',w).textContent=`${(sel*100).toPrecision(2)}% ≈ ${fmt(matched)} rows`;$('#vc',w).textContent=corr.toFixed(2);$('#vp',w).textContent=rpc.toFixed(1);
+    $('#only',w).disabled=!hasI;
+    const seq=pages+rows*0.0125;const ML=Math.min(pages,2*pages*matched/(2*pages+matched));
+    const maxIO=ML*rpc,minIO=rpc+Math.max(0,Math.ceil(sel*pages)-1);const idxIO=maxIO+corr*corr*(minIO-maxIO);
+    const idx=0.3+idxIO+matched*0.0175;
+    const per=rpc-(rpc-1)*Math.sqrt(ML/pages);const bmp=0.3+ML*per+matched*0.0175+matched*0.0075;
+    const ios=0.3+matched*0.0075+Math.ceil(sel*pages)*0.1;
+    const C=[['Seq Scan',seq]];if(hasI){C.push(['Index Scan',idx],['Bitmap Heap Scan',bmp]);if(only)C.push(['Index Only Scan',ios])}
+    const best=C.reduce((a,b)=>b[1]<a[1]?b:a);const mx=Math.max(...C.map(c=>Math.log10(c[1]+1)));
+    $('#bars',w).innerHTML=C.map(c=>`<div class="bar"><div><span>${c[0]}${c===best?' <span class="tag good">chosen</span>':''}</span><span class="mono">${num(c[1].toFixed(0))}</span></div><div class="track"><div class="fill ${c===best?'best':''}" style="width:${Math.max(2,Math.log10(c[1]+1)/mx*100)}%"></div></div></div>`).join('')+'<div style="font-size:12px;color:var(--muted)">Bar length is log-scaled.</div>';
+    const cs=best[1].toFixed(2);
+    const plans={'Seq Scan':`Seq Scan on orders  (cost=0.00..${cs} rows=${matched} width=64)\n  Filter: (customer_id = 42)`,
+      'Index Scan':`Index Scan using orders_customer_idx on orders\n  (cost=0.43..${cs} rows=${matched} width=64)\n  Index Cond: (customer_id = 42)`,
+      'Bitmap Heap Scan':`Bitmap Heap Scan on orders  (cost=4.30..${cs} rows=${matched} width=64)\n  Recheck Cond: (customer_id = 42)\n  ->  Bitmap Index Scan on orders_customer_idx\n        Index Cond: (customer_id = 42)`,
+      'Index Only Scan':`Index Only Scan using orders_cover_idx on orders\n  (cost=0.43..${cs} rows=${matched} width=8)\n  Index Cond: (customer_id = 42)\n  Heap Fetches: 0`};
+    $('#ex',w).textContent=plans[best[0]];
+    const why={'Seq Scan':hasI?'Too many rows match. Jumping around the heap through an index would cost more than reading every page once in order.':'No usable index, so reading the whole table is the only option.',
+      'Index Scan':'Few rows match, or the table is physically ordered like the index, so random heap reads are cheap enough.',
+      'Bitmap Heap Scan':'A middle number of rows: collecting row locations first lets the heap be read in page order, avoiding repeated page visits.',
+      'Index Only Scan':'The index holds every column needed. The heap is skipped for pages marked all-visible by VACUUM.'};
+    $('#why',w).innerHTML=`<b>${best[0]}.</b> ${why[best[0]]}`}
+  $$('input',w).forEach(i=>i.oninput=calc);calc();
+}
+
+/* ───────── JOINS ───────── */
+function rJoin(w,m){
+  const CU=[[1,'Ada'],[2,'Bo'],[3,'Cy'],[4,'Di']],OR=[[101,1],[102,3],[103,1],[104,4],[105,3]];
+  const ALG={nl:{t:'Nested loop',d:'For every outer row, scan the inner side. Best when the outer side is tiny and the inner side has an index. Awful on two big unindexed tables.'},
+   hash:{t:'Hash join',d:'Build an in-memory hash table from the smaller input, then probe it with each row of the larger. Needs work_mem, equality conditions only. The workhorse for big joins.'},
+   merge:{t:'Merge join',d:'Both inputs sorted on the join key, then walked together once. Great when inputs are already sorted (index order) or for very large joins.'}};
+  function steps(a){const S=[],res=[];let cmp=0;
+    if(a==='nl'){CU.forEach((c,i)=>OR.forEach((o,j)=>{cmp++;const hit=c[0]===o[1];if(hit)res.push(`${c[1]} · #${o[0]}`);S.push({c:i,o:j,hit,cmp,res:res.slice(),txt:`Compare customer ${c[0]} with order ${o[0]} (customer_id ${o[1]}): ${hit?'match, emit row':'no match'}.`})}))}
+    if(a==='hash'){const H={};CU.forEach((c,i)=>{const b=c[0]%3;(H[b]=H[b]||[]).push(c[1]);S.push({c:i,o:-1,hit:false,cmp,res:res.slice(),H:JSON.parse(JSON.stringify(H)),txt:`Build phase: hash customer ${c[0]} → bucket ${b}.`})});
+      OR.forEach((o,j)=>{const b=o[1]%3;cmp++;const c=CU.findIndex(x=>x[0]===o[1]);const hit=c>=0;if(hit)res.push(`${CU[c][1]} · #${o[0]}`);S.push({c,o:j,hit,cmp,res:res.slice(),H:JSON.parse(JSON.stringify(H)),txt:`Probe phase: order ${o[0]} hashes customer_id ${o[1]} → bucket ${b}: ${hit?'found '+CU[c][1]+', emit row':'empty'}.`})})}
+    if(a==='merge'){const O=OR.slice().sort((x,y)=>x[1]-y[1]);let j=0;
+      CU.forEach((c,i)=>{while(j<O.length&&O[j][1]<c[0]){cmp++;S.push({c:i,o:j,hit:false,cmp,res:res.slice(),sorted:O,txt:`Customer ${c[0]} vs order key ${O[j][1]}: order key is smaller, advance the orders pointer.`});j++}
+        let k=j,any=false;while(k<O.length&&O[k][1]===c[0]){cmp++;res.push(`${c[1]} · #${O[k][0]}`);any=true;S.push({c:i,o:k,hit:true,cmp,res:res.slice(),sorted:O,txt:`Customer ${c[0]} = order key ${O[k][1]}: match, emit row.`});k++}
+        if(!any){cmp++;S.push({c:i,o:Math.min(j,O.length-1),hit:false,cmp,res:res.slice(),sorted:O,txt:`Customer ${c[0]}: no orders with this key (next key is ${j<O.length?O[j][1]:'end'}). Move to next customer.`})}j=k})}
+    return S}
+  let cur='nl',api,S;
+  w.innerHTML=P(m,`<div class="panel stack"><div class="tabs" id="tabs">${Object.entries(ALG).map(([k,v])=>`<button data-alg="${k}" aria-pressed="${k===cur}">${v.t}</button>`).join('')}</div>
+   <p id="ad" style="color:var(--muted)"></p><pre style="white-space:pre-wrap">SELECT c.name, o.id FROM customers c JOIN orders o ON o.customer_id = c.id;</pre>
+   <div class="cols"><div><h3 style="font-size:14px;margin-bottom:6px">customers</h3><div class="tw"><table class="t" id="tc"></table></div></div><div><h3 style="font-size:14px;margin-bottom:6px" id="oh">orders</h3><div class="tw"><table class="t" id="to"></table></div></div>
+   <div><h3 style="font-size:14px;margin-bottom:6px">Hash table / result</h3><div id="hs" class="mono"></div><div class="out" id="rs" style="margin-top:8px">(empty)</div></div></div>
+   <div class="note" id="tx">Press Next step.</div><div class="kpi"><div><b id="cm">0</b><span>comparisons / probes</span></div></div>${ctl()}</div>`,
+  ['The planner chooses the join algorithm from cost estimates, you only write the JOIN.',
+   'Nested loop with an index on the inner side is the OLTP favorite: a few rows, many fast lookups.',
+   'Hash joins need memory. If the hash table exceeds work_mem it spills to disk in batches and slows down sharply.',
+   'Missing index on a foreign key column is the classic cause of a slow nested loop.']);
+  function draw(i){const s=i>=0?S[i]:null;const sorted=(s&&s.sorted)||(cur==='merge'?OR.slice().sort((x,y)=>x[1]-y[1]):OR);
+    $('#tc',w).innerHTML='<tr><th>id</th><th>name</th></tr>'+CU.map((c,k)=>`<tr class="${s&&s.c===k?(s.hit?'ok':'hl'):''}"><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('');
+    $('#oh',w).textContent=cur==='merge'?'orders (sorted by customer_id)':'orders';
+    $('#to',w).innerHTML='<tr><th>id</th><th>customer_id</th></tr>'+sorted.map((o,k)=>`<tr class="${s&&s.o===k?(s.hit?'ok':'hl'):''}"><td>${o[0]}</td><td>${o[1]}</td></tr>`).join('');
+    $('#hs',w).innerHTML=cur==='hash'&&s&&s.H?[0,1,2].map(b=>`bucket ${b}: ${(s.H[b]||[]).join(', ')||'—'}`).join('<br>'):cur==='hash'?'(hash table empty)':'';
+    $('#rs',w).textContent=s&&s.res.length?s.res.join('\n'):'(empty)';$('#cm',w).textContent=s?s.cmp:0;$('#tx',w).textContent=s?s.txt:'Press Next step.'}
+  function mk(){api&&api.stop();S=steps(cur);$('#ad',w).textContent=ALG[cur].d;api=player(S.length,draw,cur==='nl'?350:900);draw(-1)}
+  mk();bindCtl(w,{next:()=>api.next(),prev:()=>api.prev(),reset:()=>api.reset(),play:()=>api.play(),stop:()=>api.stop()});
+  $('#tabs',w).addEventListener('click',e=>{const b=e.target.closest('[data-alg]');if(!b)return;cur=b.dataset.alg;$$('#tabs button',w).forEach(x=>x.setAttribute('aria-pressed',x===b));mk()});
+}
+
+/* ───────── WAL ───────── */
+function rWal(w,m){
+  let W;const P3=['A','B','C'];
+  const init=()=>{W={data:{A:{v:0,lsn:0},B:{v:0,lsn:0},C:{v:0,lsn:0}},buf:null,wal:[],lsn:0,flushed:0,ckpt:0,tx:0,open:null,crashed:false,sync:W?W.sync:true,acked:[],log:[]};
+    W.buf={};P3.forEach(p=>W.buf[p]={v:0,dirty:false,lsn:0})};
+  const L=t=>W.log.unshift(t);
+  function upd(p){if(W.crashed)return;if(!W.open)W.open=++W.tx;const b=W.buf[p];b.v++;b.dirty=true;W.lsn++;b.lsn=W.lsn;W.wal.push({lsn:W.lsn,type:'upd',tx:W.open,page:p});L(`Tx ${W.open}: changed page ${p} in shared_buffers (dirty) and appended WAL record LSN ${W.lsn} to the WAL buffer.`)}
+  function commit(){if(W.crashed)return;if(!W.open){L('No open transaction.');return}W.lsn++;W.wal.push({lsn:W.lsn,type:'commit',tx:W.open});W.acked.push({tx:W.open,lsn:W.lsn});
+    if(W.sync){W.flushed=W.lsn;L(`COMMIT tx ${W.open}: WAL flushed and fsynced up to LSN ${W.lsn}. Client told "COMMIT". Durable.`)}else L(`COMMIT tx ${W.open}: client told "COMMIT" immediately, but WAL up to LSN ${W.lsn} is still only in RAM (synchronous_commit = off).`);W.open=null}
+  function tick(){if(W.crashed)return;W.flushed=W.lsn;L(`WAL writer flushed WAL to LSN ${W.flushed}.`)}
+  function ckpt(){if(W.crashed)return;W.flushed=W.lsn;let n=0;P3.forEach(p=>{const b=W.buf[p];if(b.dirty){W.data[p]={v:b.v,lsn:b.lsn};b.dirty=false;n++}});W.lsn++;W.wal.push({lsn:W.lsn,type:'ckpt'});W.flushed=W.lsn;W.ckpt=W.lsn;L(`CHECKPOINT: wrote ${n} dirty page(s) to data files, recorded checkpoint at LSN ${W.lsn}. Older WAL can be recycled.`)}
+  function crash(){if(W.crashed)return;const lost=W.acked.filter(a=>a.lsn>W.flushed);const dropped=W.wal.filter(r=>r.lsn>W.flushed).length;
+    W.wal=W.wal.filter(r=>r.lsn<=W.flushed);W.lsn=W.flushed;W.acked=W.acked.filter(a=>a.lsn<=W.flushed);W.buf=null;W.open=null;W.crashed=true;
+    L(`CRASH! shared_buffers and the WAL buffer vanished (${dropped} unflushed WAL record(s) lost).`);lost.forEach(a=>L(`⚠ Tx ${a.tx} was acknowledged to the client but its commit record was not on disk. It is lost.`))}
+  function recover(){if(!W.crashed)return;let n=0;W.wal.forEach(r=>{if(r.lsn>W.ckpt&&r.type==='upd'&&r.lsn>W.data[r.page].lsn){W.data[r.page].v++;W.data[r.page].lsn=r.lsn;n++}});
+    W.buf={};P3.forEach(p=>W.buf[p]={v:W.data[p].v,dirty:false,lsn:W.data[p].lsn});W.crashed=false;L(`RECOVERY: replayed ${n} WAL record(s) after checkpoint LSN ${W.ckpt}. Server is back.`)}
+  const visible=p=>{const c=new Set(W.wal.filter(r=>r.type==='commit').map(r=>r.tx));return W.wal.filter(r=>r.type==='upd'&&r.page===p&&c.has(r.tx)).length};
+  w.innerHTML=P(m,`<div class="panel stack"><div class="row"><label><input type="checkbox" id="sync" checked> synchronous_commit = on</label></div>
+   <div class="row">${P3.map(p=>`<button class="btn" data-a="upd" data-p="${p}">UPDATE page ${p}</button>`).join('')}<button class="btn primary" data-a="commit">COMMIT</button><button class="btn" data-a="tick">WAL writer tick</button><button class="btn" data-a="ckpt">CHECKPOINT</button><button class="btn danger" data-a="crash">💥 Crash server</button><button class="btn primary" data-a="recover">Restart + recover</button><button class="btn" data-a="reset">Reset</button></div>
+   <div class="cols"><div class="panel"><h3>Shared buffers <span class="tag">RAM</span></h3><div id="bf"></div></div>
+   <div class="panel"><h3>WAL <span class="tag">log: RAM tail + disk</span></h3><div id="wl" style="max-height:230px;overflow:auto"></div></div>
+   <div class="panel"><h3>Data files <span class="tag">disk</span></h3><div id="df"></div></div></div>
+   <div class="panel"><h3>What committed clients can see</h3><div id="vv" class="row"></div></div><div class="log" id="lg"></div></div>`,
+  ['Rule: the log record reaches disk before the data page does (write-ahead). Commit only waits for the sequential WAL flush, never for random data-file writes.',
+   'After a crash, Postgres replays WAL from the last checkpoint. Committed work is redone; uncommitted work stays invisible.',
+   'synchronous_commit = off trades up to a few hundred ms of recent commits for speed. You lose the latest commits, never consistency.',
+   'The same WAL stream feeds replicas and point-in-time recovery.']);
+  function draw(){
+    $('#bf',w).innerHTML=W.crashed?'<p class="null">Lost in the crash.</p>':P3.map(p=>`<div class="row" style="margin-bottom:6px"><span class="cell">${p}</span><b class="mono">v = ${W.buf[p].v}</b>${W.buf[p].dirty?'<span class="tag warn">dirty</span>':'<span class="tag good">clean</span>'}</div>`).join('');
+    $('#wl',w).innerHTML=W.wal.length?W.wal.slice(-14).map(r=>`<div class="rec ${r.lsn>W.flushed?'ram':''} ${r.lsn<W.ckpt?'old':''}">LSN ${r.lsn} · ${r.type==='upd'?`tx ${r.tx} update ${r.page}`:r.type==='commit'?`tx ${r.tx} COMMIT`:'CHECKPOINT'}${r.lsn>W.flushed?' · RAM only':''}${r.lsn<W.ckpt?' · recyclable':''}</div>`).join(''):'<p class="null">Empty.</p>';
+    $('#df',w).innerHTML=P3.map(p=>`<div class="row" style="margin-bottom:6px"><span class="cell">${p}</span><b class="mono">v = ${W.data[p].v}</b><span class="tag">page LSN ${W.data[p].lsn}</span></div>`).join('');
+    $('#vv',w).innerHTML=W.crashed?'<span class="null">Server is down.</span>':P3.map(p=>`<span class="tag acc">page ${p}: ${visible(p)} committed change${visible(p)===1?'':'s'}</span>`).join('');
+    $('#lg',w).innerHTML=logHTML(W.log);$$('[data-a]',w).forEach(b=>{if(b.dataset.a==='recover')b.disabled=!W.crashed;else if(b.dataset.a!=='reset')b.disabled=W.crashed})}
+  init();draw();
+  w.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='upd')upd(b.dataset.p);if(a==='commit')commit();if(a==='tick')tick();if(a==='ckpt')ckpt();if(a==='crash')crash();if(a==='recover')recover();if(a==='reset')init();draw()});
+  $('#sync',w).onchange=e=>{W.sync=e.target.checked;L(`synchronous_commit = ${W.sync?'on':'off'}`);draw()};
+}
+
+/* ───────── LOCKS ───────── */
+function rLocks(w,m){
+  const M=['ACCESS SHARE','ROW SHARE','ROW EXCLUSIVE','SHARE UPDATE EXCLUSIVE','SHARE','SHARE ROW EXCLUSIVE','EXCLUSIVE','ACCESS EXCLUSIVE'];
+  const CF={1:[8],2:[7,8],3:[5,6,7,8],4:[4,5,6,7,8],5:[3,4,6,7,8],6:[3,4,5,6,7,8],7:[2,3,4,5,6,7,8],8:[1,2,3,4,5,6,7,8]};
+  const conf=(a,b)=>CF[a].includes(b);
+  const CMD=[['SELECT',1],['SELECT … FOR UPDATE',2],['INSERT / UPDATE / DELETE',3],['VACUUM (plain) / ANALYZE',4],['CREATE INDEX CONCURRENTLY',4],['CREATE INDEX (blocking)',5],['CREATE TRIGGER / some ALTER TABLE',6],['REFRESH MATERIALIZED VIEW CONCURRENTLY',7],['ALTER TABLE (most forms) / DROP / TRUNCATE',8],['VACUUM FULL / REINDEX / LOCK TABLE',8]];
+  let ra=3,rb=8;
+  w.innerHTML=P(m,`<div class="panel stack"><h3>Two sessions, one table</h3><div class="cols">
+   <label class="f">Already running (holds the lock)<select id="ca">${CMD.map((c,i)=>`<option value="${i}">${c[0]}</option>`).join('')}</select></label>
+   <label class="f">Arrives later<select id="cb">${CMD.map((c,i)=>`<option value="${i}">${c[0]}</option>`).join('')}</select></label></div><div id="res"></div></div>
+   <div class="panel"><h3>Conflict matrix</h3><p style="color:var(--muted);font-size:13.5px;margin-bottom:8px">Red = the two lock modes conflict, so the second session waits. Click a cell, or use the dropdowns above.</p>
+   <div class="tw"><table class="mx" id="mx"></table></div></div>
+   <div class="cols"><div class="card"><h3>Row-level locks</h3><p>UPDATE, DELETE and SELECT FOR UPDATE lock individual rows (stored in the tuple header). Two sessions only wait if they touch the same row.</p></div>
+   <div class="card"><h3>Deadlocks</h3><p>A waits for B and B waits for A. Postgres detects the cycle after deadlock_timeout (1 s) and aborts one session. Fix: always lock rows in the same order.</p></div>
+   <div class="card"><h3>Advisory locks</h3><p>pg_advisory_lock(key) gives your application named locks that Postgres manages but never takes by itself.</p></div></div>`,
+  ['Plain reads (ACCESS SHARE) only conflict with ACCESS EXCLUSIVE. That is why ALTER TABLE, which needs ACCESS EXCLUSIVE, queues behind a long SELECT and then blocks every query behind it.',
+   'Safe migration habit: set lock_timeout to a few seconds, so DDL gives up instead of stalling production.',
+   'Use CREATE INDEX CONCURRENTLY, and add constraints as NOT VALID then VALIDATE, to avoid heavy locks.',
+   'Find blockers with pg_locks and pg_blocking_pids(pid).']);
+  function draw(){$('#mx',w).innerHTML=`<tr><th></th>${M.map((_,i)=>`<th>${i+1}</th>`).join('')}</tr>`+M.map((n,r)=>`<tr><th style="white-space:nowrap">${r+1} ${n.toLowerCase()}</th>${M.map((_,c)=>`<td data-r="${r+1}" data-c="${c+1}" class="${conf(r+1,c+1)?'x':''} ${r+1===ra&&c+1===rb?'cur':''}">${conf(r+1,c+1)?'✕':'✓'}</td>`).join('')}</tr>`).join('');
+    const ia=CMD.findIndex(c=>c[1]===ra&&c[0]===CMD[+$('#ca',w).value][0]);
+    const A=CMD[+$('#ca',w).value],B=CMD[+$('#cb',w).value];ra=A[1];rb=B[1];const c=conf(ra,rb);
+    $('#res',w).innerHTML=`<div class="note ${c?'bad':'good'}"><b>${c?'Blocked.':'Runs concurrently.'}</b> ${esc(A[0])} takes <b>${M[ra-1]}</b>; ${esc(B[0])} needs <b>${M[rb-1]}</b>. ${c?'The second statement waits until the first transaction ends, and anything queued behind it waits too.':'The lock modes are compatible, so neither waits (row-level conflicts can still occur).'}</div>`}
+  $('#ca',w).value=2;$('#cb',w).value=8;draw();
+  $('#ca',w).onchange=$('#cb',w).onchange=draw;
+  w.addEventListener('click',e=>{const t=e.target.closest('td[data-r]');if(!t)return;const r=+t.dataset.r,c=+t.dataset.c;
+    $('#ca',w).value=CMD.findIndex(x=>x[1]===r);$('#cb',w).value=CMD.findIndex(x=>x[1]===c);draw()});
+}
+
+/* ───────── REPLICATION ───────── */
+function rRepl(w,m){
+  let R,iv;
+  const init=()=>{R={lsn:0,sb:0,pending:[],acked:[],sync:R?R.sync:false,net:R?R.net:true,lat:R?R.lat:900,promoted:false,log:[]}};
+  const L=t=>R.log.unshift(t);
+  function tick(){if(R.promoted||!R.net||R.sb>=R.lsn)return;R.sb++;R.pending=R.pending.filter(l=>{if(l<=R.sb){R.acked.push(l);L(`Standby confirmed LSN ${l}: client gets COMMIT.`);return false}return true});draw()}
+  function restart(){clearInterval(iv);iv=setInterval(tick,R.lat)}onLeave(()=>clearInterval(iv));
+  function commit(){if(R.promoted)return;R.lsn++;if(R.sync){R.pending.push(R.lsn);L(`Tx ${R.lsn} committed locally. Waiting for the standby before telling the client…`)}else{R.acked.push(R.lsn);L(`Tx ${R.lsn} committed. Client told immediately (async).`)}}
+  function failover(){const lost=R.acked.filter(l=>l>R.sb);R.promoted=true;L(`Primary lost. Standby promoted at LSN ${R.sb}.`);L(lost.length?`⚠ ${lost.length} acknowledged transaction(s) were lost: ${lost.join(', ')}.`:'No acknowledged transaction was lost.');R.pending.length&&L(`${R.pending.length} commit(s) were never acknowledged, the client sees an error and can retry.`)}
+  w.innerHTML=P(m,`<div class="panel stack"><div class="row"><label><input type="checkbox" id="sy"> synchronous_commit = remote_apply / on with synchronous_standby_names</label><label><input type="checkbox" id="nt" checked> Network up</label>
+    <label class="f" style="min-width:200px">Replication delay per record: <b id="lv"></b><input id="lt" type="range" min="200" max="2000" step="100" value="900"></label></div>
+   <div class="row"><button class="btn primary" data-a="c">COMMIT a transaction</button><button class="btn danger" data-a="f">💥 Primary crashes, promote standby</button><button class="btn" data-a="r">Reset</button></div>
+   <div class="cols"><div class="panel"><h3>Primary <span class="tag acc">writes</span></h3><div id="pm"></div></div><div class="panel"><h3>Standby <span class="tag">replays WAL</span></h3><div id="sm"></div></div></div>
+   <div class="legend"><span><i style="background:var(--good)"></i>safe on the standby</span><span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>acknowledged but only on primary</span><span><i style="border:1px dashed var(--muted)"></i>client still waiting</span></div>
+   <div class="log" id="lg"></div></div>
+   <div class="cols"><div class="card"><h3>Physical (streaming)</h3><p>Ships the raw WAL. The standby is a byte-identical copy of the whole cluster; read-only with hot_standby. Needs the same major version.</p></div>
+   <div class="card"><h3>Logical</h3><p>Publishes row changes per table (PUBLICATION / SUBSCRIPTION). Can cross versions, replicate a subset, and write on the target. Does not copy DDL.</p></div>
+   <div class="card"><h3>Replication slots</h3><p>Make the primary keep WAL until a consumer has it. Safe, but an abandoned slot fills the disk: monitor pg_replication_slots.</p></div>
+   <div class="card"><h3>Failover</h3><p>Postgres does not elect leaders by itself. Patroni, repmgr or a managed service decides when to promote and fences the old primary.</p></div></div>`,
+  ['Async replication is fast but a failover can lose the last acknowledged commits. Sync replication loses nothing but commits wait on the network.',
+   'With synchronous replication and the standby unreachable, commits hang: you choose between availability and durability.',
+   'Replicas also scale reads. Expect replica lag: a read right after a write may not see it.',
+   'Replication is not a backup. A DROP TABLE replicates instantly. Keep base backups plus WAL archives for point-in-time recovery.']);
+  function draw(){
+    const sq=(l)=>{const cls=l<=R.sb?'good':R.acked.includes(l)?'warn':'wait';return `<span class="sq ${cls}">${l}</span>`};
+    $('#pm',w).innerHTML=R.lsn?Array.from({length:R.lsn},(_,i)=>sq(i+1)).join(''):'<span class="null">No transactions yet.</span>';
+    $('#sm',w).innerHTML=R.promoted?`<span class="tag good">PROMOTED: new primary at LSN ${R.sb}</span><br>`+Array.from({length:R.sb},(_,i)=>`<span class="sq good">${i+1}</span>`).join(''):R.sb?Array.from({length:R.sb},(_,i)=>`<span class="sq good">${i+1}</span>`).join(''):'<span class="null">Nothing received.</span>';
+    $('#lg',w).innerHTML=logHTML(R.log);$('#lv',w).textContent=R.lat+' ms';$$('[data-a]',w).forEach(b=>{if(b.dataset.a!=='r')b.disabled=R.promoted})}
+  init();draw();restart();
+  w.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;if(a==='c')commit();if(a==='f')failover();if(a==='r'){init();$('#sy',w).checked=R.sync;restart()}draw()});
+  $('#sy',w).onchange=e=>{R.sync=e.target.checked;L('Mode: '+(R.sync?'SYNCHRONOUS':'ASYNCHRONOUS'));draw()};
+  $('#nt',w).onchange=e=>{R.net=e.target.checked;L(R.net?'Network restored.':'Network partition: standby unreachable.');draw()};
+  $('#lt',w).oninput=e=>{R.lat=+e.target.value;restart();draw()};
+}
+
+/* ───────── PARTITIONING ───────── */
+function rPart(w,m){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const REG=['EU','US','APAC','LATAM'];let mode='range';
+  const rowsOf=n=>Math.round(2e6+((n*7919)%13)*3e5);
+  w.innerHTML=P(m,`<div class="panel stack"><div class="tabs" id="tb">${[['range','Range (by month)'],['list','List (by region)'],['hash','Hash (by id)']].map(([k,t])=>`<button data-m="${k}" aria-pressed="${k===mode}">${t}</button>`).join('')}</div>
+   <div id="ctrl" class="row"></div><div class="pgrid" id="pg"></div><div class="kpi" id="kp"></div><pre id="ex"></pre><div class="note" id="nt"></div></div>`,
+  ['Partitioning splits one logical table into many physical tables. Queries that filter on the partition key touch only the matching partitions (partition pruning).',
+   'Pruning only works when the WHERE clause compares the bare partition key. Wrapping it in a function usually defeats pruning.',
+   'Biggest win: dropping or detaching an old partition is instant, while DELETE of the same rows would bloat the table.',
+   'Keep partition counts reasonable (tens to a few hundred). Thousands slow down planning. Partitioning is not sharding: it all stays on one server.']);
+  function ctrl(){const c=$('#ctrl',w);
+    if(mode==='range')c.innerHTML=`<label class="f">created_at from<select id="a">${MON.map((x,i)=>`<option value="${i}">${x} 2025</option>`).join('')}</select></label><label class="f">to (inclusive)<select id="b">${MON.map((x,i)=>`<option value="${i}">${x} 2025</option>`).join('')}</select></label><label class="row" style="margin-top:16px"><input type="checkbox" id="fn"> wrap the column: date_trunc('month', created_at) = …</label>`;
+    if(mode==='list')c.innerHTML=REG.map(r=>`<label><input type="checkbox" class="rg" value="${r}" ${r==='EU'?'checked':''}> ${r}</label>`).join('')+`<label><input type="checkbox" id="nof"> no region filter at all</label>`;
+    if(mode==='hash')c.innerHTML=`<label class="f">id = <input id="id" type="number" value="1042" style="width:100px"></label><label><input type="checkbox" id="nof"> no id filter (e.g. WHERE status = 'new')</label>`;
+    $('#a',w)&&($('#a',w).value=2,$('#b',w).value=4);$$('input,select',c).forEach(x=>x.oninput=draw)}
+  function draw(){let parts,scan,name,pred;
+    if(mode==='range'){parts=MON.map((x,i)=>`orders_2025_${String(i+1).padStart(2,'0')}`);const a=+$('#a',w).value,b=+$('#b',w).value,fn=$('#fn',w).checked;scan=parts.map((_,i)=>fn||(i>=Math.min(a,b)&&i<=Math.max(a,b)));
+      pred=fn?`WHERE date_trunc('month', created_at) = '${MON[a]} 2025'`:`WHERE created_at >= '2025-${String(Math.min(a,b)+1).padStart(2,'0')}-01' AND created_at < '2025-${String(Math.max(a,b)+2).padStart(2,'0')}-01'`}
+    if(mode==='list'){parts=REG.map(r=>`orders_${r.toLowerCase()}`);const no=$('#nof',w).checked,sel=$$('.rg',w).filter(x=>x.checked).map(x=>x.value);scan=REG.map(r=>no||sel.includes(r));pred=no?`WHERE status = 'new'`:`WHERE region IN (${sel.map(s=>"'"+s+"'").join(', ')||'…'})`}
+    if(mode==='hash'){parts=[0,1,2,3].map(i=>`orders_p${i}`);const no=$('#nof',w).checked,id=+$('#id',w).value;scan=[0,1,2,3].map(i=>no||((id%4)+4)%4===i);pred=no?`WHERE status = 'new'`:`WHERE id = ${id}`}
+    const rs=parts.map((_,i)=>rowsOf(i+1)),tot=rs.reduce((a,b)=>a+b,0),sc=rs.reduce((a,b,i)=>a+(scan[i]?b:0),0),n=scan.filter(Boolean).length;
+    $('#pg',w).innerHTML=parts.map((p,i)=>`<div class="part ${scan[i]?'scan':'skip'}"><b>${p.replace('orders_','')}</b><br><span style="color:var(--muted)">${fmt(rs[i])} rows</span><br>${scan[i]?'scanned':'pruned'}</div>`).join('');
+    $('#kp',w).innerHTML=`<div><b>${n} / ${parts.length}</b><span>partitions scanned</span></div><div><b>${fmt(sc)}</b><span>rows in scope</span></div><div><b>${(sc/tot*100).toFixed(0)}%</b><span>of ${fmt(tot)} total rows</span></div>`;
+    $('#ex',w).textContent=`EXPLAIN SELECT * FROM orders ${pred};\n`+(n===0?'Result  (One-Time Filter: false)':`Append\n`+parts.filter((_,i)=>scan[i]).slice(0,5).map(p=>`  ->  Seq Scan on ${p}`).join('\n')+(n>5?`\n  ->  … ${n-5} more partitions`:''));
+    $('#nt',w).innerHTML=n===parts.length&&(mode==='range'&&$('#fn',w).checked||$('#nof',w)&&$('#nof',w).checked)?'<b>No pruning.</b> The planner cannot map this condition to a partition key, so every partition is scanned.':`<b>Pruned ${parts.length-n} partition${parts.length-n===1?'':'s'} at plan time.</b> Only the partitions that can contain matching rows are in the plan.`}
+  w.querySelector('#tb').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;mode=b.dataset.m;$$('#tb button',w).forEach(x=>x.setAttribute('aria-pressed',x===b));ctrl();draw()});
+  ctrl();draw();
+}
+
+/* ───────── TUNING ───────── */
+function rTune(w,m){
+  w.innerHTML=P(m,`<div class="cols"><div class="panel stack"><h3>Your server</h3>
+   <label class="f">RAM (GB)<input id="ram" type="number" value="32" min="1" max="2048"></label>
+   <label class="f">CPU cores<input id="cpu" type="number" value="8" min="1" max="256"></label>
+   <label class="f">Max connections<input id="mc" type="number" value="200" min="10" max="5000"></label>
+   <label class="f">Storage<select id="sto"><option value="ssd">SSD / NVMe</option><option value="hdd">Spinning disk</option></select></label>
+   <label class="f">Workload<select id="wk"><option value="oltp">OLTP (many small queries)</option><option value="mix">Mixed</option><option value="dw">Analytics / reporting</option></select></label></div>
+   <div class="panel stack"><h3>Memory budget</h3><div class="bars" id="mb"></div><div id="wn"></div></div></div>
+   <div class="panel stack"><div class="row" style="justify-content:space-between"><h3>postgresql.conf starting point</h3><button class="btn sm" id="cp">Copy</button></div><pre id="cf"></pre>
+   <p style="color:var(--muted);font-size:13.5px">Rules of thumb from the community, not a substitute for measuring. Change one thing at a time and check with pg_stat_statements and EXPLAIN (ANALYZE, BUFFERS).</p></div>`,
+  ['shared_buffers is Postgres’s own cache (start near 25% of RAM). The OS page cache holds the rest, and effective_cache_size tells the planner about both.',
+   'work_mem is per sort or hash node, per query, per connection. 200 connections with several nodes each can exhaust RAM, so keep it modest globally and raise it per session for reports.',
+   'random_page_cost = 1.1 on SSD stops the planner from avoiding perfectly good indexes.',
+   'Bigger max_wal_size means fewer, smoother checkpoints at the price of longer crash recovery.']);
+  const mb=n=>n>=1024?(n/1024).toFixed(n%1024?1:0).replace(/\.0$/,'')+'GB':Math.round(n)+'MB';
+  function calc(){const ram=+$('#ram',w).value||1,cpu=+$('#cpu',w).value||1,mc=+$('#mc',w).value||10,ssd=$('#sto',w).value==='ssd',wk=$('#wk',w).value;const R=ram*1024;
+    const sb=Math.min(R*0.25,40*1024),ecs=R*0.75,frac=wk==='oltp'?0.25:wk==='mix'?0.35:0.5;
+    const wm=Math.max(4,Math.floor(R*frac/(mc*3))),mw=Math.min(2048,Math.max(64,R/16)),maxw=wk==='oltp'?4096:wk==='mix'?8192:16384;
+    const pw=Math.min(cpu,wk==='dw'?8:4),worst=mc*wm*2;
+    const lines=[['shared_buffers',mb(sb)],['effective_cache_size',mb(ecs)],['work_mem',mb(wm)],['maintenance_work_mem',mb(mw)],['wal_buffers','16MB'],['max_wal_size',mb(maxw)],['checkpoint_timeout','15min'],['checkpoint_completion_target','0.9'],
+     ['random_page_cost',ssd?'1.1':'4.0'],['effective_io_concurrency',ssd?'200':'2'],['max_connections',mc],['max_worker_processes',cpu],['max_parallel_workers',cpu],['max_parallel_workers_per_gather',Math.max(1,Math.floor(pw/ (wk==='dw'?1:2)))],['default_statistics_target',wk==='dw'?'500':'100']];
+    $('#cf',w).textContent=lines.map(l=>`${l[0].padEnd(33)}= ${l[1]}`).join('\n');
+    const os=Math.max(0,R-sb-worst);const seg=[['shared_buffers',sb,'var(--accent)'],[`work_mem worst case (${mc} × ${mb(wm)} × 2 nodes)`,Math.min(worst,R),'var(--warn)'],['OS cache / everything else',os,'var(--good)']];
+    $('#mb',w).innerHTML=`<div class="track" style="height:22px;display:flex">${seg.map(s=>`<div style="width:${s[1]/R*100}%;background:${s[2]}"></div>`).join('')}</div>`+seg.map(s=>`<div class="bar"><div><span><i style="display:inline-block;width:10px;height:10px;background:${s[2]};border-radius:2px;margin-right:6px"></i>${s[0]}</span><b class="mono">${mb(s[1])}</b></div></div>`).join('');
+    $('#wn',w).innerHTML=worst+sb>R?`<div class="note bad"><b>Over budget.</b> If every connection ran two sort/hash nodes at once, memory would exceed RAM. Lower max_connections (use a pooler) or work_mem.</div>`:`<div class="note good">Worst-case memory fits in RAM, leaving about ${mb(os)} for the OS cache.</div>`}
+  $$('input,select',w).forEach(x=>x.oninput=calc);calc();$('#cp',w).onclick=e=>copyText($('#cf',w).textContent,e.target);
+}
+
+/* ───────── SQL TOOLKIT ───────── */
+function rSql(w,m){
+  let tab='join';
+  const EM=[[1,'Ana',1],[2,'Ben',1],[3,'Chi',2],[4,'Dev',null]],DP=[[1,'Eng'],[2,'Ops'],[3,'Legal']];
+  const SALES=[['East','Ana',100],['East','Ben',150],['East','Cy',150],['West','Di',90],['West','Eli',200],['West','Fay',60]];
+  const dc=(a,b)=>{if(a!==null&&typeof a==='object'){if(b===null||typeof b!=='object')return false;if(Array.isArray(a)){return Array.isArray(b)&&b.every(y=>a.some(x=>dc(x,y)))}return !Array.isArray(b)&&Object.keys(b).every(k=>k in a&&dc(a[k],b[k]))}return a===b};
+  w.innerHTML=P(m,`<div class="panel stack"><div class="tabs" id="tb">${[['join','JOIN types'],['win','Window functions'],['json','JSONB operators']].map(([k,t])=>`<button data-t="${k}" aria-pressed="${k===tab}">${t}</button>`).join('')}</div><div id="body" class="stack"></div></div>
+   <div class="cols"><div class="card"><h3>CTEs</h3><pre>WITH recent AS (\n  SELECT * FROM orders\n  WHERE created_at > now() - interval '7 days'\n)\nSELECT customer_id, sum(total)\nFROM recent GROUP BY 1;</pre></div>
+   <div class="card"><h3>UPSERT</h3><pre>INSERT INTO counters (key, n)\nVALUES ('hits', 1)\nON CONFLICT (key)\nDO UPDATE SET n = counters.n + 1\nRETURNING n;</pre></div>
+   <div class="card"><h3>Queue worker pattern</h3><pre>SELECT * FROM jobs\nWHERE status = 'new'\nORDER BY id\nLIMIT 1\nFOR UPDATE SKIP LOCKED;</pre></div></div>`,
+  ['LEFT JOIN keeps unmatched left rows (with NULLs on the right). FULL keeps both. EXISTS / NOT EXISTS test for presence without multiplying rows.',
+   'Window functions compute across related rows without collapsing them like GROUP BY does. With ORDER BY, the default frame includes peer rows with equal values, which is why ties share a running total.',
+   'jsonb is stored decomposed and indexable with GIN; json keeps the exact text. Prefer jsonb unless you need to preserve formatting.']);
+  function show(){const b=$('#body',w);
+    if(tab==='join'){b.innerHTML=`<label class="f">Join type<select id="jt">${[['INNER JOIN','inner'],['LEFT JOIN','left'],['RIGHT JOIN','right'],['FULL OUTER JOIN','full'],['CROSS JOIN','cross'],['WHERE EXISTS (semi join)','semi'],['WHERE NOT EXISTS (anti join)','anti']].map(x=>`<option value="${x[1]}">${x[0]}</option>`).join('')}</select></label>
+      <div class="cols"><div class="tw"><table class="t"><tr><th>employees.id</th><th>name</th><th>dept_id</th></tr>${EM.map(e=>`<tr><td>${e[0]}</td><td>${e[1]}</td><td>${e[2]===null?'<span class="null">NULL</span>':e[2]}</td></tr>`).join('')}</table></div>
+      <div class="tw"><table class="t"><tr><th>departments.id</th><th>dept</th></tr>${DP.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td></tr>`).join('')}</table></div></div><pre id="js"></pre><div class="tw"><table class="t" id="jr"></table></div>`;
+      const go=()=>{const t=$('#jt',w).value;let r=[];const nl=v=>v===null?'<span class="null">NULL</span>':v;
+        if(t==='inner')EM.forEach(e=>DP.forEach(d=>{if(e[2]===d[0])r.push([e[1],d[1]])}));
+        if(t==='left'||t==='full'){EM.forEach(e=>{const d=DP.filter(d=>d[0]===e[2]);if(d.length)d.forEach(x=>r.push([e[1],x[1]]));else r.push([e[1],null])})}
+        if(t==='right'||t==='full'){DP.forEach(d=>{const es=EM.filter(e=>e[2]===d[0]);if(!es.length)r.push([null,d[1]]);else if(t==='right')es.forEach(e=>r.push([e[1],d[1]]))})}
+        if(t==='cross')EM.forEach(e=>DP.forEach(d=>r.push([e[1],d[1]])));
+        if(t==='semi')EM.filter(e=>DP.some(d=>d[0]===e[2])).forEach(e=>r.push([e[1]]));
+        if(t==='anti')EM.filter(e=>!DP.some(d=>d[0]===e[2])).forEach(e=>r.push([e[1]]));
+        const sem=t==='semi'||t==='anti';
+        $('#js',w).textContent=sem?`SELECT e.name FROM employees e\nWHERE ${t==='anti'?'NOT ':''}EXISTS (SELECT 1 FROM departments d WHERE d.id = e.dept_id);`:`SELECT e.name, d.dept\nFROM employees e\n${{inner:'INNER JOIN',left:'LEFT JOIN',right:'RIGHT JOIN',full:'FULL OUTER JOIN',cross:'CROSS JOIN'}[t]} departments d${t==='cross'?';':' ON d.id = e.dept_id;'}`;
+        $('#jr',w).innerHTML=`<tr>${sem?'<th>name</th>':'<th>name</th><th>dept</th>'}</tr>`+r.map(x=>`<tr>${x.map(c=>`<td>${nl(c)}</td>`).join('')}</tr>`).join('')+`<tr><td colspan="2" style="color:var(--muted)">${r.length} row${r.length===1?'':'s'}</td></tr>`};
+      $('#jt',w).onchange=go;go()}
+    if(tab==='win'){b.innerHTML=`<div class="row"><label class="f">Function<select id="wf">${[['row_number','row_number()'],['rank','rank()'],['dense_rank','dense_rank()'],['sum','sum(amount)'],['lag','lag(amount)'],['avg','avg(amount)']].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label><label style="margin-top:16px"><input type="checkbox" id="pt" checked> PARTITION BY region</label></div><pre id="ws"></pre><div class="tw"><table class="t" id="wr"></table></div>`;
+      const go=()=>{const f=$('#wf',w).value,p=$('#pt',w).checked;const rows=SALES.map(r=>({r:r[0],n:r[1],a:r[2]})).sort((x,y)=>p&&x.r!==y.r?(x.r<y.r?-1:1):y.a-x.a);
+        const G=new Map();rows.forEach(x=>{const k=p?x.r:'all';(G.get(k)||G.set(k,[]).get(k)).push(x)});
+        G.forEach(g=>g.forEach((x,i)=>{const first=g.findIndex(y=>y.a===x.a),last=g.map(y=>y.a).lastIndexOf(x.a);
+          x.v={row_number:i+1,rank:first+1,dense_rank:new Set(g.slice(0,i+1).map(y=>y.a)).size,sum:g.slice(0,last+1).reduce((s,y)=>s+y.a,0),lag:i?g[i-1].a:null,avg:+(g.reduce((s,y)=>s+y.a,0)/g.length).toFixed(1)}[f]}));
+        const ex={row_number:'row_number()',rank:'rank()',dense_rank:'dense_rank()',sum:'sum(amount)',lag:'lag(amount)',avg:'avg(amount)'}[f];
+        $('#ws',w).textContent=`SELECT region, rep, amount,\n       ${ex} OVER (${p?'PARTITION BY region ':''}${f==='avg'?'':'ORDER BY amount DESC'}) AS result\nFROM sales;`;
+        $('#wr',w).innerHTML='<tr><th>region</th><th>rep</th><th>amount</th><th>result</th></tr>'+rows.map(x=>`<tr><td>${x.r}</td><td>${x.n}</td><td>${x.a}</td><td><b>${x.v===null?'<span class="null">NULL</span>':x.v}</b></td></tr>`).join('')};
+      $('#wf',w).onchange=$('#pt',w).onchange=go;go()}
+    if(tab==='json'){b.innerHTML=`<label class="f">jsonb document<textarea id="jd" rows="5">{"user":{"name":"Ada","tags":["db","math"],"address":{"city":"London"}},"active":true,"score":42}</textarea></label>
+      <div class="row"><label class="f">Operator<select id="jo"><option value="-&gt;">-&gt;  get as jsonb</option><option value="-&gt;&gt;">-&gt;&gt; get as text</option><option value="#&gt;">#&gt;  path as jsonb</option><option value="@&gt;">@&gt;  contains</option><option value="?">?  key exists</option></select></label>
+      <label class="f">Right-hand side<input id="ja" type="text" value="user" style="min-width:240px"></label></div><pre id="jq"></pre><div class="out" id="jx"></div>
+      <p style="color:var(--muted);font-size:13.5px">Examples: <code>user</code> with -&gt; | <code>{user,address,city}</code> with #&gt; | <code>{"active":true}</code> with @&gt; | <code>score</code> with ?</p>`;
+      const go=()=>{const op=$('#jo',w).value,arg=$('#ja',w).value.trim();let out;try{const doc=JSON.parse($('#jd',w).value);
+        if(op==='->'||op==='->>'){const k=/^\d+$/.test(arg)?+arg:arg;const v=doc==null?null:doc[k];out=v===undefined?'NULL':op==='->'?JSON.stringify(v):(typeof v==='object'&&v!==null?JSON.stringify(v):String(v))}
+        else if(op==='#>'){const ks=arg.replace(/^\{|\}$/g,'').split(',').map(s=>s.trim());let v=doc;for(const k of ks){v=v==null?undefined:v[k]}out=v===undefined?'NULL':JSON.stringify(v)}
+        else if(op==='@>'){out=String(dc(doc,JSON.parse(arg)))}
+        else out=String(doc!==null&&typeof doc==='object'&&!Array.isArray(doc)&&arg in doc)}catch(e){out='Invalid JSON: '+e.message}
+        $('#jq',w).textContent=`SELECT doc ${op} '${arg}' FROM events;`;$('#jx',w).textContent=out};
+      $('#jo',w).onchange=$('#ja',w).oninput=$('#jd',w).oninput=go;go()}}
+  $('#tb',w).addEventListener('click',e=>{const t=e.target.closest('[data-t]');if(!t)return;tab=t.dataset.t;$$('#tb button',w).forEach(x=>x.setAttribute('aria-pressed',x===t));show()});show();
+}
+
+/* ───────── TOOLBOX ───────── */
+function rTool(w,m){
+  const T=[
+  ['psql','\\l  and  \\c dbname','List databases; connect to one.','\\l'],['psql','\\dt+ / \\d+ table','List tables with sizes; describe a table with indexes and constraints.','\\d+ orders'],['psql','\\x auto','Expanded output when rows are too wide.','\\x auto'],['psql','\\timing','Print query duration.','\\timing on'],['psql','\\watch 2','Re-run the last query every 2 seconds.','\\watch 2'],['psql','\\copy','Client-side CSV import/export.','\\copy orders TO \'orders.csv\' CSV HEADER'],['psql','\\df / \\du / \\dx','List functions, roles, installed extensions.','\\dx'],
+  ['Catalog','pg_stat_activity','Who is connected and what they are running, and for how long.','SELECT pid, state, now()-query_start AS age, left(query,80)\nFROM pg_stat_activity WHERE state <> \'idle\' ORDER BY age DESC;'],
+  ['Catalog','Who blocks whom','Find sessions waiting on locks and the pids blocking them.','SELECT pid, pg_blocking_pids(pid) AS blocked_by, query\nFROM pg_stat_activity\nWHERE cardinality(pg_blocking_pids(pid)) > 0;'],
+  ['Catalog','Table bloat signals','Dead tuples and last vacuum per table.','SELECT relname, n_live_tup, n_dead_tup, last_autovacuum\nFROM pg_stat_user_tables ORDER BY n_dead_tup DESC LIMIT 10;'],
+  ['Catalog','Unused indexes','Indexes never scanned since stats reset: candidates to drop.','SELECT relname, indexrelname, idx_scan\nFROM pg_stat_user_indexes WHERE idx_scan = 0;'],
+  ['Catalog','Sizes','Human-readable size of a table including indexes and TOAST.','SELECT pg_size_pretty(pg_total_relation_size(\'orders\'));'],
+  ['Catalog','Slowest queries','Needs the pg_stat_statements extension.','SELECT calls, mean_exec_time, left(query,80)\nFROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 10;'],
+  ['Catalog','Replication lag','On the primary: how far behind each standby is.','SELECT client_addr, state, replay_lag FROM pg_stat_replication;'],
+  ['Catalog','Settings','Current value and where it was set.','SELECT name, setting, source FROM pg_settings WHERE name = \'work_mem\';'],
+  ['Operate','EXPLAIN ANALYZE','Run the query and show real timings, rows and buffer use.','EXPLAIN (ANALYZE, BUFFERS) SELECT …;'],
+  ['Operate','VACUUM / ANALYZE','Reclaim dead rows and refresh planner statistics.','VACUUM (VERBOSE, ANALYZE) orders;'],
+  ['Operate','Online index build','Build without blocking writes (slower, cannot run in a transaction).','CREATE INDEX CONCURRENTLY orders_cust_idx ON orders (customer_id);'],
+  ['Operate','Cancel a query','Politely cancel, or terminate the whole connection.','SELECT pg_cancel_backend(12345);\nSELECT pg_terminate_backend(12345);'],
+  ['Operate','Logical backup','Dump in custom format; restore in parallel.','pg_dump -Fc mydb > mydb.dump\npg_restore -j4 -d mydb mydb.dump'],
+  ['Operate','Base backup','Physical copy for replicas and PITR (with WAL archive).','pg_basebackup -D /backup -Fp -Xs -P'],
+  ['Operate','Change config live','Writes postgresql.auto.conf; reload without restart if the setting allows.','ALTER SYSTEM SET work_mem = \'32MB\';\nSELECT pg_reload_conf();'],
+  ['Operate','Safe migrations','Fail fast instead of queueing behind long transactions.','SET lock_timeout = \'3s\';\nALTER TABLE orders ADD COLUMN note text;'],
+  ['Security','Roles and grants','Least privilege: a role per application, grant only what it needs.','CREATE ROLE app LOGIN PASSWORD \'…\';\nGRANT SELECT, INSERT ON orders TO app;'],
+  ['Security','Row-level security','Policies filter rows per user, enforced by the server.','ALTER TABLE docs ENABLE ROW LEVEL SECURITY;\nCREATE POLICY own ON docs USING (owner = current_user);'],
+  ['Security','pg_hba.conf','Who may connect from where, using which auth method.','hostssl  all  app  10.0.0.0/8  scram-sha-256'],
+  ['Extension','pg_stat_statements','Per-query statistics across all sessions.','CREATE EXTENSION pg_stat_statements;'],
+  ['Extension','pg_trgm','Trigram similarity and fast LIKE / ILIKE with GIN.','CREATE INDEX ON users USING gin (name gin_trgm_ops);'],
+  ['Extension','PostGIS','Geometry, geography, spatial indexes and hundreds of GIS functions.','CREATE EXTENSION postgis;'],
+  ['Extension','pgvector','Vector column type and nearest-neighbor indexes for embeddings.','CREATE EXTENSION vector;\nCREATE INDEX ON items USING hnsw (embedding vector_cosine_ops);'],
+  ['Extension','TimescaleDB','Time-series hypertables, compression and continuous aggregates.','SELECT create_hypertable(\'metrics\', \'ts\');'],
+  ['Extension','postgres_fdw','Query tables in another Postgres server as if local.','CREATE SERVER s FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host \'h\', dbname \'d\');'],
+  ['Extension','pg_cron','Run SQL on a schedule inside the database.','SELECT cron.schedule(\'0 3 * * *\', \'VACUUM ANALYZE orders\');'],
+  ['Feature','Generated columns','Computed and stored automatically.','ALTER TABLE items ADD total numeric GENERATED ALWAYS AS (qty * price) STORED;'],
+  ['Feature','LISTEN / NOTIFY','Lightweight pub/sub between sessions.','LISTEN jobs;\nNOTIFY jobs, \'new\';'],
+  ['Feature','Materialized view','Stored query result you refresh on demand.','CREATE MATERIALIZED VIEW daily AS SELECT …;\nREFRESH MATERIALIZED VIEW CONCURRENTLY daily;'],
+  ['Feature','Transactional DDL','Schema changes roll back too. Rare among databases.','BEGIN;\nALTER TABLE t ADD c int;\nROLLBACK;'],
+  ['Feature','Arrays and ranges','First-class types with operators and indexes.','SELECT ARRAY[1,2,3] @> ARRAY[2];\nSELECT daterange(\'2025-01-01\',\'2025-02-01\') @> DATE \'2025-01-15\';']];
+  const cats=['All',...new Set(T.map(t=>t[0]))];let cat='All';
+  w.innerHTML=P(m,`<div class="panel stack"><div class="row"><input id="fq" type="text" placeholder="Search tools, views, extensions…" style="min-width:240px;flex:1" aria-label="Search"><div class="tabs" id="ct">${cats.map(c=>`<button data-c="${c}" aria-pressed="${c===cat}">${c}</button>`).join('')}</div></div><div class="cards" id="cd"></div></div>`,
+  ['Postgres exposes almost everything as queryable views (pg_stat_*, pg_locks, pg_settings). When something is wrong, query the catalog first.',
+   'Extensions are the ecosystem: search, GIS, vectors, time series, scheduling and foreign data all plug in with CREATE EXTENSION.']);
+  function draw(){const q=$('#fq',w).value.toLowerCase();const items=T.filter(t=>(cat==='All'||t[0]===cat)&&(t[1]+t[2]+t[3]).toLowerCase().includes(q));
+    $('#cd',w).innerHTML=items.map((t,i)=>`<div class="card"><span class="tag acc" style="justify-self:start">${t[0]}</span><h3>${esc(t[1])}</h3><p>${esc(t[2])}</p><pre>${esc(t[3])}</pre><button class="btn sm" data-i="${T.indexOf(t)}" style="justify-self:start">Copy</button></div>`).join('')||'<p class="null">No match.</p>'}
+  draw();$('#fq',w).oninput=draw;
+  w.addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(c){cat=c.dataset.c;$$('#ct button',w).forEach(x=>x.setAttribute('aria-pressed',x===c));draw();return}
+    const b=e.target.closest('button[data-i]');if(b)copyText(T[+b.dataset.i][3],b)});
+}
+
+/* ───────── QUIZ ───────── */
+function rQuiz(w,m){
+  const Q=[['What does an UPDATE do to a row on disk?',['Overwrites it in place','Writes a new row version and marks the old one dead','Moves it to the WAL','Locks the whole table'],1,'MVCC: the old version gets xmax set, a new version is written. VACUUM removes dead versions later.'],
+  ['At COMMIT, what must reach disk before the client is told "success" (default settings)?',['All modified data pages','The modified indexes','The WAL records up to the commit','A full checkpoint'],2,'Only the sequential WAL flush. Data pages are written lazily.'],
+  ['Which isolation level gives a fresh snapshot for every statement?',['Read Committed','Repeatable Read','Serializable','Read Uncommitted'],0,'Read Committed (the default) re-snapshots per statement, so repeated reads can differ.'],
+  ['You filter on a column but the planner ignores your index. Most likely reason?',['Indexes only work on primary keys','The query returns a large share of the table','The table has too few columns','Postgres never uses indexes for text'],1,'When a big fraction of rows match, a sequential scan is cheaper than many random heap reads.'],
+  ['Which index suits "tags @> ARRAY[\'sql\']" or jsonb containment?',['B-tree','Hash','GIN','BRIN'],2,'GIN is an inverted index for composite values: arrays, jsonb and full-text.'],
+  ['Why can ALTER TABLE freeze an entire busy table?',['It rewrites WAL','It needs ACCESS EXCLUSIVE and queues behind running queries, blocking all new ones','It disables autovacuum','It drops the indexes first'],1,'Lock queueing: once the ALTER waits, every later query waits behind it. Use lock_timeout.'],
+  ['Async streaming replication: the primary dies. What can happen?',['Nothing, replicas are always identical','Recently acknowledged commits may be missing on the standby','The standby corrupts','The WAL is replayed backwards'],1,'Async acknowledges before the standby has the record. Synchronous replication closes that gap at a latency cost.'],
+  ['What is partition pruning?',['Deleting old partitions','Skipping partitions that cannot match the WHERE clause','Compressing partitions','Merging partitions'],1,'The planner (or executor) excludes partitions whose bounds contradict the filter on the partition key.'],
+  ['Which join algorithm builds an in-memory hash table from one input?',['Nested loop','Merge join','Hash join','Index join'],2,'Hash join. It is limited by work_mem and spills to disk in batches if the table is too large.'],
+  ['What does autovacuum NOT do?',['Remove dead tuples','Update planner statistics','Roll back long transactions','Prevent transaction ID wraparound'],2,'It cleans and analyzes, but never kills transactions. Long-running transactions actually hold back vacuum.']];
+  let score=0,answered=new Array(Q.length).fill(null);
+  function draw(){const n=answered.filter(x=>x!==null).length;
+    $('#qz',w).innerHTML=Q.map((q,i)=>`<div class="panel"><h3 style="font-size:15px">${i+1}. ${esc(q[0])}</h3>${q[1].map((o,j)=>`<button class="opt ${answered[i]!==null?(j===q[2]?'right':j===answered[i]?'wrong':''):''}" data-q="${i}" data-o="${j}" ${answered[i]!==null?'disabled':''}>${esc(o)}</button>`).join('')}${answered[i]!==null?`<div class="note ${answered[i]===q[2]?'good':'warn'}" style="margin-top:8px">${answered[i]===q[2]?'Correct. ':'Not quite. '}${esc(q[3])}</div>`:''}</div>`).join('');
+    $('#sc',w).textContent=`${answered.filter((a,i)=>a===Q[i][2]).length} / ${Q.length} correct · ${n} answered`}
+  w.innerHTML=P(m,`<div class="row"><span class="tag acc" id="sc" style="font-size:14px"></span><button class="btn sm" id="rs">Restart</button></div><div class="stack" id="qz"></div>`,null);
+  draw();w.addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b){answered[+b.dataset.q]=+b.dataset.o;draw()}if(e.target.id==='rs'){answered.fill(null);draw()}});
+}
+
+const MODS=[
+ {id:'home',group:'Start',title:'Overview',lead:'',render:rHome},
+ {id:'architecture',group:'Foundations',title:'Architecture',lead:'How one server is built: processes, shared memory, files. Trace a read and a write through all of it.',render:rArch},
+ {id:'lifecycle',group:'Foundations',title:'Life of a Query',lead:'The six stages every statement passes through, shown with real-looking output for three queries.',render:rLife},
+ {id:'heap',group:'Storage',title:'Pages, Tuples and VACUUM',lead:'Rows live in 8 KB pages. Insert, update, delete and vacuum a page and watch the bytes move.',render:rHeap},
+ {id:'mvcc',group:'Storage',title:'MVCC and Isolation',lead:'Two live sessions against one table. See snapshots, row locks and why readers never block writers.',render:rMvcc},
+ {id:'indexes',group:'Storage',title:'Indexes',lead:'Grow a B+tree key by key, then match query patterns to the right index type.',render:rIdx},
+ {id:'planner',group:'Query engine',title:'Planner and EXPLAIN',lead:'Move the sliders and watch the planner switch between sequential, index and bitmap scans.',render:rPlan},
+ {id:'joins',group:'Query engine',title:'Join Algorithms',lead:'Nested loop, hash and merge join running step by step on the same small tables.',render:rJoin},
+ {id:'wal',group:'Reliability',title:'WAL and Crash Recovery',lead:'Write, commit, checkpoint, then pull the plug. See what survives and why.',render:rWal},
+ {id:'locks',group:'Reliability',title:'Locks',lead:'Which statements block which. Pick two and find out why your migration hung.',render:rLocks},
+ {id:'replication',group:'Reliability',title:'Replication and Failover',lead:'Stream WAL to a standby, cut the network, crash the primary, count what you lost.',render:rRepl},
+ {id:'partitioning',group:'Scale and operations',title:'Partitioning',lead:'Range, list and hash partitions, and exactly when the planner can skip them.',render:rPart},
+ {id:'tuning',group:'Scale and operations',title:'Configuration Tuning',lead:'Enter your hardware, get a sensible postgresql.conf and a memory budget check.',render:rTune},
+ {id:'sql',group:'Using Postgres',title:'SQL Toolkit',lead:'Joins, window functions and JSONB operators, computed live on small tables.',render:rSql},
+ {id:'toolbox',group:'Using Postgres',title:'Toolbox',lead:'Searchable, copyable snippets: psql, system views, operations, security and extensions.',render:rTool},
+ {id:'quiz',group:'Check',title:'Quiz',lead:'Ten questions to see what stuck.',render:rQuiz}];
+
+function buildNav(cur){let g='';$('#nav').innerHTML=MODS.map(m=>{const h=m.group!==g?`<div class="grp">${(g=m.group)}</div>`:'';return h+`<a href="#${m.id}" ${m.id===cur?'aria-current="page"':''}>${m.title}</a>`}).join('')}
+function route(){const id=(location.hash||'#home').slice(1);const m=MODS.find(x=>x.id===id)||MODS[0];
+  cleanups.forEach(f=>{try{f()}catch(e){}});cleanups=[];const v=$('#view');const w=document.createElement('div');v.replaceChildren(w);
+  try{m.render(w,m)}catch(e){w.innerHTML='<div class="note bad">This module failed to load: '+esc(e.message)+'</div>'}
+  buildNav(m.id);$('#side').classList.remove('open');$('#menu').setAttribute('aria-expanded','false');window.scrollTo(0,0)}
+addEventListener('hashchange',route);
+$('#menu').onclick=()=>{const o=$('#side').classList.toggle('open');$('#menu').setAttribute('aria-expanded',o)};
+(function(){const modes=['auto','light','dark'];let i=0;$('#theme').onclick=()=>{i=(i+1)%3;const r=document.documentElement;if(modes[i]==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',modes[i]);$('#theme').textContent='Theme: '+modes[i]}})();
+route();
+</script>

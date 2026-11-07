@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Atlas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky tab bar over four study views (map, layers, journey, connect); each view is a diagram plus a detail panel. */
+:root{
+  --bg:#f2f5f7; --surface:#ffffff; --fg:#13202b; --muted:#566573; --line:#d5dde3; --accent:#0b6e6a; --accent-ink:#ffffff; --hot:#c2410c;
+  --l5:#b45309; --l4:#0f766e; --l3:#1d4ed8; --l2:#be185d; --l1:#4b5563;
+  --l5t:#fdf0dc; --l4t:#dcf3ef; --l3t:#e1e9fc; --l2t:#fbe3ee; --l1t:#e6e9ed;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e161d; --surface:#16212a; --fg:#e6edf2; --muted:#9aabb8; --line:#2a3945; --accent:#4fd1c5; --accent-ink:#06211f; --hot:#fb923c;
+  --l5:#f5b45a; --l4:#4fd1c5; --l3:#7aa2ff; --l2:#f48fb8; --l1:#aab4be;
+  --l5t:#2d2312; --l4t:#10302d; --l3t:#16243f; --l2t:#35172a; --l1t:#222c35; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e161d; --surface:#16212a; --fg:#e6edf2; --muted:#9aabb8; --line:#2a3945; --accent:#4fd1c5; --accent-ink:#06211f; --hot:#fb923c;
+  --l5:#f5b45a; --l4:#4fd1c5; --l3:#7aa2ff; --l2:#f48fb8; --l1:#aab4be;
+  --l5t:#2d2312; --l4t:#10302d; --l3t:#16243f; --l2t:#35172a; --l1t:#222c35; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;padding-block:20px 48px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,40px);letter-spacing:-.01em}
+h2{font-size:22px} h3{font-size:16px}
+.lede{color:var(--muted);max-width:62ch;margin:8px 0 0}
+.mono{font-family:var(--mono)}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:6px;padding-bottom:16px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding-block:8px;border-bottom:1px solid var(--line);margin-bottom:20px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+nav button{flex:none;font:500 14px var(--body);color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+section[hidden]{display:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px}
+.panel p{margin:8px 0 0}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-block:12px}
+.btn{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+/* map */
+.search{width:100%;font:15px var(--body);padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);margin-bottom:14px}
+.layer{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:12px;border-radius:8px;margin-bottom:8px;background:var(--t);border-left:4px solid var(--c)}
+@media(max-width:520px){.layer{grid-template-columns:minmax(0,1fr)}}
+.layer b{font:600 13px var(--display);color:var(--c)} .layer small{display:block;color:var(--muted);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13px var(--mono);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:5px 9px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--c);color:var(--surface);border-color:var(--c)}
+.chip.dim{opacity:.25}.chip.rel{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin-top:12px;font-size:14px}
+.kv dt{color:var(--muted);font:500 11px/1.9 var(--mono);text-transform:uppercase;letter-spacing:.06em}.kv dd{margin:0}
+.tag{display:inline-block;font:500 12px var(--mono);padding:2px 7px;border-radius:4px;background:var(--t);color:var(--c)}
+/* diagrams */
+figure{margin:0}figcaption{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
+svg{max-width:100%;height:auto;display:block}
+svg text{font-family:var(--mono);fill:currentColor}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font:13px var(--mono)}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500}
+td.chg{color:var(--hot);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.step{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:500 13px var(--mono);cursor:pointer}
+.step[aria-current="step"]{background:var(--hot);color:var(--surface);border-color:var(--hot)}
+.step.done{border-color:var(--accent);color:var(--accent)}
+.pkt{transition:transform .6s ease}
+@media(prefers-reduced-motion:reduce){.pkt{transition:none}}
+.note{border-left:3px solid var(--hot);padding:2px 0 2px 12px;margin-top:12px;font-size:14px}
+.stat{font:600 28px var(--display);font-variant-numeric:tabular-nums}
+</style>
+
+<style>:root{color-scheme:light}body{margin:0}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="eyebrow">How computer networks fit together</span>
+  <h1>Network Atlas</h1>
+  <p class="lede">One request from your laptop to a website touches every topic in networking. Learn the map first, then watch the layers wrap your data, follow a packet hop by hop, and step through the handshake that opens a page.</p>
+</header>
+
+<nav role="tablist" aria-label="Views">
+  <button role="tab" data-tab="map">1 · Knowledge map</button>
+  <button role="tab" data-tab="layers">2 · Layers wrap data</button>
+  <button role="tab" data-tab="journey">3 · Packet journey</button>
+  <button role="tab" data-tab="connect">4 · Opening a page</button>
+</nav>
+
+<section id="map">
+  <input id="q" class="search" type="search" placeholder="Filter topics: try tcp, ip, wifi, dns" aria-label="Filter topics">
+  <div class="grid">
+    <div id="layers-list"></div>
+    <aside class="panel" id="detail" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="layers" hidden>
+  <div class="panel">
+    <h2>What the sender adds at each layer</h2>
+    <p class="lede">Drag the slider down the stack. Each layer puts its own header in front of what it received and does not look inside. The receiver removes them in the opposite order.</p>
+    <div class="ctrl"><label for="stage" class="eyebrow">Stack depth</label></div>
+    <input id="stage" type="range" min="0" max="4" step="1" value="0">
+    <figure>
+      <div class="scroll"><svg id="encap" viewBox="0 0 760 190" role="img" aria-label="Data gains a TCP header, then an IP header, then an Ethernet header and trailer as it moves down the stack"></svg></div>
+      <figcaption id="encap-cap"></figcaption>
+    </figure>
+  </div>
+  <div class="panel scroll" style="margin-top:16px">
+    <table id="pdu"></table>
+  </div>
+</section>
+
+<section id="journey" hidden>
+  <div class="panel">
+    <h2>One packet, six stops</h2>
+    <p class="lede">Your laptop sends a request to a server. Pick a stop. The table shows the address fields at that point, and highlights what the last device changed.</p>
+    <div class="ctrl"><div class="steps" id="hops"></div></div>
+    <figure>
+      <div class="scroll"><svg id="topo" viewBox="0 0 900 190" role="img" aria-label="A packet travels from a laptop through a switch, home router, two ISP routers and reaches a server"></svg></div>
+      <figcaption>Switches forward by MAC address inside one network. Routers forward by IP address between networks and rewrite the link-layer addresses at every hop.</figcaption>
+    </figure>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="panel scroll"><table id="fields"></table></div>
+    <div class="panel"><h3 id="hop-title"></h3><p id="hop-text"></p></div>
+  </div>
+</section>
+
+<section id="connect" hidden>
+  <div class="grid">
+    <div class="panel">
+      <h2>Messages before the first byte of a page</h2>
+      <p class="lede">Assumes 5 ms one-way to the DNS resolver and 20 ms one-way to the server, with TLS 1.3 over TCP.</p>
+      <div class="ctrl">
+        <button class="btn" id="prev">Back</button>
+        <button class="btn primary" id="next">Next message</button>
+        <button class="btn" id="reset">Reset</button>
+      </div>
+      <figure>
+        <div class="scroll"><svg id="seq" viewBox="0 0 720 470" role="img" aria-label="Sequence of eight messages between client, DNS resolver and server"></svg></div>
+        <figcaption>Faint arrows have not happened yet. The highlighted arrow is the current message.</figcaption>
+      </figure>
+    </div>
+    <aside class="panel" id="seq-detail" aria-live="polite"></aside>
+  </div>
+</section>
+</div>
+
+<script>
+const LAYERS=[
+ {id:5,key:'l5',name:'Application',sub:'What programs say'},
+ {id:4,key:'l4',name:'Transport',sub:'Which program, how reliably'},
+ {id:3,key:'l3',name:'Network',sub:'Which machine, which path'},
+ {id:2,key:'l2',name:'Link',sub:'Next device on this network'},
+ {id:1,key:'l1',name:'Physical',sub:'Signals on a medium'}];
+const T=[
+ {id:'http',l:5,n:'HTTP',s:'Request and response format for the web.',a:'Ordering at a counter: you ask for an item, you get it or a reason why not.',p:'TCP 443 (HTTPS), UDP 443 (HTTP/3)',r:['dns','tls','tcp','quic'],d:'Methods like GET and POST, status codes like 200 and 404, headers, and a body.'},
+ {id:'dns',l:5,n:'DNS',s:'Turns names into IP addresses.',a:'A phone book that is split across many offices.',p:'UDP/TCP 53',r:['http','udp','ip'],d:'A resolver asks root, TLD, then authoritative servers and caches the answer for its TTL.'},
+ {id:'tls',l:5,n:'TLS',s:'Encrypts and authenticates a connection.',a:'A sealed envelope plus a check of the sender\'s ID.',p:'Runs over TCP or QUIC',r:['http','tcp','quic'],d:'The server proves its identity with a certificate. Both sides derive a shared key.'},
+ {id:'dhcp',l:5,n:'DHCP',s:'Hands a new device its IP settings.',a:'A hotel desk giving you a room number and the wifi password.',p:'UDP 67/68',r:['ip','udp','arp'],d:'Gives address, subnet mask, default gateway and DNS server for a lease period.'},
+ {id:'tcp',l:4,n:'TCP',s:'Reliable, ordered byte stream.',a:'Registered mail with delivery receipts.',p:'IP protocol 6',r:['http','tls','ip','ports'],d:'Handshake, sequence numbers, acknowledgments, retransmission, flow and congestion control.'},
+ {id:'udp',l:4,n:'UDP',s:'Fast, no guarantees.',a:'Dropping postcards in a mailbox.',p:'IP protocol 17',r:['dns','dhcp','quic','ports'],d:'Adds only ports and a checksum. Used when speed beats completeness, or when the app handles loss itself.'},
+ {id:'quic',l:4,n:'QUIC',s:'Reliable streams on top of UDP, with TLS built in.',a:'Registered mail that skips the slow counter line.',p:'UDP 443',r:['http','udp','tls'],d:'Combines transport and security handshakes and avoids one lost packet blocking every stream.'},
+ {id:'ports',l:4,n:'Ports',s:'Pick the program on a machine.',a:'Apartment number inside a building address.',p:'16-bit number',r:['tcp','udp','nat'],d:'IP gets data to the machine, the port gets it to the right socket. 443 is HTTPS, 22 is SSH.'},
+ {id:'ip',l:3,n:'IP',s:'Global addressing and best-effort delivery.',a:'The street address on a parcel.',p:'IPv4 (32-bit), IPv6 (128-bit)',r:['tcp','udp','routing','subnet','icmp'],d:'Each packet carries source and destination addresses and a TTL that drops by one per router.'},
+ {id:'subnet',l:3,n:'Subnets',s:'Split address space into networks.',a:'Postal codes grouping many streets.',p:'CIDR, e.g. 192.168.1.0/24',r:['ip','routing','arp'],d:'The prefix length says how many leading bits name the network. Same prefix means reachable without a router.'},
+ {id:'routing',l:3,n:'Routing',s:'Choose the next hop toward a destination.',a:'Following signposts at each junction.',p:'OSPF inside, BGP between ISPs',r:['ip','subnet','nat'],d:'Routers hold tables of prefixes and pick the longest match. BGP exchanges reachability between organizations.'},
+ {id:'nat',l:3,n:'NAT',s:'Share one public address among many devices.',a:'A company switchboard with one public number.',p:'Home routers, carrier networks',r:['ip','ports','routing'],d:'The router rewrites the private source address and port, and remembers the mapping for the reply.'},
+ {id:'icmp',l:3,n:'ICMP',s:'Error and diagnostic messages.',a:'Return-to-sender notes.',p:'IP protocol 1',r:['ip'],d:'ping uses echo request and reply. traceroute uses TTL-expired replies to reveal each hop.'},
+ {id:'eth',l:2,n:'Ethernet',s:'Frames on a wired local network.',a:'Hallway delivery inside one building.',p:'MAC addresses, 1500-byte payload',r:['arp','switch','ip'],d:'A frame carries destination MAC, source MAC, type, payload and a checksum.'},
+ {id:'arp',l:2,n:'ARP',s:'Find the MAC address for an IP on this network.',a:'Shouting "who has this number?" in the hall.',p:'Broadcast request, unicast reply',r:['eth','ip','subnet','dhcp'],d:'Before sending to a neighbor or gateway, a host asks which MAC owns that IP and caches the answer.'},
+ {id:'switch',l:2,n:'Switching',s:'Forward frames by MAC address.',a:'A mail room that learns which desk is on which floor.',p:'MAC table, VLANs',r:['eth','wifi'],d:'A switch learns source MACs per port and forwards only toward the destination. VLANs separate groups.'},
+ {id:'wifi',l:2,n:'Wi-Fi',s:'Link layer over radio.',a:'A conversation in a shared room where people take turns.',p:'IEEE 802.11',r:['switch','radio','eth'],d:'Devices share the air, listen before sending, and acknowledge each frame because collisions are invisible.'},
+ {id:'cable',l:1,n:'Copper & fiber',s:'Electrical or light pulses in a cable.',a:'Pipes of different widths.',p:'Cat6, single-mode fiber',r:['bits','eth'],d:'Fiber carries more, farther, with less loss. Copper is cheap for short runs.'},
+ {id:'radio',l:1,n:'Radio',s:'Modulated waves through air.',a:'Voices in a room that fade with distance.',p:'2.4, 5, 6 GHz; cellular bands',r:['wifi','bits'],d:'Walls, distance and other devices reduce the usable rate.'},
+ {id:'bits',l:1,n:'Bits & signals',s:'Encoding ones and zeros.',a:'Morse code with voltage or light.',p:'Line coding, modulation',r:['cable','radio'],d:'Everything above is eventually turned into a signal and back.'}];
+const byId=Object.fromEntries(T.map(t=>[t.id,t]));
+const Lx=n=>LAYERS.find(x=>x.id===n);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ---------- tabs ---------- */
+const tabs=['map','layers','journey','connect'];
+function show(t){
+  if(!tabs.includes(t))t='map';
+  tabs.forEach(x=>{$('#'+x).hidden=x!==t;document.querySelector(`[data-tab="${x}"]`).setAttribute('aria-selected',x===t)});
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab}));
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+/* ---------- map ---------- */
+let sel='tcp';
+function renderMap(){
+  const q=$('#q').value.trim().toLowerCase();
+  const rel=new Set(byId[sel].r);
+  $('#layers-list').innerHTML=LAYERS.map(L=>{
+    const chips=T.filter(t=>t.l===L.id).map(t=>{
+      const hit=!q||(t.n+t.s+t.p).toLowerCase().includes(q);
+      return `<button class="chip ${hit?'':'dim'} ${rel.has(t.id)?'rel':''}" data-id="${t.id}" aria-pressed="${t.id===sel}">${esc(t.n)}</button>`}).join('');
+    return `<div class="layer" style="--c:var(--${L.key});--t:var(--${L.key}t)"><div><b>${L.id} · ${L.name}</b><small>${L.sub}</small></div><div class="chips">${chips}</div></div>`}).join('');
+  const t=byId[sel],L=Lx(t.l);
+  $('#detail').innerHTML=`<span class="tag" style="--c:var(--${L.key});--t:var(--${L.key}t)">Layer ${L.id} · ${L.name}</span>
+   <h2 style="margin-top:10px">${esc(t.n)}</h2><p>${esc(t.s)}</p>
+   <dl class="kv"><dt>In detail</dt><dd>${esc(t.d)}</dd><dt>Analogy</dt><dd>${esc(t.a)}</dd><dt>Where</dt><dd class="mono" style="font-size:13px">${esc(t.p)}</dd>
+   <dt>Works with</dt><dd><div class="chips">${t.r.map(r=>`<button class="chip" data-id="${r}" style="--c:var(--${Lx(byId[r].l).key})">${esc(byId[r].n)}</button>`).join('')}</div></dd></dl>
+   <p class="note">Orange outlines on the map mark everything ${esc(t.n)} directly depends on or serves.</p>`;
+}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-id]');if(c&&c.closest('#map')){sel=c.dataset.id;renderMap()}});
+$('#q').addEventListener('input',renderMap);
+
+/* ---------- layers / encapsulation ---------- */
+const BLK=[
+ {k:'l5',w:210,label:'HTTP data',sub:'GET /index.html'},
+ {k:'l4',w:90,label:'TCP',sub:'ports, seq'},
+ {k:'l3',w:100,label:'IP',sub:'src, dst, TTL'},
+ {k:'l2',w:100,label:'Eth',sub:'MACs'}];
+const STAGES=[
+ {pdu:'Data',cap:'Layer 5: the application hands over its message. Nothing else is attached yet.'},
+ {pdu:'Segment',cap:'Layer 4: TCP adds source and destination ports and sequence numbers, so the far end can pick the right program and put bytes back in order.'},
+ {pdu:'Packet',cap:'Layer 3: IP adds source and destination addresses and a TTL, so routers can move it between networks.'},
+ {pdu:'Frame',cap:'Layer 2: Ethernet adds MAC addresses for the next device only, and a checksum trailer so damaged frames get dropped.'},
+ {pdu:'Bits',cap:'Layer 1: the frame becomes voltage, light or radio. The receiver reads the signal and works back up the stack.'}];
+function drawEncap(s){
+  let x=20,out='';
+  const bars=[];
+  const hdrs=[BLK[3],BLK[2],BLK[1]]; // outermost first
+  const added=s>=1?(s>=3?3:s):0;
+  const list=[];
+  if(s>=3)list.push({...BLK[3],w:100,label:'Eth hdr'});
+  if(s>=2)list.push({...BLK[2],label:'IP hdr'});
+  if(s>=1)list.push({...BLK[1],label:'TCP hdr'});
+  list.push(BLK[0]);
+  if(s>=3)list.push({k:'l2',w:60,label:'FCS',sub:'checksum'});
+  list.forEach(b=>{
+    out+=`<rect x="${x}" y="50" width="${b.w}" height="70" rx="4" fill="var(--${b.k}t)" stroke="var(--${b.k})" stroke-width="2"/>
+    <text x="${x+b.w/2}" y="82" text-anchor="middle" font-size="13" font-weight="500" style="fill:var(--${b.k})">${b.label}</text>
+    <text x="${x+b.w/2}" y="102" text-anchor="middle" font-size="10" style="fill:var(--muted)">${b.sub}</text>`;
+    x+=b.w+4;});
+  const total=x-24;
+  out+=`<line x1="20" y1="140" x2="${20+total}" y2="140" stroke="currentColor"/><line x1="20" y1="134" x2="20" y2="146" stroke="currentColor"/><line x1="${20+total}" y1="134" x2="${20+total}" y2="146" stroke="currentColor"/>
+  <text x="${20+total/2}" y="164" text-anchor="middle" font-size="13" style="fill:var(--fg)">${STAGES[s].pdu}</text>`;
+  if(s===4)out=`<text x="20" y="78" font-size="16" letter-spacing="2" style="fill:var(--l1)">1010 0110 0001 1101 0111 0010 1100 0101 0011 1000 1010 0110 0001 1101 0111 0010 1100 0101 0011 1000</text>
+   <text x="20" y="110" font-size="13" style="fill:var(--muted)">…the whole frame, serialized onto the wire</text>
+   <text x="20" y="164" font-size="13" style="fill:var(--fg)">Bits</text>`;
+  $('#encap').innerHTML=out;
+  $('#encap-cap').textContent=STAGES[s].cap;
+}
+$('#stage').addEventListener('input',e=>drawEncap(+e.target.value));
+$('#pdu').innerHTML=`<tr><th>Layer</th><th>Unit name</th><th>Address used</th><th>Device that reads it</th></tr>`+
+ [['5 Application','Message','URL, hostname','Browser, server'],['4 Transport','Segment','Port number','The two end hosts only'],['3 Network','Packet','IP address','Routers'],['2 Link','Frame','MAC address','Switches, access points'],['1 Physical','Bits','None','Cables, radios, hubs']]
+ .map((r,i)=>`<tr><td style="color:var(--l${5-i})">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+
+/* ---------- journey ---------- */
+const HOPS=[
+ {n:'Laptop',x:60,f:['aa:11','rt:01','192.168.1.20','93.184.216.34',64],t:'The laptop builds a packet. The destination IP is far away, so it sends the frame to its default gateway: it looks up the router\'s MAC with ARP and uses that as the destination MAC.'},
+ {n:'Switch / AP',x:230,f:['aa:11','rt:01','192.168.1.20','93.184.216.34',64],t:'A switch reads only the destination MAC and forwards the frame out the right port. Nothing in the packet changes. It is invisible at layer 3.'},
+ {n:'Home router',x:400,f:['rt:02','is:01','203.0.113.7','93.184.216.34',63],t:'The router strips the old frame and decrements TTL. NAT replaces the private source IP with the public one and records the mapping. A new frame is built for the ISP\'s MAC.'},
+ {n:'ISP router',x:570,f:['is:02','tr:01','203.0.113.7','93.184.216.34',62],t:'Looks up the destination in its routing table (longest prefix match), picks a next hop, and wraps the same packet in a new frame again.'},
+ {n:'Transit router',x:740,f:['tr:02','sv:01','203.0.113.7','93.184.216.34',61],t:'Same again. The IP source and destination stay fixed from here on, while MAC addresses and TTL change at every hop.'},
+ {n:'Server',x:850,f:['sv:01','sv:99','203.0.113.7','93.184.216.34',60],t:'The destination IP matches this machine. The IP header comes off, TCP reads port 443 and hands the bytes to the web server. The reply travels back with source and destination swapped.'}];
+let hop=0;
+function renderJourney(){
+  $('#hops').innerHTML=HOPS.map((h,i)=>`<button class="step ${i<hop?'done':''}" ${i===hop?'aria-current="step"':''} data-hop="${i}" aria-label="Stop ${i+1}: ${h.n}">${i+1}</button>`).join('');
+  const cur=HOPS[hop],prev=HOPS[Math.max(0,hop-1)];
+  const names=['Source MAC','Dest MAC','Source IP','Dest IP','TTL'];
+  $('#fields').innerHTML=`<tr><th>Field</th><th>At ${esc(cur.n)}</th></tr>`+names.map((nm,i)=>`<tr><td>${nm}</td><td class="${hop>0&&String(cur.f[i])!==String(prev.f[i])?'chg':''}">${cur.f[i]}${hop>0&&String(cur.f[i])!==String(prev.f[i])?' ← changed':''}</td></tr>`).join('');
+  $('#hop-title').textContent=`Stop ${hop+1}: ${cur.n}`;
+  $('#hop-text').textContent=cur.t;
+  let s='';
+  HOPS.forEach((h,i)=>{
+    if(i>0)s+=`<line x1="${HOPS[i-1].x+26}" y1="95" x2="${h.x-26}" y2="95" stroke="currentColor" stroke-width="2" ${i<=hop?'':'opacity=".3"'}/>`;
+  });
+  const icon=['▭','⇄','◈','◈','◈','▤'];
+  const lay=['L7→L1','L2','L3 + NAT','L3','L3','L7→L1'];
+  HOPS.forEach((h,i)=>{
+    s+=`<g opacity="${i<=hop?1:.45}"><rect x="${h.x-26}" y="69" width="52" height="52" rx="8" fill="var(--surface)" stroke="${i===hop?'var(--hot)':'currentColor'}" stroke-width="${i===hop?3:1.5}"/>
+    <text x="${h.x}" y="102" text-anchor="middle" font-size="22">${icon[i]}</text>
+    <text x="${h.x}" y="145" text-anchor="middle" font-size="11">${h.n}</text><text x="${h.x}" y="162" text-anchor="middle" font-size="10" style="fill:var(--muted)">${lay[i]}</text></g>`;
+  });
+  s+=`<g class="pkt" style="transform:translateX(${cur.x}px)"><circle cx="0" cy="42" r="9" fill="var(--hot)"/><text x="0" y="24" text-anchor="middle" font-size="10" style="fill:var(--hot)">packet</text></g>`;
+  $('#topo').innerHTML=s;
+}
+$('#hops').addEventListener('click',e=>{const b=e.target.closest('[data-hop]');if(b){hop=+b.dataset.hop;renderJourney()}});
+
+/* ---------- connect ---------- */
+const MSG=[
+ {f:0,t:1,l:'A example.com ?',ph:'DNS',ms:5,h:'Turn the name into an address',x:'The client cannot connect to a name. It asks its resolver (UDP, one packet each way).'},
+ {f:1,t:0,l:'93.184.216.34',ph:'DNS',ms:10,h:'Name resolved',x:'If the resolver had it cached this took one round trip. A cold lookup walks root, TLD and authoritative servers first.'},
+ {f:0,t:2,l:'SYN',ph:'TCP',ms:30,h:'TCP handshake, part 1',x:'The client proposes an initial sequence number. This starts the first of the full round trips to the server.'},
+ {f:2,t:0,l:'SYN-ACK',ph:'TCP',ms:50,h:'TCP handshake, part 2',x:'The server accepts and proposes its own sequence number. One round trip (40 ms) has gone by.'},
+ {f:0,t:2,l:'ACK + ClientHello',ph:'TLS',ms:70,h:'Connection open, start TLS',x:'The final ACK can carry the first TLS message, so the handshakes overlap.'},
+ {f:2,t:0,l:'ServerHello, cert, Finished',ph:'TLS',ms:90,h:'Server proves identity',x:'The certificate links the server\'s key to its domain name. Keys are agreed. TLS 1.3 needs one round trip.'},
+ {f:0,t:2,l:'Finished + GET /',ph:'HTTP',ms:110,h:'Encrypted request',x:'The client verifies the certificate chain, finishes TLS and sends the HTTP request in the same flight.'},
+ {f:2,t:0,l:'200 OK + HTML',ph:'HTTP',ms:130,h:'First byte of the page',x:'130 ms in, from three round trips: DNS, TCP+TLS, and the request. Reusing a connection skips most of this. QUIC merges the TCP and TLS trips.'}];
+const COL=['Client','DNS resolver','Server'],CX=[100,360,620],PHC={DNS:'l5',TCP:'l4',TLS:'l3',HTTP:'l2'};
+let cur=0;
+function renderSeq(){
+  let s='';
+  CX.forEach((x,i)=>{s+=`<text x="${x}" y="28" text-anchor="middle" font-size="14" font-weight="500">${COL[i]}</text><line x1="${x}" y1="42" x2="${x}" y2="450" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/>`});
+  MSG.forEach((m,i)=>{
+    const y=78+i*48,x1=CX[m.f],x2=CX[m.t],dir=x2>x1?1:-1,on=i===cur-1,done=i<cur,col=`var(--${PHC[m.ph]})`;
+    s+=`<g opacity="${done?1:.25}"><line x1="${x1}" y1="${y}" x2="${x2-dir*8}" y2="${y}" stroke="${col}" stroke-width="${on?3.5:2}"/>
+    <polygon points="${x2},${y} ${x2-dir*10},${y-5} ${x2-dir*10},${y+5}" fill="${col}"/>
+    <text x="${(x1+x2)/2}" y="${y-8}" text-anchor="middle" font-size="12" ${on?'font-weight="500"':''}>${m.l}</text>
+    <text x="${x1===CX[0]?x1-12:x1+12}" y="${y+4}" text-anchor="${x1===CX[0]?'end':'start'}" font-size="10" style="fill:var(--muted)">${m.ms} ms</text></g>`;
+  });
+  $('#seq').innerHTML=s;
+  const m=MSG[cur-1];
+  $('#seq-detail').innerHTML=cur===0?`<span class="eyebrow">Elapsed</span><div class="stat">0 ms</div><p>Press <b>Next message</b> to send the first packet.</p>`:
+   `<span class="eyebrow">Elapsed</span><div class="stat">${m.ms} ms</div>
+    <span class="tag" style="--c:var(--${PHC[m.ph]});--t:var(--${PHC[m.ph]}t)">${m.ph}</span>
+    <h3 style="margin-top:10px">${m.h}</h3><p>${m.x}</p>
+    <div class="note">Message ${cur} of ${MSG.length}</div>`;
+  $('#prev').disabled=cur===0;$('#next').disabled=cur===MSG.length;
+}
+$('#next').onclick=()=>{if(cur<MSG.length){cur++;renderSeq()}};
+$('#prev').onclick=()=>{if(cur>0){cur--;renderSeq()}};
+$('#reset').onclick=()=>{cur=0;renderSeq()};
+
+renderMap();drawEncap(0);renderJourney();renderSeq();show(location.hash.slice(1));
+</script>
+</body>
+</html>

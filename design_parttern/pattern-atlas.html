@@ -1,0 +1,639 @@
+<title>Pattern Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky top bar, left index of 23 patterns grouped by family, main column = intent -> live demo + roles -> guidance -> code. */
+:root{
+  --bg:#F2F5F7; --surface:#FFFFFF; --ink:#13202B; --mute:#576876; --line:#D8E0E6; --soft:#E8EEF2;
+  --cre:#B26B00; --str:#0A7873; --beh:#C1411A;
+  --c:var(--str); --ok:#1B7F4B; --bad:#B42318;
+  --f-display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1317; --surface:#141C22; --ink:#E5ECF1; --mute:#92A3B1; --line:#26333D; --soft:#1B262E;
+  --cre:#E8A93C; --str:#42C6C0; --beh:#FF8C5E; --ok:#4CC789; --bad:#FF7A6B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1317; --surface:#141C22; --ink:#E5ECF1; --mute:#92A3B1; --line:#26333D; --soft:#1B262E;
+  --cre:#E8A93C; --str:#42C6C0; --beh:#FF8C5E; --ok:#4CC789; --bad:#FF7A6B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.wrap{padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header.top .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.brand{font:700 20px/1 var(--f-display);letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.brand small{font:400 12px var(--f-mono);color:var(--mute);margin-left:8px;letter-spacing:0}
+.top nav.tabs{margin-left:auto;display:flex;gap:6px}
+.tabs a{padding:6px 12px;border-radius:6px;text-decoration:none;color:var(--mute);font-weight:500}
+.tabs a[aria-current="page"]{background:var(--soft);color:var(--ink)}
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:32px;padding-block:24px 64px}
+aside.idx{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));align-self:start;max-height:calc(100vh - 90px);overflow:auto;padding-right:4px}
+aside.idx summary{display:none}
+.fam{margin:0 0 18px}
+.fam h3{font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.fam h3::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--fc)}
+.fam a{display:block;padding:5px 10px;border-radius:6px;color:var(--mute);text-decoration:none;font-size:14px;border-left:2px solid transparent}
+.fam a:hover{background:var(--soft);color:var(--ink)}
+.fam a[aria-current="page"]{background:var(--soft);color:var(--ink);font-weight:600;border-left-color:var(--fc)}
+.cre{--fc:var(--cre)} .str{--fc:var(--str)} .beh{--fc:var(--beh)}
+main{min-width:0}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+h1{font:700 clamp(30px,5vw,46px)/1.05 var(--f-display);letter-spacing:-.02em;margin:6px 0 10px;text-wrap:balance}
+h2{font:600 13px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.lead{font-size:18px;max-width:62ch;margin:0 0 24px;text-wrap:pretty}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.stage{border-top:3px solid var(--c)}
+.stage .hint{color:var(--mute);font-size:13px;margin:0 0 12px}
+.side{display:flex;flex-direction:column;gap:16px}
+.roles{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}
+.roles dt{font:500 12px var(--f-mono);color:var(--mute);padding-top:2px}
+.roles dd{margin:0;font-family:var(--f-mono);font-size:13px}
+.analogy{font-size:15px;margin:0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+ul.tight{margin:0;padding-left:18px;display:grid;gap:5px}
+.codewrap{margin-top:20px}
+.codehead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+pre.code{margin:0;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:14px;overflow:auto;font:13px/1.55 var(--f-mono);tab-size:2}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:28px;flex-wrap:wrap}
+.pager a{color:var(--ink);text-decoration:none;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-weight:500}
+.pager a:hover{border-color:var(--c)}
+/* demo controls */
+button{cursor:pointer;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:6px;padding:7px 12px;font-weight:500;font-size:14px}
+button:hover{opacity:.88}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.ghost:hover{border-color:var(--c)}
+button.on{background:var(--c);border-color:var(--c);color:#fff}
+button[disabled]{opacity:.35;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.row label{display:flex;gap:6px;align-items:center;font-size:14px}
+input[type=range]{accent-color:var(--c);flex:1;min-width:140px}
+input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:0}
+textarea{width:100%;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font:12px var(--f-mono);padding:3px 8px;border-radius:99px;border:1px solid var(--line);background:var(--bg)}
+.chip.c{border-color:var(--c);color:var(--c)}
+.log{font:12.5px/1.5 var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:64px;max-height:190px;overflow:auto;color:var(--mute)}
+.log .ok{color:var(--ok)} .log .bad{color:var(--bad)} .log .hl{color:var(--ink)}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);font:13px/1.5 var(--f-mono);overflow:auto;white-space:pre-wrap;min-width:0}
+.box.hot{border-color:var(--c);box-shadow:inset 3px 0 0 var(--c)}
+.box.err{border-color:var(--bad);color:var(--bad)}
+.flow{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:12px}
+.node{flex:1 1 90px;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;font-size:13px;background:var(--bg);transition:.2s}
+.node b{display:block;font:600 13px var(--f-mono)}
+.node.passed{opacity:.5;text-decoration:line-through}
+.node.done{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--bg))}
+.node.cur{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--bg))}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{font:13px var(--f-mono);color:var(--mute);margin:8px 0 0}
+.stat b{color:var(--ink)}
+.tree{font:13px/1.8 var(--f-mono);margin:0 0 10px;padding:0;list-style:none}
+.tree ul{list-style:none;padding-left:18px;margin:0;border-left:1px dashed var(--line)}
+.tree .n{cursor:pointer;padding:1px 6px;border-radius:4px}
+.tree .n:hover{background:var(--soft)}
+.tree .n.sel{background:var(--c);color:#fff}
+.cells{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.cell{padding:8px 12px;border:1px solid var(--line);border-radius:6px;font:13px var(--f-mono);background:var(--bg)}
+.cell.vis{background:var(--soft);color:var(--mute)} .cell.cur{border-color:var(--c);background:var(--c);color:#fff}
+.bar{height:14px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);transition:width .15s}
+.snaps{display:grid;gap:6px;margin-top:10px}
+.snap{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:12.5px var(--f-mono);background:var(--bg)}
+.snap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+canvas{max-width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+svg text{fill:currentColor}
+.preview{display:flex;gap:14px;align-items:center;padding:14px;border:1px dashed var(--line);border-radius:8px;margin-bottom:10px;flex-wrap:wrap}
+.pw{display:inline-block;padding:8px 16px;font-size:14px;border:2px solid;font-weight:600}
+.pc{display:inline-flex;gap:8px;align-items:center;font-size:14px}
+.pc i{width:18px;height:18px;border:2px solid;display:inline-block}
+/* overview */
+.famhead{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin:30px 0 4px}
+.famhead h2{margin:0;color:var(--fc)}
+.famhead p{margin:0;color:var(--mute)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px}
+.pcard{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--fc);border-radius:8px;padding:14px}
+.pcard:hover{border-color:var(--fc)}
+.pcard b{display:block;font:600 17px var(--f-display);margin-bottom:4px}
+.pcard span{color:var(--mute);font-size:14px}
+.guide{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.guide div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;border-top:3px solid var(--fc)}
+.guide b{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fc)}
+.guide p{margin:6px 0 0}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.qopts button{background:var(--surface);color:var(--ink);border-color:var(--line);text-align:left;padding:12px}
+.qopts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--surface))}
+.qopts button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,var(--surface))}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:16px}
+  aside.idx{position:static;max-height:none}
+  aside.idx summary{display:block;cursor:pointer;font-weight:600;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+  aside.idx .fams{padding-top:12px}
+  .grid2,.cols,.guide,.qopts,.two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="#overview">Pattern Atlas<small>23 GoF patterns, hands-on</small></a>
+  <nav class="tabs" aria-label="Sections"><a href="#overview" id="t-overview">Map</a><a href="#quiz" id="t-quiz">Quiz</a></nav>
+</div></header>
+<div class="wrap shell">
+  <aside class="idx"><details id="idxd" open><summary>All 23 patterns</summary><div class="fams" id="fams"></div></details></aside>
+  <main id="main" aria-live="polite"></main>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function wire(el,map){
+  el.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&el.contains(b)&&map[b.dataset.a])map[b.dataset.a](b,e)});
+  el.addEventListener('input',e=>{const b=e.target.closest('[data-i]');if(b&&el.contains(b)&&map[b.dataset.i])map[b.dataset.i](b,e)});
+}
+function logger(el){const pre=$('.log',el);return(m,cls='')=>{const d=document.createElement('div');d.className=cls;d.textContent=m;pre.prepend(d);while(pre.children.length>40)pre.lastChild.remove()}}
+const hex=()=>Math.random().toString(16).slice(2,6);
+
+/* ================= DEMOS ================= */
+function dSingleton(el){
+  el.innerHTML=`<div class="row"><button data-a="get">Config.getInstance()</button><button class="ghost" data-a="new">new Config()</button><button class="ghost" data-a="reset">Reset</button></div><div class="chips"></div><div class="log"></div><p class="stat"></p>`;
+  const log=logger(el),chips=$('.chips',el),st=$('.stat',el);let inst=null,calls=0,made=0;
+  const upd=()=>st.innerHTML=`getInstance() calls: <b>${calls}</b> · instances created: <b>${made}</b>`;upd();
+  wire(el,{
+    get(){calls++;if(!inst){inst={id:hex()};made++;log('created Config@'+inst.id,'ok')}else log('returned existing Config@'+inst.id);
+      chips.insertAdjacentHTML('beforeend',`<span class="chip c">call ${calls} → Config@${inst.id}</span>`);upd()},
+    new(){log('TypeError: Config constructor is private. Use getInstance().','bad')},
+    reset(){inst=null;calls=0;made=0;chips.innerHTML='';$('.log',el).innerHTML='';upd()}
+  });
+}
+function dFactoryMethod(el){
+  const F={Road:['Truck','drives on a road','by land'],Sea:['Ship','sails a route','by sea'],Air:['Plane','flies a corridor','by air']};
+  el.innerHTML=`<div class="row">${Object.keys(F).map(k=>`<button class="ghost" data-a="mk" data-k="${k}">${k}Logistics</button>`).join('')}</div><div class="box" id="o">Pick a creator. Each one decides which Transport class to instantiate.</div>`;
+  wire(el,{mk(b){$$('button',el).forEach(x=>x.classList.toggle('on',x===b));const [t,v,w]=F[b.dataset.k];
+    $('#o',el).className='box hot';$('#o',el).textContent=`logistics = new ${b.dataset.k}Logistics()\ntransport = logistics.createTransport()  // returns ${t}\nlogistics.planDelivery()  // the shared code calls transport.deliver()\n→ ${t} ${v}, delivering ${w}`}});
+}
+function dAbstractFactory(el){
+  const FAM={Flat:{btn:'border-radius:2px;background:#0A7873;color:#fff;border-color:#0A7873',box:'border-radius:2px;border-color:#0A7873;background:#0A7873'},
+    Rounded:{btn:'border-radius:99px;background:#B26B00;color:#fff;border-color:#B26B00',box:'border-radius:50%;border-color:#B26B00;background:#B26B00'},
+    Outline:{btn:'border-radius:6px;background:transparent;color:currentColor;border-color:currentColor',box:'border-radius:4px;border-color:currentColor;background:transparent'}};
+  el.innerHTML=`<div class="row">${Object.keys(FAM).map(k=>`<button class="ghost" data-a="f" data-k="${k}">${k}Factory</button>`).join('')}</div><div class="preview" id="pv"><span class="pw">Button</span><span class="pc"><i></i>Checkbox</span></div><div class="box" id="o">Client code only knows the GuiFactory interface. Swap the factory and the whole family changes together.</div>`;
+  function pick(k){$$('button',el).forEach(x=>x.classList.toggle('on',x.dataset.k===k));const f=FAM[k];
+    $('.pw',el).style.cssText=f.btn;$('.pc i',el).style.cssText=f.box;
+    $('#o',el).className='box hot';$('#o',el).textContent=`gui = new ${k}Factory()\nbutton = gui.createButton()      // ${k}Button\ncheckbox = gui.createCheckbox()  // ${k}Checkbox\n// both products always match: same family`}
+  wire(el,{f(b){pick(b.dataset.k)}});pick('Flat');
+}
+function dBuilder(el){
+  el.innerHTML=`<div class="row"><label>Size <select data-i="u"><option>S</option><option selected>M</option><option>L</option></select></label>
+  <label><input type="checkbox" data-i="u" value="cheese" checked> cheese</label><label><input type="checkbox" data-i="u" value="pepperoni"> pepperoni</label>
+  <label><input type="checkbox" data-i="u" value="mushrooms"> mushrooms</label><label><input type="checkbox" data-i="u" value="sauce"> extra sauce</label></div>
+  <div class="box" id="c"></div><div class="box hot" id="r" style="margin-top:8px"></div>`;
+  const u=()=>{const sz=$('select',el).value,on=$$('input:checked',el).map(i=>i.value);
+    $('#c',el).textContent='new PizzaBuilder()\n  .size("'+sz+'")'+on.map(o=>'\n  .add("'+o+'")').join('')+'\n  .build()';
+    $('#r',el).textContent='Pizza { size: '+sz+', toppings: ['+on.join(', ')+'] }\nsteps run: '+(on.length+2)+' (the same builder can make other pizzas)'};
+  wire(el,{u});u();
+}
+function dPrototype(el){
+  el.innerHTML=`<div class="row"><button data-a="deep">Deep clone</button><button class="ghost" data-a="shallow">Shallow clone</button><button class="ghost" data-a="paint">Paint clone's arm gold</button><button class="ghost" data-a="reset">Reset</button></div>
+  <div class="two"><div><h2>Original</h2><div class="box" id="o"></div></div><div><h2>Clone</h2><div class="box" id="c">no clone yet</div></div></div><p class="stat" id="s"></p>`;
+  let o,c;const J=x=>JSON.stringify(x,null,1);
+  const reset=()=>{o={name:'Robot',parts:{arm:'steel'}};c=null;draw()};
+  function draw(){$('#o',el).textContent=J(o);$('#c',el).textContent=c?J(c):'no clone yet';$('#s',el).textContent=''}
+  wire(el,{deep(){c=structuredClone(o);draw();$('#s',el).textContent='structuredClone(o): nested objects are copied too.'},
+    shallow(){c={...o};draw();$('#s',el).textContent='{...o}: c.parts is the SAME object as o.parts.'},
+    paint(){if(!c)return;c.parts.arm='gold';draw();const leaked=o.parts.arm==='gold';const s=$('#s',el);s.innerHTML=leaked?'<b style="color:var(--bad)">The original changed too.</b> Shallow copies share nested state.':'<b style="color:var(--ok)">Original is untouched.</b> Deep clone is independent.'},reset});
+  reset();
+}
+function dAdapter(el){
+  el.innerHTML=`<div class="row"><label>Sensor reads <input type="range" min="14" max="122" value="68" data-i="u"> <b id="f">68</b>°F</label><label><input type="checkbox" data-i="u" checked> use adapter</label></div>
+  <div class="box" id="o"></div><p class="stat">Client expects <b>getCelsius()</b>. Legacy sensor only offers <b>readFahrenheit()</b>.</p>`;
+  const u=()=>{const f=+$('input[type=range]',el).value,ad=$('input[type=checkbox]',el).checked;$('#f',el).textContent=f;const b=$('#o',el);
+    if(ad){b.className='box hot';b.textContent='client.show(new CelsiusAdapter(legacySensor))\n→ adapter.getCelsius() = (readFahrenheit() - 32) * 5/9\n→ '+((f-32)*5/9).toFixed(1)+' °C'}
+    else{b.className='box err';b.textContent='client.show(legacySensor)\nTypeError: legacySensor.getCelsius is not a function'}};
+  wire(el,{u});u();
+}
+function dBridge(el){
+  el.innerHTML=`<div class="row"><label>Shape (abstraction) <select data-i="u"><option>Circle</option><option>Square</option><option>Triangle</option></select></label><label>Renderer (implementation) <select data-i="u"><option>Solid</option><option>Outline</option><option>Dotted</option></select></label></div>
+  <div class="two"><svg id="sv" viewBox="0 0 120 120" width="120" height="120" style="color:var(--c)"></svg><div class="box" id="o"></div></div>
+  <p class="stat">3 shapes + 3 renderers = <b>6 classes</b>. Without a bridge you would write <b>9</b> (and 12 after one more shape).</p>`;
+  const u=()=>{const [s,r]=$$('select',el).map(x=>x.value);const st={Solid:'fill="currentColor"',Outline:'fill="none" stroke="currentColor" stroke-width="4"',Dotted:'fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="2 7" stroke-linecap="round"'}[r];
+    const g={Circle:`<circle cx="60" cy="60" r="44" ${st}/>`,Square:`<rect x="16" y="16" width="88" height="88" ${st}/>`,Triangle:`<polygon points="60,14 108,102 12,102" ${st}/>`}[s];
+    $('#sv',el).innerHTML=g;$('#o',el).textContent='new '+s+'(new '+r+'Renderer())\n→ '+s.toLowerCase()+'.draw()\n→ this.renderer.render'+s+'(...)'};
+  wire(el,{u});u();
+}
+function dComposite(el){
+  const T={n:'root/',kids:[{n:'docs/',kids:[{n:'cv.pdf',s:120},{n:'letter.txt',s:80}]},{n:'photos/',kids:[{n:'a.jpg',s:900},{n:'b.jpg',s:700},{n:'raw/',kids:[{n:'c.raw',s:3000}]}]},{n:'notes.md',s:15}]};
+  const size=x=>x.kids?x.kids.reduce((a,k)=>a+size(k),0):x.s;let id=0;const M=new Map();
+  const R=x=>{const i=++id;M.set(i,x);return `<li><span class="n" data-a="p" data-id="${i}">${x.kids?'▸ ':''}${x.n}</span>${x.kids?'<ul>'+x.kids.map(R).join('')+'</ul>':''}</li>`};
+  el.innerHTML=`<ul class="tree">${R(T)}</ul><div class="box" id="o">Click any file or folder. Same call, same interface: node.size()</div>`;
+  wire(el,{p(b){$$('.n',el).forEach(x=>x.classList.remove('sel'));b.classList.add('sel');const x=M.get(+b.dataset.id);const o=$('#o',el);o.className='box hot';
+    o.textContent=x.kids?x.n+'.size() = sum of '+x.kids.length+' children = '+size(x)+' KB':x.n+'.size() = '+x.s+' KB  (leaf)'}});
+}
+function dDecorator(el){
+  const A={Milk:.5,Mocha:.7,Whip:.4};let base='Espresso',stack=[];
+  el.innerHTML=`<div class="row"><select data-i="b"><option>Espresso</option><option>Tea</option></select>${Object.keys(A).map(k=>`<button class="ghost" data-a="t" data-k="${k}">+ ${k}</button>`).join('')}</div><div class="box hot" id="o"></div>`;
+  const price={Espresso:2,Tea:1.5};
+  const u=()=>{$$('[data-k]',el).forEach(b=>b.classList.toggle('on',stack.includes(b.dataset.k)));
+    const cost=price[base]+stack.reduce((a,k)=>a+A[k],0);let s=`new ${base}()`;stack.forEach(k=>s=`new ${k}(${s})`);
+    $('#o',el).textContent=s+'\ndescription: '+[base,...stack].join(' + ')+'\ncost(): $'+cost.toFixed(2)+'\nEach wrapper adds behaviour and delegates to what it wraps.'};
+  wire(el,{b(s){base=s.value;u()},t(b){const k=b.dataset.k;stack=stack.includes(k)?stack.filter(x=>x!==k):[...stack,k];u()}});u();
+}
+function dFacade(el){
+  el.innerHTML=`<div class="two"><div><h2>Without facade</h2><button class="ghost" data-a="m">Client calls 6 subsystems</button></div><div><h2>With facade</h2><button data-a="f">theater.watchMovie("Dune")</button></div></div><div class="log" style="margin-top:12px"></div><p class="stat"></p>`;
+  const log=logger(el),st=$('.stat',el);
+  const steps=['lights.dim(10)','screen.down()','projector.on()','projector.setInput("streamer")','amp.setVolume(7)','streamer.play("Dune")'];
+  wire(el,{m(){steps.slice().reverse().forEach(s=>log('client → '+s));st.innerHTML='Client made <b>6</b> calls and must know the order.'},
+    f(){steps.slice().reverse().forEach(s=>log('   facade → '+s));log('client → theater.watchMovie("Dune")','ok');st.innerHTML='Client made <b>1</b> call. Subsystems are still reachable if needed.'}});
+}
+function dFlyweight(el){
+  el.innerHTML=`<div class="row"><label>Trees <input type="range" min="100" max="10000" step="100" value="2000" data-i="u"> <b id="n">2000</b></label></div><canvas width="520" height="150"></canvas><div class="two" style="margin-top:10px"><div class="box" id="a"></div><div class="box hot" id="b"></div></div>`;
+  const cols=['#1B7F4B','#0A7873','#7A9B2E'],fmt=b=>b>1e6?(b/1e6).toFixed(2)+' MB':(b/1e3).toFixed(0)+' KB';
+  const u=()=>{const n=+$('input',el).value;$('#n',el).textContent=n;const cv=$('canvas',el),g=cv.getContext('2d');g.clearRect(0,0,520,150);
+    let s=n;for(let i=0;i<Math.min(n,2500);i++){s=(s*1103515245+12345)&0x7fffffff;const x=s%520;s=(s*1103515245+12345)&0x7fffffff;const y=12+s%130,t=i%3;g.fillStyle=cols[t];g.beginPath();g.moveTo(x,y-9);g.lineTo(x-5,y+3);g.lineTo(x+5,y+3);g.fill()}
+    $('#a',el).textContent='Naive: every tree owns its mesh + texture\n'+n+' × 1.2 KB = '+fmt(n*1200);
+    $('#b',el).textContent='Flyweight: 3 shared TreeTypes\n3 × 1.2 KB + '+n+' × 16 B (x, y, type) = '+fmt(3600+n*16)}
+  wire(el,{u});u();
+}
+function dProxy(el){
+  el.innerHTML=`<div class="row"><button data-a="get">proxy.load("hero.png")</button><button class="ghost" data-a="reset">Clear cache</button></div><div class="log"></div><p class="stat"></p>`;
+  const log=logger(el),st=$('.stat',el);let cache=false,real=0,total=0,busy=false;
+  const u=()=>st.innerHTML=`Requests: <b>${total}</b> · hit the real service: <b>${real}</b> · cached: <b>${cache?'yes':'no'}</b>`;u();
+  wire(el,{get(){if(busy)return;total++;if(cache){log('proxy: cache hit, returned instantly','ok');u();return}
+      busy=true;log('proxy: miss, calling RealImage (slow)...');real++;u();setTimeout(()=>{if(!el.isConnected)return;cache=true;busy=false;log('RealImage: downloaded 4.2 MB in 800 ms','hl');u()},800)},
+    reset(){cache=false;real=0;total=0;busy=false;$('.log',el).innerHTML='';u()}});
+}
+function dChain(el){
+  const H=[['Bot',2,'FAQ auto-reply'],['Support',5,'agent replies'],['Engineer',8,'patch shipped'],['CTO',10,'war room']];
+  el.innerHTML=`<div class="row"><label>Severity <input type="range" min="1" max="10" value="6" data-i="u"> <b id="v">6</b></label></div><div class="flow"></div><div class="box hot" id="o"></div>`;
+  const u=()=>{const s=+$('input',el).value;$('#v',el).textContent=s;let done=false,t='';
+    $('.flow',el).innerHTML=H.map(([n,max,a])=>{let c='';if(done)c='';else if(s<=max){c='done';done=true;t=n+' handled it: '+a}else c='passed';return `<div class="node ${c}"><b>${n}</b>handles ≤ ${max}</div>`}).join('');
+    $('#o',el).textContent='request(severity='+s+')\n'+t+'\nEach handler either handles it or calls next.handle(request).'};
+  wire(el,{u});u();
+}
+function dCommand(el){
+  el.innerHTML=`<div class="row"><button data-a="c" data-op="add5">+5</button><button data-a="c" data-op="add1">+1</button><button data-a="c" data-op="mul2">×2</button><button class="ghost" data-a="undo">Undo</button><button class="ghost" data-a="redo">Redo</button></div><div class="chips"><span class="chip c" id="v" style="font-size:16px"></span></div><div class="box" id="h"></div>`;
+  let v=0,done=[],undone=[];const ops={add5:['+5',x=>x+5],add1:['+1',x=>x+1],mul2:['×2',x=>x*2]};
+  const u=()=>{$('#v',el).textContent='value = '+v;$('#h',el).textContent='history (stack): '+(done.map(d=>d.n).join(' → ')||'empty')+'\nredo stack: '+(undone.map(d=>d.n).join(', ')||'empty')};
+  wire(el,{c(b){const [n,f]=ops[b.dataset.op],prev=v;v=f(v);done.push({n,prev,next:v});undone=[];u()},
+    undo(){const c=done.pop();if(!c)return;v=c.prev;undone.push(c);u()},redo(){const c=undone.pop();if(!c)return;v=c.next;done.push(c);u()}});u();
+}
+function dInterpreter(el){
+  el.innerHTML=`<div class="row"><input type="text" data-i="u" value="2 + 3 * (4 - 1)" style="flex:1"></div><div class="box hot" id="o"></div><p class="stat">Grammar: expr := term (+|- term)* · term := factor (*|/ factor)* · factor := number | ( expr )</p>`;
+  function parse(src){const tk=src.match(/\d+\.?\d*|[()+\-*/]|\S/g)||[];let i=0;
+    const num=n=>({t:'Num',ev:()=>n,kids:[],label:String(n)});
+    const op=(o,l,r)=>({t:{'+':'Add','-':'Sub','*':'Mul','/':'Div'}[o],kids:[l,r],ev:()=>{const a=l.ev(),b=r.ev();return o=='+'?a+b:o=='-'?a-b:o=='*'?a*b:a/b}});
+    function expr(){let l=term();while(tk[i]=='+'||tk[i]=='-'){const o=tk[i++];l=op(o,l,term())}return l}
+    function term(){let l=fac();while(tk[i]=='*'||tk[i]=='/'){const o=tk[i++];l=op(o,l,fac())}return l}
+    function fac(){const t=tk[i++];if(t=='('){const e=expr();if(tk[i++]!=')')throw Error('missing )');return e}if(/^\d/.test(t))return num(+t);throw Error('unexpected "'+(t??'end')+'"')}
+    const r=expr();if(i<tk.length)throw Error('unexpected "'+tk[i]+'"');return r}
+  const show=(n,d=0)=>'  '.repeat(d)+n.t+(n.label?'('+n.label+')':'')+'  = '+n.ev()+'\n'+n.kids.map(k=>show(k,d+1)).join('');
+  const u=()=>{const o=$('#o',el);try{const t=parse($('input',el).value);o.className='box hot';o.textContent='Syntax tree, each node.interpret():\n'+show(t)}catch(e){o.className='box err';o.textContent='SyntaxError: '+e.message}};
+  wire(el,{u});u();
+}
+function dIterator(el){
+  const items=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  el.innerHTML=`<div class="row"><select data-i="m"><option value="f">Forward</option><option value="r">Reverse</option><option value="e">Every other</option></select><button data-a="n">it.next()</button><button class="ghost" data-a="r">Reset</button></div><div class="cells"></div><div class="box" id="o"></div>`;
+  let order,p;
+  const reset=()=>{const m=$('select',el).value;order=m=='f'?[0,1,2,3,4,5,6]:m=='r'?[6,5,4,3,2,1,0]:[0,2,4,6];p=-1;draw('hasNext() = true')};
+  function draw(msg){$('.cells',el).innerHTML=items.map((x,i)=>{const k=order.indexOf(i);return `<span class="cell ${k==p?'cur':k>=0&&k<p?'vis':''}">${x}</span>`}).join('');$('#o',el).textContent=msg}
+  wire(el,{m:reset,r:reset,n(){if(p+1>=order.length){draw('hasNext() = false → done');return}p++;draw('next() → "'+items[order[p]]+'"\nhasNext() = '+(p+1<order.length)+'\n(the client never touches the array or its index)')}});reset();
+}
+function dMediator(el){
+  const U=['Ann','Bob','Cy'];let from='Ann';const muted=new Set();
+  el.innerHTML=`<div class="row">Sender:${U.map(u=>`<button class="ghost" data-a="s" data-u="${u}">${u}</button>`).join('')}</div><div class="row"><input type="text" id="t" value="Hi all" style="flex:1"><button data-a="send">Send</button></div><div class="row">Mute at mediator:${U.map(u=>`<label><input type="checkbox" data-i="m" value="${u}"> ${u}</label>`).join('')}</div><div class="log"></div>`;
+  const log=logger(el),mark=()=>$$('[data-u]',el).forEach(b=>b.classList.toggle('on',b.dataset.u==from));mark();
+  wire(el,{s(b){from=b.dataset.u;mark()},m(i){i.checked?muted.add(i.value):muted.delete(i.value)},
+    send(){const t=$('#t',el).value;const to=U.filter(u=>u!=from&&!muted.has(u));
+      log(from+' → mediator → ['+(to.join(', ')||'nobody')+']: "'+t+'"',to.length?'ok':'bad')}});
+}
+function dMemento(el){
+  el.innerHTML=`<textarea rows="3" id="t">The quick brown fox</textarea><div class="row" style="margin-top:8px"><button data-a="save">Save snapshot</button><button class="ghost" data-a="clear">Wipe text</button></div><div class="snaps"></div>`;
+  const S=[];const draw=()=>{$('.snaps',el).innerHTML=S.map((s,i)=>`<div class="snap"><span>#${i+1} ${s.t} · "${esc(s.x)}"</span><button class="ghost" data-a="rs" data-i="${i}">Restore</button></div>`).join('')||'<div class="snap">No snapshots yet. The editor hands out opaque mementos; the caretaker only stores them.</div>'};
+  wire(el,{save(){S.push({t:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}),x:$('#t',el).value});draw()},clear(){$('#t',el).value=''},rs(b){$('#t',el).value=S[+b.dataset.i].x}});draw();
+}
+function dObserver(el){
+  el.innerHTML=`<div class="row"><label>store.set <input type="range" min="0" max="100" value="40" data-i="u"> <b id="v">40</b></label></div>
+  <div class="row"><button data-a="t" data-k="Label" class="on">Label</button><button data-a="t" data-k="Bar" class="on">Bar</button><button data-a="t" data-k="Alert">Alert</button><span class="stat" style="margin:0">toggle = subscribe / unsubscribe</span></div>
+  <div class="two"><div><div class="chips"><span class="chip c" id="L"></span></div><div class="bar"><i id="B"></i></div></div><div class="box" id="A">alert idle</div></div><div class="log" style="margin-top:12px"></div>`;
+  const log=logger(el);const subs={Label:true,Bar:true,Alert:false};
+  const fx={Label:v=>$('#L',el).textContent='Label shows '+v,Bar:v=>$('#B',el).style.width=v+'%',Alert:v=>{const a=$('#A',el);a.textContent=v>80?'ALERT: value above 80!':'alert: ok';a.className='box'+(v>80?' err':'')}};
+  fx.Label(40);fx.Bar(40);
+  wire(el,{u(i){$('#v',el).textContent=i.value;const n=Object.keys(subs).filter(k=>subs[k]);n.forEach(k=>fx[k](+i.value));log('notify('+i.value+') → '+(n.join(', ')||'no subscribers'))},
+    t(b){const k=b.dataset.k;subs[k]=!subs[k];b.classList.toggle('on',subs[k]);log((subs[k]?'subscribe ':'unsubscribe ')+k,subs[k]?'ok':'bad')}});
+}
+function dState(el){
+  const G={Draft:{submit:'Review'},Review:{approve:'Published',reject:'Draft'},Published:{unpublish:'Draft'}};let s='Draft';
+  el.innerHTML=`<div class="flow">${Object.keys(G).map(k=>`<div class="node" data-s="${k}"><b>${k}</b></div>`).join('')}</div><div class="row">${['submit','approve','reject','unpublish'].map(a=>`<button class="ghost" data-a="go" data-x="${a}">${a}()</button>`).join('')}</div><div class="log"></div>`;
+  const log=logger(el);const u=()=>{$$('.node',el).forEach(n=>n.classList.toggle('cur',n.dataset.s==s));$$('[data-x]',el).forEach(b=>b.disabled=!G[s][b.dataset.x])};u();
+  wire(el,{go(b){const n=G[s][b.dataset.x];log(s+'.'+b.dataset.x+'() → '+n,'ok');s=n;u()}});
+}
+function dStrategy(el){
+  const S={Standard:w=>3+w*.8,Express:w=>9+w*1.5,Drone:w=>w>5?null:14};
+  el.innerHTML=`<div class="row"><label>Weight <input type="range" min="1" max="20" value="4" data-i="u"> <b id="w">4</b> kg</label></div><div class="row">${Object.keys(S).map(k=>`<label><input type="radio" name="st" data-i="u" value="${k}" ${k=='Standard'?'checked':''}> ${k}</label>`).join('')}</div><div class="box hot" id="o"></div><div class="box" id="t" style="margin-top:8px"></div>`;
+  const u=()=>{const w=+$('input[type=range]',el).value,k=$('input:checked',el).value;$('#w',el).textContent=w;const c=S[k](w);
+    $('#o',el).textContent='cart.setStrategy(new '+k+'Shipping())\ncart.shipping('+w+') → '+(c==null?'not available for this weight':'$'+c.toFixed(2));
+    $('#t',el).textContent=Object.keys(S).map(x=>x.padEnd(9)+(S[x](w)==null?'n/a':'$'+S[x](w).toFixed(2))).join('\n')};
+  wire(el,{u});u();
+}
+function dTemplate(el){
+  const B={Tea:{brew:'steep tea bag 3 min',add:'add lemon'},Coffee:{brew:'drip coffee through filter',add:'add milk and sugar'},'Hot chocolate':{brew:'stir in cocoa powder',add:null}};
+  el.innerHTML=`<div class="row">${Object.keys(B).map(k=>`<button class="ghost" data-a="b" data-k="${k}">${k}</button>`).join('')}</div><div class="box" id="o">Pick a drink. prepare() is fixed; subclasses fill in the steps.</div>`;
+  wire(el,{b(b){$$('button',el).forEach(x=>x.classList.toggle('on',x===b));const d=B[b.dataset.k];
+    $('#o',el).className='box hot';$('#o',el).textContent=`${b.dataset.k}.prepare():\n  1. boil water                [fixed in base class]\n  2. ${d.brew.padEnd(26)}[overridden]\n  3. pour into cup             [fixed in base class]\n  4. ${d.add?d.add.padEnd(26)+'[overridden]':'(skipped by hook wantsExtras() = false)'}`}});
+}
+function dVisitor(el){
+  const S=[{type:'Circle',r:3},{type:'Rect',w:4,h:5},{type:'Group',kids:[{type:'Circle',r:1},{type:'Rect',w:2,h:2}]}];
+  const acc=(n,v)=>v['visit'+n.type](n);
+  const V={Area:{visitCircle:0,visitCircle(n){return Math.PI*n.r*n.r},visitRect:n=>n.w*n.h,visitGroup(n){return n.kids.reduce((a,k)=>a+acc(k,V.Area),0)}},
+    Json:{visitCircle:n=>`{"circle":${n.r}}`,visitRect:n=>`{"rect":[${n.w},${n.h}]}`,visitGroup(n){return `{"group":[${n.kids.map(k=>acc(k,V.Json)).join(',')}]}`}},
+    Count:{visitCircle:()=>1,visitRect:()=>1,visitGroup(n){return 1+n.kids.reduce((a,k)=>a+acc(k,V.Count),0)}}};
+  el.innerHTML=`<div class="box">shapes = [Circle(r=3), Rect(4×5), Group[Circle(r=1), Rect(2×2)]]</div><div class="row" style="margin-top:10px">${Object.keys(V).map(k=>`<button class="ghost" data-a="v" data-k="${k}">${k}Visitor</button>`).join('')}</div><div class="box" id="o">Pick a visitor. Each one adds an operation without editing the shape classes.</div>`;
+  wire(el,{v(b){$$('button',el).forEach(x=>x.classList.toggle('on',x===b));const k=b.dataset.k;const r=S.map(s=>acc(s,V[k]));
+    const total=k=='Area'?r.reduce((a,x)=>a+x,0).toFixed(2):k=='Count'?r.reduce((a,x)=>a+x,0):'['+r.join(',')+']';
+    $('#o',el).className='box hot';$('#o',el).textContent=`shapes.forEach(s => s.accept(new ${k}Visitor()))\nshape.accept(v) → v.visit<Type>(shape)  (double dispatch)\nresult: ${total}`}});
+}
+
+/* ================= CONTENT ================= */
+const P=[
+{id:'singleton',name:'Singleton',cat:'cre',tag:'One instance, global access point.',intent:'Guarantee that a class has exactly one instance and give everyone the same way to reach it.',analogy:'A country has one government. Anyone who needs it asks for "the government", not "a new government".',roles:[['Singleton','Config'],['access','Config.getInstance()']],use:['Shared logger, config, connection pool','A resource that is truly unique (hardware port)'],watch:['Acts like a global variable and hides dependencies','Makes tests harder; prefer passing the instance in'],demo:dSingleton,
+code:`class Config {
+  static #instance = null;
+  constructor() {
+    if (Config.#instance) throw new Error("use getInstance()");
+  }
+  static getInstance() {
+    return Config.#instance ??= new Config();
+  }
+}
+Config.getInstance() === Config.getInstance(); // true`},
+{id:'factory-method',name:'Factory Method',cat:'cre',tag:'Subclasses decide which class to create.',intent:'Define an interface for creating an object, but let subclasses choose the concrete class.',analogy:'A hiring manager asks for "a new team member". Each department decides whether that is an engineer or a designer.',roles:[['Creator','Logistics'],['factory method','createTransport()'],['Product','Transport'],['Concrete','Truck, Ship, Plane']],use:['A class cannot know ahead of time which objects it must create','Let library users plug in their own product types'],watch:['Can lead to many small creator subclasses'],demo:dFactoryMethod,
+code:`class Logistics {
+  planDelivery() {
+    const t = this.createTransport(); // factory method
+    return t.deliver();
+  }
+}
+class RoadLogistics extends Logistics {
+  createTransport() { return new Truck(); }
+}
+class SeaLogistics extends Logistics {
+  createTransport() { return new Ship(); }
+}`},
+{id:'abstract-factory',name:'Abstract Factory',cat:'cre',tag:'Create whole families of matching objects.',intent:'Provide an interface for creating families of related objects without naming their concrete classes.',analogy:'A furniture shop sells a Modern set or a Victorian set. A chair and a sofa always come from the same style.',roles:[['AbstractFactory','GuiFactory'],['Concrete','FlatFactory, RoundedFactory'],['Products','Button, Checkbox']],use:['Products must be used together (UI themes, DB drivers)','Swap an entire family in one place'],watch:['Adding a new product type touches every factory'],demo:dAbstractFactory,
+code:`class FlatFactory {
+  createButton()   { return new FlatButton(); }
+  createCheckbox() { return new FlatCheckbox(); }
+}
+class RoundedFactory {
+  createButton()   { return new RoundedButton(); }
+  createCheckbox() { return new RoundedCheckbox(); }
+}
+function renderApp(factory) {   // knows only the factory
+  return [factory.createButton(), factory.createCheckbox()];
+}`},
+{id:'builder',name:'Builder',cat:'cre',tag:'Assemble complex objects step by step.',intent:'Separate how a complex object is constructed from its final representation, so one process can make different results.',analogy:'Ordering at a sandwich counter: you pick bread, filling and sauce in steps, then the sandwich is assembled.',roles:[['Builder','PizzaBuilder'],['steps','size(), add()'],['build()','returns Pizza']],use:['Constructors with many optional parameters','Same construction steps, different outputs'],watch:['More code than a plain constructor for simple objects'],demo:dBuilder,
+code:`class PizzaBuilder {
+  #p = { size: "M", toppings: [] };
+  size(s)  { this.#p.size = s; return this; }
+  add(t)   { this.#p.toppings.push(t); return this; }
+  build()  { return Object.freeze({ ...this.#p }); }
+}
+const pizza = new PizzaBuilder()
+  .size("L").add("cheese").add("mushrooms").build();`},
+{id:'prototype',name:'Prototype',cat:'cre',tag:'Create new objects by copying existing ones.',intent:'Specify what to create by cloning a prototype instance, without depending on its concrete class.',analogy:'Photocopying a filled-in form instead of re-typing it from scratch.',roles:[['Prototype','clone()'],['Client','copies, then tweaks']],use:['Creating an object is expensive but copying is cheap','Many objects differ only slightly'],watch:['Deep vs shallow copy: nested objects can stay shared','Circular references complicate cloning'],demo:dPrototype,
+code:`const robot = { name: "Robot", parts: { arm: "steel" } };
+
+const deep    = structuredClone(robot); // independent
+const shallow = { ...robot };           // parts is shared
+
+shallow.parts.arm = "gold";
+robot.parts.arm;   // "gold"  <- leaked through the shallow copy`},
+{id:'adapter',name:'Adapter',cat:'str',tag:'Make incompatible interfaces work together.',intent:'Convert the interface of a class into the one clients expect, so classes with mismatched interfaces can cooperate.',analogy:'A travel plug adapter: the wall socket and your charger do not change, the adapter sits between them.',roles:[['Target','getCelsius()'],['Adaptee','LegacySensor'],['Adapter','CelsiusAdapter']],use:['Reuse an old or third-party class with a different API','Wrap an SDK behind your own interface'],watch:['Do not adapt what you could simply fix at the source'],demo:dAdapter,
+code:`class LegacySensor { readFahrenheit() { return 68; } }
+
+class CelsiusAdapter {
+  constructor(sensor) { this.sensor = sensor; }
+  getCelsius() {
+    return (this.sensor.readFahrenheit() - 32) * 5 / 9;
+  }
+}
+show(new CelsiusAdapter(new LegacySensor())); // 20`},
+{id:'bridge',name:'Bridge',cat:'str',tag:'Split abstraction from implementation.',intent:'Decouple an abstraction from its implementation so the two can vary independently.',analogy:'A remote control (abstraction) works with any TV brand (implementation). New remotes and new TVs do not multiply each other.',roles:[['Abstraction','Shape'],['Implementor','Renderer'],['Link','shape.renderer']],use:['A class varies in two independent dimensions','Avoid a subclass explosion (N × M)'],watch:['Overkill when only one dimension exists'],demo:dBridge,
+code:`class Shape {
+  constructor(renderer) { this.renderer = renderer; }  // the bridge
+}
+class Circle extends Shape {
+  draw() { return this.renderer.renderCircle(this.r); }
+}
+class SolidRenderer   { renderCircle(r) { /* fill */ } }
+class OutlineRenderer { renderCircle(r) { /* stroke */ } }
+new Circle(new OutlineRenderer()).draw();`},
+{id:'composite',name:'Composite',cat:'str',tag:'Treat single items and groups the same way.',intent:'Compose objects into tree structures and let clients treat individual objects and compositions uniformly.',analogy:'A folder contains files and other folders. "Total size" works the same whether you ask a file or a whole drive.',roles:[['Component','Node.size()'],['Leaf','File'],['Composite','Folder (has children)']],use:['Part-whole hierarchies: menus, DOM, org charts','Recursive operations over a tree'],watch:['The common interface can become too general'],demo:dComposite,
+code:`class File   { constructor(n, kb) { this.kb = kb; }
+               size() { return this.kb; } }
+class Folder { constructor(n, kids) { this.kids = kids; }
+               size() { return this.kids.reduce((a, k) => a + k.size(), 0); } }
+
+new Folder("root", [new File("a", 5), new Folder("b", [new File("c", 7)])]).size(); // 12`},
+{id:'decorator',name:'Decorator',cat:'str',tag:'Add behaviour by wrapping.',intent:'Attach extra responsibilities to an object dynamically by wrapping it, as a flexible alternative to subclassing.',analogy:'Layering clothes: a coat over a sweater over a shirt. Each layer adds warmth and you pick layers at runtime.',roles:[['Component','Coffee'],['Concrete','Espresso'],['Decorator','Milk(coffee)']],use:['Combine optional features freely (streams, middleware)','Avoid a subclass per combination'],watch:['Long wrapper chains are hard to debug','Order of wrapping can matter'],demo:dDecorator,
+code:`class Espresso { cost() { return 2; } desc() { return "Espresso"; } }
+class Milk {
+  constructor(inner) { this.inner = inner; }
+  cost() { return this.inner.cost() + 0.5; }
+  desc() { return this.inner.desc() + " + Milk"; }
+}
+const drink = new Milk(new Milk(new Espresso()));
+drink.cost(); // 3`},
+{id:'facade',name:'Facade',cat:'str',tag:'One simple door to a complex subsystem.',intent:'Provide a unified, simpler interface to a set of interfaces in a subsystem.',analogy:'A hotel concierge: you say "dinner at 8" and they deal with the restaurant, taxi and table.',roles:[['Facade','HomeTheater'],['Subsystem','Lights, Screen, Amp, Streamer']],use:['Hide a messy library behind a few high-level calls','Layer a large system'],watch:['Can grow into a god object','Does not forbid direct subsystem access'],demo:dFacade,
+code:`class HomeTheater {
+  watchMovie(title) {
+    this.lights.dim(10);
+    this.screen.down();
+    this.projector.on();
+    this.amp.setVolume(7);
+    this.streamer.play(title);
+  }
+}
+theater.watchMovie("Dune");`},
+{id:'flyweight',name:'Flyweight',cat:'str',tag:'Share common state to save memory.',intent:'Use sharing to support large numbers of fine-grained objects efficiently.',analogy:'A print shop keeps one metal block per letter and reuses it, instead of carving a new "e" for every "e" on the page.',roles:[['Flyweight','TreeType (shared)'],['Extrinsic state','x, y (per tree)'],['Factory','TreeTypeFactory (cache)']],use:['Thousands of similar objects (particles, glyphs, tiles)','Most object state can be moved out and shared'],watch:['Adds complexity to separate intrinsic and extrinsic state'],demo:dFlyweight,
+code:`const types = new Map();
+function getType(name, mesh) {            // factory with cache
+  if (!types.has(name)) types.set(name, new TreeType(name, mesh));
+  return types.get(name);
+}
+class Tree {
+  constructor(x, y, type) { this.x = x; this.y = y; this.type = type; }
+}
+forest.push(new Tree(10, 20, getType("oak", bigMesh)));`},
+{id:'proxy',name:'Proxy',cat:'str',tag:'A stand-in that controls access.',intent:'Provide a surrogate for another object to control access to it (lazy loading, caching, permissions).',analogy:'A credit card is a proxy for your bank account: same payment interface, with limits and checks in front.',roles:[['Subject','Image.load()'],['RealSubject','RealImage'],['Proxy','ImageProxy']],use:['Lazy initialisation and caching','Access control, logging, remote calls'],watch:['Adds a layer and some latency','Response may be stale if cached'],demo:dProxy,
+code:`class ImageProxy {
+  #real = null;
+  load() {
+    if (!this.#real) this.#real = new RealImage(); // slow, once
+    return this.#real.load();
+  }
+}
+// same interface as RealImage, so clients cannot tell the difference`},
+{id:'chain-of-responsibility',name:'Chain of Responsibility',cat:'beh',tag:'Pass a request along until someone handles it.',intent:'Avoid coupling the sender of a request to its receiver by giving several objects a chance to handle it.',analogy:'Customer support escalation: bot, then agent, then engineer, then manager. Each decides to act or pass it on.',roles:[['Handler','handle(req)'],['Concrete','Bot, Support, Engineer'],['link','next']],use:['Middleware pipelines, event bubbling','Handler is not known in advance'],watch:['A request may fall off the end unhandled','Hard to see the flow at a glance'],demo:dChain,
+code:`class Handler {
+  setNext(h) { this.next = h; return h; }
+  handle(req) {
+    if (this.canHandle(req)) return this.process(req);
+    return this.next?.handle(req);   // pass it on
+  }
+}
+bot.setNext(support).setNext(engineer).setNext(cto);
+bot.handle({ severity: 6 });`},
+{id:'command',name:'Command',cat:'beh',tag:'Turn a request into an object.',intent:'Encapsulate a request as an object so you can queue, log and undo it.',analogy:'A restaurant order slip: the waiter writes the request, the kitchen executes it later, and the slip can be cancelled.',roles:[['Command','execute(), undo()'],['Invoker','History / buttons'],['Receiver','the value being changed']],use:['Undo and redo, macros, job queues','Decouple the UI button from the action'],watch:['One class per action can be a lot of small classes'],demo:dCommand,
+code:`class AddCommand {
+  constructor(doc, n) { this.doc = doc; this.n = n; }
+  execute() { this.prev = this.doc.value; this.doc.value += this.n; }
+  undo()    { this.doc.value = this.prev; }
+}
+history.push(cmd); cmd.execute();
+history.pop().undo();`},
+{id:'interpreter',name:'Interpreter',cat:'beh',tag:'Represent a grammar as objects and evaluate it.',intent:'Given a language, define a representation of its grammar and an interpreter that uses it to evaluate sentences.',analogy:'A sheet-music reader: each symbol has a meaning, and playing the piece means evaluating symbols in order.',roles:[['AbstractExpression','interpret()'],['Terminal','Number'],['NonTerminal','Add, Mul']],use:['Small DSLs, rule engines, search filters','Grammar is simple and stable'],watch:['Does not scale to big grammars; use a parser generator'],demo:dInterpreter,
+code:`class Num { constructor(n) { this.n = n; } interpret() { return this.n; } }
+class Add {
+  constructor(l, r) { this.l = l; this.r = r; }
+  interpret() { return this.l.interpret() + this.r.interpret(); }
+}
+new Add(new Num(2), new Mul(new Num(3), new Num(3))).interpret(); // 11`},
+{id:'iterator',name:'Iterator',cat:'beh',tag:'Walk a collection without knowing its insides.',intent:'Provide a way to access the elements of an aggregate sequentially without exposing its representation.',analogy:'A TV remote\'s "next channel" button: you do not need to know how channels are stored.',roles:[['Iterator','next(), hasNext()'],['Aggregate','Collection'],['variants','forward, reverse, step']],use:['Traverse trees, graphs, paginated APIs','Offer several traversal orders'],watch:['In most languages the built-in iterator protocol already does this'],demo:dIterator,
+code:`class Week {
+  *[Symbol.iterator]() { for (const d of this.days) yield d; }
+  *reverse()          { for (let i = this.days.length - 1; i >= 0; i--)
+                          yield this.days[i]; }
+}
+for (const day of week) console.log(day);`},
+{id:'mediator',name:'Mediator',cat:'beh',tag:'Objects talk through a hub, not to each other.',intent:'Define an object that encapsulates how a set of objects interact, so they do not refer to each other directly.',analogy:'An air-traffic tower: planes never talk to each other, they talk to the tower, which coordinates everyone.',roles:[['Mediator','ChatRoom'],['Colleague','User'],['rule','mute, routing']],use:['Many-to-many dependencies turned into one-to-many','Centralise coordination rules (forms, chat, UI dialogs)'],watch:['The mediator can become a god object'],demo:dMediator,
+code:`class ChatRoom {
+  users = [];
+  send(from, text) {
+    this.users.filter(u => u !== from && !u.muted)
+              .forEach(u => u.receive(from.name, text));
+  }
+}
+class User { say(t) { this.room.send(this, t); } }  // knows only the room`},
+{id:'memento',name:'Memento',cat:'beh',tag:'Save and restore state without breaking encapsulation.',intent:'Capture an object\'s internal state externally so the object can be restored to it later.',analogy:'A video-game save slot: you can reload exactly where you were, without needing to know how the game stores things.',roles:[['Originator','Editor'],['Memento','Snapshot (opaque)'],['Caretaker','History list']],use:['Undo, checkpoints, transactions','Snapshots of state that is private'],watch:['Many large snapshots eat memory'],demo:dMemento,
+code:`class Editor {
+  text = "";
+  save()          { return { text: this.text }; }   // memento
+  restore(memento) { this.text = memento.text; }
+}
+const snapshots = [];            // caretaker
+snapshots.push(editor.save());
+editor.restore(snapshots.at(-1));`},
+{id:'observer',name:'Observer',cat:'beh',tag:'Subscribers get notified when something changes.',intent:'Define a one-to-many dependency so that when one object changes state, all its dependents are notified automatically.',analogy:'Subscribing to a newsletter: the publisher does not know who you are, it just sends to the list.',roles:[['Subject','Store'],['Observer','Label, Bar, Alert'],['methods','subscribe(), notify()']],use:['UI updates, event systems, reactive state','Many parts depend on one source of truth'],watch:['Forgotten unsubscribes leak memory','Update order and cascades can surprise'],demo:dObserver,
+code:`class Store {
+  #subs = new Set();
+  subscribe(fn)   { this.#subs.add(fn); return () => this.#subs.delete(fn); }
+  set(value)      { this.value = value; this.#subs.forEach(fn => fn(value)); }
+}
+const off = store.subscribe(v => label.textContent = v);
+store.set(42);  off();`},
+{id:'state',name:'State',cat:'beh',tag:'Behaviour changes with the object\'s state.',intent:'Allow an object to alter its behaviour when its internal state changes, as if it changed class.',analogy:'A vending machine acts differently when idle, when it holds money, and when it is out of stock.',roles:[['Context','Document'],['State','Draft, Review, Published'],['transitions','submit(), approve()']],use:['Workflows, order lifecycles, UI modes','Large if/switch blocks on a status field'],watch:['Many small state classes for simple machines'],demo:dState,
+code:`class Draft {
+  submit(doc)  { doc.state = new Review(); }
+  approve()    { throw Error("not allowed in Draft"); }
+}
+class Review {
+  approve(doc) { doc.state = new Published(); }
+  reject(doc)  { doc.state = new Draft(); }
+}
+doc.state.submit(doc);   // behaviour depends on the current state`},
+{id:'strategy',name:'Strategy',cat:'beh',tag:'Swap algorithms at runtime.',intent:'Define a family of algorithms, encapsulate each one and make them interchangeable.',analogy:'Choosing a route in a map app: walk, drive or transit. Same trip, different algorithm.',roles:[['Strategy','shipping(weight)'],['Concrete','Standard, Express, Drone'],['Context','Cart']],use:['Several ways to do one job (sorting, pricing, validation)','Remove conditionals that choose an algorithm'],watch:['Clients must know the strategies to pick one'],demo:dStrategy,
+code:`const standard = w => 3 + w * 0.8;
+const express  = w => 9 + w * 1.5;
+
+class Cart {
+  setStrategy(fn) { this.shipping = fn; }
+  total(w)        { return this.items + this.shipping(w); }
+}
+cart.setStrategy(express);`},
+{id:'template-method',name:'Template Method',cat:'beh',tag:'Fixed skeleton, customisable steps.',intent:'Define the skeleton of an algorithm in a base class and let subclasses override specific steps.',analogy:'A recipe card: the order of steps is fixed, but "add the filling" differs for each dish.',roles:[['Template','prepare()'],['Fixed steps','boilWater(), pour()'],['Hooks','brew(), addExtras()']],use:['Frameworks with lifecycle methods','Several classes share one workflow'],watch:['Inheritance couples subclasses to the base','Too many hooks make flow hard to follow'],demo:dTemplate,
+code:`class Beverage {
+  prepare() {                       // the template, never overridden
+    this.boilWater(); this.brew(); this.pour();
+    if (this.wantsExtras()) this.addExtras();
+  }
+  wantsExtras() { return true; }    // hook with a default
+}
+class Tea extends Beverage {
+  brew() { /* steep */ }  addExtras() { /* lemon */ }
+}`},
+{id:'visitor',name:'Visitor',cat:'beh',tag:'Add operations without changing the classes.',intent:'Represent an operation to be performed on the elements of an object structure, so new operations can be added without changing those classes.',analogy:'A tax inspector visiting different kinds of businesses: the inspector has a procedure per type, the businesses stay unchanged.',roles:[['Element','accept(visitor)'],['Visitor','visitCircle(), visitRect()'],['trick','double dispatch']],use:['Many unrelated operations over a stable class hierarchy','Export, report and analysis passes over an AST'],watch:['Adding a new element type means touching every visitor'],demo:dVisitor,
+code:`class Circle { accept(v) { return v.visitCircle(this); } }
+class Rect   { accept(v) { return v.visitRect(this); } }
+
+const area = {
+  visitCircle: c => Math.PI * c.r ** 2,
+  visitRect:   r => r.w * r.h,
+};
+shapes.map(s => s.accept(area));`}
+];
+const FAMS={cre:['Creational','How objects get made','Hide or customise creation.'],str:['Structural','How objects fit together','Compose classes into larger, flexible structures.'],beh:['Behavioral','How objects talk and share work','Assign responsibility and manage communication.']};
+
+/* ================= QUIZ ================= */
+const Q=[['I need exactly one shared logger across the whole app.','singleton'],['Add milk, mocha or whip to a coffee at runtime without a subclass per combination.','decorator'],['Many widgets must refresh whenever the data changes.','observer'],['Let the user switch the sorting algorithm on the fly.','strategy'],['An old API must look like the one my code expects.','adapter'],['Undo and redo for editor actions.','command'],['A folder and a file should answer "how big are you?" the same way.','composite'],['Hide six subsystem calls behind one simple method.','facade'],['Cache a slow-to-load image behind the same interface.','proxy'],['Walk a collection without exposing how it is stored.','iterator'],['Save a checkpoint and roll back to it later.','memento'],['Construct a complex object step by step with optional parts.','builder'],['A document moves through draft, review and published with different allowed actions.','state'],['A request should travel through handlers until one of them deals with it.','chain-of-responsibility'],['Millions of particles share the same texture and mesh, memory is too high.','flyweight'],['Add new export and report operations to a class tree without editing the classes.','visitor'],['UI components must always come from the same matching theme family.','abstract-factory'],['Subclasses choose which product class the shared code instantiates.','factory-method'],['Chat users should never hold references to each other.','mediator'],['Copy an existing configured object rather than building it again.','prototype']];
+
+/* ================= ROUTER ================= */
+const main=$('#main');
+function buildIndex(){
+  $('#fams').innerHTML=Object.keys(FAMS).map(c=>`<div class="fam ${c}"><h3>${FAMS[c][0]}</h3>${P.filter(p=>p.cat==c).map(p=>`<a href="#${p.id}" data-id="${p.id}">${p.name}</a>`).join('')}</div>`).join('');
+}
+function setActive(h){
+  $$('.fam a').forEach(a=>a.dataset.id==h?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
+  ['overview','quiz'].forEach(t=>{const a=$('#t-'+t);h==t?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current')});
+}
+function overview(){
+  main.style.removeProperty('--c');
+  main.innerHTML=`<div class="eyebrow">Map</div><h1>Learn design patterns by touching them</h1>
+  <p class="lead">Patterns are named solutions to problems that keep coming back. Each of the 23 classic Gang of Four patterns has a live demo, a real-world analogy, and short code. Start from the question you are asking.</p>
+  <div class="guide">${Object.keys(FAMS).map(c=>`<div class="${c}"><b>${FAMS[c][0]}</b><p><strong>${FAMS[c][1]}.</strong> ${FAMS[c][2]}</p></div>`).join('')}</div>
+  ${Object.keys(FAMS).map(c=>`<div class="${c}"><div class="famhead"><h2>${FAMS[c][0]} · ${P.filter(p=>p.cat==c).length}</h2><p>${FAMS[c][1]}</p></div><div class="cards">${P.filter(p=>p.cat==c).map(p=>`<a class="pcard" href="#${p.id}"><b>${p.name}</b><span>${p.tag}</span></a>`).join('')}</div></div>`).join('')}
+  <p style="margin-top:32px"><a href="#quiz" style="color:var(--ink);font-weight:600">Done exploring? Test yourself with the quiz →</a></p>`;
+}
+function pattern(p,i){
+  main.style.setProperty('--c',`var(--${p.cat})`);
+  const prev=P[i-1],next=P[i+1];
+  main.innerHTML=`<div class="eyebrow">${FAMS[p.cat][0]} · ${i+1} of ${P.length}</div><h1>${p.name}</h1><p class="lead">${p.intent}</p>
+  <div class="grid2"><section class="card stage"><h2>Try it</h2><p class="hint">${p.tag}</p><div id="demo"></div></section>
+  <div class="side"><section class="card"><h2>Think of it as</h2><p class="analogy">${p.analogy}</p></section><section class="card"><h2>Roles</h2><dl class="roles">${p.roles.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl></section></div></div>
+  <div class="cols"><section class="card"><h2>Use it when</h2><ul class="tight">${p.use.map(x=>`<li>${x}</li>`).join('')}</ul></section><section class="card"><h2>Watch out for</h2><ul class="tight">${p.watch.map(x=>`<li>${x}</li>`).join('')}</ul></section></div>
+  <section class="codewrap"><div class="codehead"><h2 style="margin:0">Code</h2><button class="ghost" id="cp">Copy</button></div><pre class="code"></pre></section>
+  <div class="pager">${prev?`<a href="#${prev.id}">← ${prev.name}</a>`:'<span></span>'}${next?`<a href="#${next.id}">${next.name} →</a>`:`<a href="#quiz">Take the quiz →</a>`}</div>`;
+  $('pre.code',main).textContent=p.code;
+  $('#cp').onclick=async()=>{const b=$('#cp');try{await navigator.clipboard.writeText(p.code);b.textContent='Copied'}catch(e){const r=document.createRange();r.selectNodeContents($('pre.code',main));getSelection().removeAllRanges();getSelection().addRange(r);b.textContent='Selected'}setTimeout(()=>b.textContent='Copy',1400)};
+  p.demo($('#demo'));
+}
+let qstate;
+function quiz(){
+  main.style.setProperty('--c','var(--ink)');
+  qstate={qs:[...Q].sort(()=>Math.random()-.5).slice(0,10),i:0,score:0};drawQ();
+}
+function drawQ(){
+  const s=qstate;const root=document.createElement('div');main.replaceChildren(root);
+  if(s.i>=s.qs.length){root.innerHTML=`<div class="eyebrow">Quiz</div><h1>${s.score} / ${s.qs.length}</h1><p class="lead">${s.score>=9?'You can pick the right pattern from a problem description.':s.score>=6?'Solid. Revisit the ones you missed from the map.':'Open the demos of the patterns you missed, then try again.'}</p><div class="row"><button data-a="again">Try another round</button><a href="#overview" style="color:var(--ink);font-weight:600;padding:8px">Back to the map</a></div>`;wire(root,{again:quiz});return}
+  const [q,ans]=s.qs[s.i];
+  const opts=[ans,...P.map(p=>p.id).filter(x=>x!=ans).sort(()=>Math.random()-.5).slice(0,3)].sort(()=>Math.random()-.5);
+  root.innerHTML=`<div class="eyebrow">Quiz · question ${s.i+1} of ${s.qs.length} · score ${s.score}</div><h1 style="font-size:clamp(22px,3.5vw,32px)">Which pattern fits?</h1><p class="lead">${q}</p>
+  <div class="qopts">${opts.map(o=>`<button data-a="pick" data-o="${o}">${P.find(p=>p.id==o).name}</button>`).join('')}</div><div id="fb"></div>`;
+  wire(root,{pick(b){if($('#fb').dataset.d)return;$('#fb').dataset.d=1;const ok=b.dataset.o==ans;if(ok)s.score++;
+    $$('.qopts button').forEach(x=>{if(x.dataset.o==ans)x.classList.add('right');else if(x==b)x.classList.add('wrong')});
+    const p=P.find(x=>x.id==ans);$('#fb').innerHTML=`<p><strong>${ok?'Correct.':'Not quite.'}</strong> ${p.name}: ${p.tag} <a href="#${p.id}" style="color:var(--ink)">See the demo</a></p><button data-a="next">${s.i+1<s.qs.length?'Next question':'See score'}</button>`},
+    next(){s.i++;drawQ()}});
+}
+function route(){
+  const h=location.hash.slice(1)||'overview';
+  const i=P.findIndex(p=>p.id==h);
+  if(h=='quiz')quiz();else if(i>=0)pattern(P[i],i);else overview();
+  setActive(i>=0?h:(h=='quiz'?'quiz':'overview'));
+  window.scrollTo(0,0);
+  if(matchMedia('(max-width:900px)').matches)$('#idxd').open=false;
+}
+buildIndex();
+if(!matchMedia('(max-width:900px)').matches)$('#idxd').open=true;
+addEventListener('hashchange',route);route();
+</script>

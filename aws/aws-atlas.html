@@ -1,0 +1,1225 @@
+<title>AWS Field Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky header with five study modes; each mode is a working tool (explorer, live diagram, concept boards, decision helper, quiz). */
+:root{
+  --bg:#eef2f5; --surface:#ffffff; --raised:#f6f8fa; --ink:#14202b; --muted:#566676; --line:#d5dde4;
+  --accent:#0d6688; --accent-ink:#ffffff; --accent-soft:#dcedf4; --hi:#c9741a; --hi-soft:#fbecd9;
+  --good:#24803a; --good-soft:#dff1e2; --bad:#b52a3a; --bad-soft:#f8e0e3; --shared:#8a6a00; --shared-soft:#f6edcf;
+  --pub:#e6f3e8; --priv:#e4edf7; --group:#f8fafb;
+  --c-compute:#c25e10; --c-containers:#a34a8a; --c-storage:#2f7d32; --c-database:#2457b8; --c-networking:#7a4fc2;
+  --c-security:#b3263a; --c-integration:#9a6a00; --c-management:#3d6b7a; --c-analytics:#0b7f86; --c-ml:#5f7300; --c-devtools:#6b5845;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d141b; --surface:#141e27; --raised:#1a2631; --ink:#e2e9ef; --muted:#93a3b1; --line:#283844;
+  --accent:#52b4dc; --accent-ink:#06202c; --accent-soft:#163445; --hi:#f0a64e; --hi-soft:#3a2b17;
+  --good:#6fcf83; --good-soft:#173322; --bad:#f2808d; --bad-soft:#3b1b21; --shared:#e5c04f; --shared-soft:#352c10;
+  --pub:#14281b; --priv:#14223a; --group:#111a22;
+  --c-compute:#f29a52; --c-containers:#e08ccc; --c-storage:#74c477; --c-database:#7fa6f0; --c-networking:#b597f0;
+  --c-security:#f07a8a; --c-integration:#e2b440; --c-management:#8cbccc; --c-analytics:#4fd0d6; --c-ml:#b8cc4a; --c-devtools:#c4a98c;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d141b; --surface:#141e27; --raised:#1a2631; --ink:#e2e9ef; --muted:#93a3b1; --line:#283844;
+  --accent:#52b4dc; --accent-ink:#06202c; --accent-soft:#163445; --hi:#f0a64e; --hi-soft:#3a2b17;
+  --good:#6fcf83; --good-soft:#173322; --bad:#f2808d; --bad-soft:#3b1b21; --shared:#e5c04f; --shared-soft:#352c10;
+  --pub:#14281b; --priv:#14223a; --group:#111a22;
+  --c-compute:#f29a52; --c-containers:#e08ccc; --c-storage:#74c477; --c-database:#7fa6f0; --c-networking:#b597f0;
+  --c-security:#f07a8a; --c-integration:#e2b440; --c-management:#8cbccc; --c-analytics:#4fd0d6; --c-ml:#b8cc4a; --c-devtools:#c4a98c;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.55}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface)}
+.wrap{max-width:1280px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+h1,h2,h3,h4{font-family:var(--f-display); text-wrap:balance; margin:0; line-height:1.15}
+h2{font-size:1.6rem; font-weight:700}
+h3{font-size:1.15rem; font-weight:700}
+p{margin:0}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+code,pre,.mono{font-family:var(--f-mono)}
+.eyebrow{font-family:var(--f-mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* Header */
+header.top{position:sticky; top:env(safe-area-inset-top,0px); z-index:9; background:var(--surface); border-bottom:1px solid var(--line)}
+.top-row{display:flex; align-items:center; gap:16px; padding-block:12px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:10px; margin-right:auto; min-width:0}
+.brand-mark{width:34px; height:34px; flex:none}
+.brand h1{font-size:1.3rem; font-weight:800; letter-spacing:-.01em}
+.brand small{display:block; color:var(--muted); font-size:.78rem}
+.progress{display:flex; align-items:center; gap:10px; font-size:.8rem; color:var(--muted)}
+.bar{width:120px; height:6px; background:var(--raised); border:1px solid var(--line); border-radius:99px; overflow:hidden}
+.bar i{display:block; height:100%; background:var(--good); width:0; transition:width .3s}
+nav.tabs{display:flex; gap:4px; overflow-x:auto; scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{flex:none; text-decoration:none; color:var(--muted); padding:10px 14px; border-bottom:2px solid transparent; font-weight:500; white-space:nowrap}
+nav.tabs a:hover{color:var(--ink)}
+nav.tabs a[aria-current="page"]{color:var(--accent); border-bottom-color:var(--accent)}
+main{padding-block:24px 64px}
+.section-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:end; gap:12px; margin-bottom:18px}
+.section-head p{max-width:62ch; color:var(--muted); margin-top:6px}
+
+/* Explore */
+.explore{display:grid; grid-template-columns:320px minmax(0,1fr); gap:24px; align-items:start}
+.sidebar{position:sticky; top:calc(env(safe-area-inset-top,0px) + 120px); display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 140px)}
+.search{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:0 12px}
+.search input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); padding:10px 0; font:inherit; outline:none}
+.search kbd{font-family:var(--f-mono); font-size:.7rem; border:1px solid var(--line); border-radius:4px; padding:1px 5px; color:var(--muted)}
+.cats{display:flex; flex-wrap:wrap; gap:6px}
+.chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); border-radius:99px; padding:4px 10px; font-size:.8rem; color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.dot{width:8px; height:8px; border-radius:50%; flex:none; background:var(--cat, var(--muted))}
+.svc-list{overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:6px; min-height:200px}
+.svc-group{padding:10px 8px 4px; font-family:var(--f-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:6px}
+.svc-item{display:grid; grid-template-columns:auto 1fr auto; gap:2px 10px; align-items:center; width:100%; text-align:left; border:0; background:transparent; padding:8px; border-radius:8px}
+.svc-item:hover{background:var(--raised)}
+.svc-item[aria-current="true"]{background:var(--accent-soft)}
+.svc-item b{font-weight:600}
+.svc-item span.t{grid-column:2/4; font-size:.78rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.svc-item .ok{font-size:.7rem; color:var(--good)}
+.empty{padding:20px; color:var(--muted); font-size:.9rem}
+
+.detail{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:28px; min-width:0; display:flex; flex-direction:column; gap:22px}
+.detail-head{display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; align-items:start}
+.detail-head h2{font-size:2.2rem; font-weight:800; letter-spacing:-.02em}
+.detail-head .full{color:var(--muted); font-size:.95rem; margin-top:2px}
+.tagline{font-size:1.15rem; margin-top:8px; max-width:55ch}
+.catpill{display:inline-flex; align-items:center; gap:6px; font-family:var(--f-mono); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--cat)}
+.btn{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:8px 14px; font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.done{background:var(--good-soft); color:var(--good); border-color:var(--good)}
+.detail-grid{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:22px}
+.block{display:flex; flex-direction:column; gap:10px; min-width:0}
+.block h4{font-family:var(--f-mono); font-weight:500; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.what{font-size:1rem; max-width:65ch}
+ul.uses{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px}
+.analogy{background:var(--raised); border-radius:var(--r); padding:14px 16px; font-size:.95rem}
+.analogy b{display:block; font-family:var(--f-mono); font-weight:500; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px}
+.concepts{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px}
+.concept{border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; display:flex; flex-direction:column; gap:4px}
+.concept b{font-family:var(--f-display); font-size:.98rem}
+.concept span{font-size:.86rem; color:var(--muted)}
+.tip{border-left:3px solid var(--hi); background:var(--hi-soft); padding:12px 14px; border-radius:0 var(--r) var(--r) 0; font-size:.92rem}
+.tip b{font-family:var(--f-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; display:block; color:var(--hi); margin-bottom:2px}
+.price{font-size:.92rem}
+pre.code{background:var(--raised); border:1px solid var(--line); border-radius:var(--r); padding:14px; overflow-x:auto; font-size:.8rem; line-height:1.5; margin:0}
+.related{display:flex; flex-wrap:wrap; gap:6px}
+
+/* Architecture */
+.scen{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px}
+.seg{border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:8px 14px; font-weight:500}
+.seg[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.arch{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; align-items:start}
+.canvas{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow-x:auto}
+.canvas svg{display:block; width:100%; min-width:760px; height:auto}
+.g-region{fill:none; stroke:var(--accent); stroke-dasharray:6 5; stroke-width:1.5}
+.g-vpc{fill:var(--group); stroke:var(--muted); stroke-width:1.2}
+.g-az{fill:none; stroke:var(--muted); stroke-dasharray:3 4}
+.g-public{fill:var(--pub); stroke:none}
+.g-private{fill:var(--priv); stroke:none}
+.g-label{font-family:var(--f-mono); font-size:11px; fill:var(--muted); letter-spacing:.04em}
+.edge{stroke:var(--muted); stroke-width:1.5; opacity:.45; fill:none}
+.edge.on{stroke:var(--hi); opacity:1; stroke-width:2.6; stroke-dasharray:8 6; animation:flow 0.9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.node{cursor:pointer}
+.node rect{fill:var(--surface); stroke:var(--line); stroke-width:1.2}
+.node .stripe{stroke:none}
+.node text.n{font-family:var(--f-display); font-weight:700; font-size:13px; fill:var(--ink)}
+.node text.s{font-family:var(--f-body); font-size:10.5px; fill:var(--muted)}
+.node:hover rect.box, .node.sel rect.box{stroke:var(--accent); stroke-width:2}
+.node.on rect.box{stroke:var(--hi); stroke-width:2.6}
+.node.dim{opacity:.35}
+.side{display:flex; flex-direction:column; gap:14px; min-width:0}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:12px}
+.player{display:flex; gap:8px; flex-wrap:wrap}
+ol.steps{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:4px; counter-reset:st}
+ol.steps li{counter-increment:st}
+ol.steps button{display:grid; grid-template-columns:26px 1fr; gap:8px; text-align:left; width:100%; border:0; background:transparent; padding:8px; border-radius:8px; font-size:.88rem; color:var(--muted)}
+ol.steps button::before{content:counter(st); font-family:var(--f-mono); font-size:.75rem; width:22px; height:22px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center}
+ol.steps button:hover{background:var(--raised)}
+ol.steps button[aria-current="step"]{background:var(--hi-soft); color:var(--ink)}
+ol.steps button[aria-current="step"]::before{background:var(--hi); color:var(--surface); border-color:var(--hi)}
+.legend{display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; border-top:1px solid var(--line); font-size:.78rem; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.sw{width:14px; height:10px; border-radius:2px; display:inline-block}
+
+/* Concepts */
+.stack{display:flex; flex-direction:column; gap:40px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px}
+.infra{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:20px}
+.region-box{border:1.5px dashed var(--accent); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px}
+.azs{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+.az{border:1px dashed var(--muted); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px}
+.dc{background:var(--raised); border:1px solid var(--line); border-radius:6px; padding:6px; font-size:.75rem; text-align:center; color:var(--muted)}
+.link-note{font-size:.78rem; color:var(--muted); text-align:center}
+.edges-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+.edge-pt{font-size:.75rem; padding:4px 8px; border-radius:99px; background:var(--hi-soft); color:var(--hi); font-family:var(--f-mono)}
+.defs{display:flex; flex-direction:column; gap:12px}
+.def b{font-family:var(--f-display); font-size:1rem}
+.def p{font-size:.9rem; color:var(--muted)}
+.tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:.88rem}
+th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+tr:last-child td{border-bottom:0}
+thead th{font-family:var(--f-display); font-size:.95rem; background:var(--raised)}
+tbody th{font-family:var(--f-mono); font-weight:500; font-size:.75rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+.resp td{text-align:center; font-weight:600; font-size:.8rem}
+.resp td.you{background:var(--accent-soft); color:var(--accent)}
+.resp td.aws{background:var(--raised); color:var(--muted)}
+.resp td.shared{background:var(--shared-soft); color:var(--shared)}
+.resp tbody th{text-transform:none; font-family:var(--f-body); font-size:.86rem; color:var(--ink); letter-spacing:0}
+.pillars{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px}
+.pillar{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:8px}
+.pillar ul{margin:0; padding-left:18px; font-size:.88rem; color:var(--muted)}
+.svc-links{display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding-top:6px}
+.rs{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px}
+.r{border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--surface)}
+.r b{font-family:var(--f-display)}
+.r p{font-size:.84rem; color:var(--muted)}
+.r em{font-style:normal; font-family:var(--f-mono); font-size:.72rem; color:var(--hi)}
+
+/* Compare */
+.decide{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start}
+.qbox{display:flex; flex-direction:column; gap:14px}
+.q{font-family:var(--f-display); font-size:1.25rem; font-weight:700}
+.opts{display:flex; flex-direction:column; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:12px 14px}
+.opt:hover{border-color:var(--accent); background:var(--accent-soft)}
+.trail{display:flex; flex-direction:column; gap:6px; font-size:.85rem}
+.trail div{color:var(--muted)}
+.trail div b{color:var(--ink); font-weight:500}
+.result{border:2px solid var(--good); background:var(--good-soft); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px}
+.result h3{font-size:1.5rem; color:var(--ink)}
+
+/* Quiz */
+.quiz{max-width:760px}
+.qmeta{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.dots{display:flex; gap:4px; flex-wrap:wrap}
+.dots i{width:14px; height:6px; border-radius:3px; background:var(--line)}
+.dots i.r{background:var(--good)} .dots i.w{background:var(--bad)} .dots i.c{background:var(--accent)}
+.qcard{display:flex; flex-direction:column; gap:16px}
+.qcard .q{font-size:1.3rem}
+.opt.right{border-color:var(--good); background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.opt:disabled:hover{background:inherit}
+.opt.right:disabled:hover{background:var(--good-soft)}
+.opt.wrong:disabled:hover{background:var(--bad-soft)}
+.why{border-left:3px solid var(--accent); padding:10px 14px; background:var(--raised); border-radius:0 10px 10px 0; font-size:.92rem}
+.score{font-family:var(--f-display); font-size:3rem; font-weight:800}
+
+@media (max-width: 960px){
+  .arch{grid-template-columns:minmax(0,1fr)}
+  .decide{grid-template-columns:minmax(0,1fr)}
+  .infra{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 860px){
+  .explore{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static; max-height:none}
+  .svc-list{max-height:320px}
+  .detail-grid{grid-template-columns:minmax(0,1fr)}
+  .detail{padding:20px}
+  .detail-head h2{font-size:1.8rem}
+}
+@media (max-width: 520px){
+  .azs{grid-template-columns:minmax(0,1fr)}
+  .progress .bar{width:70px}
+}
+@media (prefers-reduced-motion: reduce){
+  .edge.on{animation:none; stroke-dasharray:none}
+  *{transition:none!important}
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true">
+          <rect x="1" y="1" width="32" height="32" rx="8" fill="var(--accent)"/>
+          <path d="M9 22h16a5 5 0 0 0-1-9.9A7 7 0 0 0 10.6 14 4 4 0 0 0 9 22z" fill="var(--accent-ink)"/>
+          <circle cx="13" cy="18" r="1.4" fill="var(--accent)"/><circle cx="17" cy="18" r="1.4" fill="var(--accent)"/><circle cx="21" cy="18" r="1.4" fill="var(--accent)"/>
+        </svg>
+        <div><h1>AWS Field Atlas</h1><small>Services, architectures and core concepts in one interactive study guide</small></div>
+      </div>
+      <div class="progress" title="Services you marked as learned">
+        <span id="prog-label">0 learned</span><span class="bar"><i id="prog-bar"></i></span>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Study modes">
+      <a href="#explore" data-tab="explore">Explore services</a>
+      <a href="#architecture" data-tab="architecture">Architectures</a>
+      <a href="#concepts" data-tab="concepts">Core concepts</a>
+      <a href="#compare" data-tab="compare">Compare &amp; decide</a>
+      <a href="#quiz" data-tab="quiz">Practice quiz</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- EXPLORE -->
+  <section id="v-explore" data-view="explore">
+    <div class="explore">
+      <aside class="sidebar">
+        <label class="search" for="q">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="var(--muted)" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="var(--muted)" stroke-width="1.6"/></svg>
+          <input id="q" type="search" placeholder="Search services, e.g. queue, NoSQL, DNS" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <div class="cats" id="cats"></div>
+        <div class="svc-list" id="svc-list"></div>
+      </aside>
+      <article class="detail" id="detail" aria-live="polite"></article>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="v-architecture" data-view="architecture" hidden>
+    <div class="section-head">
+      <div><span class="eyebrow">Reference architectures</span><h2>See how services fit together</h2>
+      <p>Press Play to follow a request through the system step by step, or click any box to learn its role.</p></div>
+    </div>
+    <div class="scen" id="scen"></div>
+    <div class="arch">
+      <div class="canvas">
+        <svg id="arch-svg" viewBox="0 0 1000 620" role="img" aria-label="Architecture diagram"></svg>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--pub)"></i>Public subnet</span>
+          <span><i class="sw" style="background:var(--priv)"></i>Private subnet</span>
+          <span><i class="sw" style="border:1.5px dashed var(--accent)"></i>Region</span>
+          <span><i class="sw" style="border:1px dashed var(--muted)"></i>Availability Zone</span>
+          <span><i class="sw" style="background:var(--hi)"></i>Active step</span>
+        </div>
+      </div>
+      <div class="side">
+        <div class="panel">
+          <div class="player">
+            <button class="btn primary" id="play">Play</button>
+            <button class="btn" id="prev" aria-label="Previous step">Back</button>
+            <button class="btn" id="next" aria-label="Next step">Next</button>
+          </div>
+          <ol class="steps" id="steps"></ol>
+        </div>
+        <div class="panel" id="node-info"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONCEPTS -->
+  <section id="v-concepts" data-view="concepts" hidden>
+    <div class="stack">
+      <div>
+        <div class="section-head"><div><span class="eyebrow">Global infrastructure</span><h2>Regions, Availability Zones and edge locations</h2>
+        <p>Everything in AWS lives somewhere physical. Designing for failure starts with knowing these layers.</p></div></div>
+        <div class="infra">
+          <div class="card">
+            <div class="region-box">
+              <span class="eyebrow" style="color:var(--accent)">Region · eu-west-1 (Ireland)</span>
+              <div class="azs">
+                <div class="az"><span class="eyebrow">AZ eu-west-1a</span><div class="dc">Data center</div><div class="dc">Data center</div></div>
+                <div class="az"><span class="eyebrow">AZ eu-west-1b</span><div class="dc">Data center</div><div class="dc">Data center</div></div>
+                <div class="az"><span class="eyebrow">AZ eu-west-1c</span><div class="dc">Data center</div><div class="dc">Data center</div></div>
+              </div>
+              <p class="link-note">AZs are miles apart, linked by redundant low-latency private fiber</p>
+            </div>
+            <div class="edges-row"><span class="eyebrow" style="align-self:center">Edge locations →</span><span class="edge-pt">Dublin</span><span class="edge-pt">London</span><span class="edge-pt">Frankfurt</span><span class="edge-pt">Paris</span><span class="edge-pt">Madrid</span><span class="edge-pt">+ hundreds more</span></div>
+          </div>
+          <div class="defs">
+            <div class="def"><b>Region</b><p>A geographic area with three or more AZs. Data stays in the Region you choose unless you move it. Choose by compliance and data residency, latency to users, service availability and price.</p></div>
+            <div class="def"><b>Availability Zone (AZ)</b><p>One or more discrete data centers with independent power, cooling and networking. Spread resources across at least two AZs to survive a data center failure.</p></div>
+            <div class="def"><b>Edge location</b><p>Points of presence in major cities that cache content (CloudFront), answer DNS (Route 53) and absorb attacks (Shield), close to users.</p></div>
+            <div class="def"><b>Local Zones and Wavelength</b><p>Extensions of a Region placed in metro areas or inside 5G networks for single-digit millisecond latency.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head"><div><span class="eyebrow">Shared responsibility model</span><h2>Who secures what?</h2>
+        <p>AWS is responsible for security <em>of</em> the cloud. You are responsible for security <em>in</em> the cloud. The line moves as services become more managed.</p></div></div>
+        <div class="tbl-wrap"><table class="resp" id="resp"></table></div>
+        <p class="muted" style="margin-top:10px;font-size:.85rem">Rule of thumb: your data, who can access it (IAM) and how it is encrypted are always your job.</p>
+      </div>
+
+      <div>
+        <div class="section-head"><div><span class="eyebrow">Well-Architected Framework</span><h2>Six pillars of a good design</h2>
+        <p>The checklist AWS solutions architects use to review workloads. Every pillar comes with design principles and the services that help.</p></div></div>
+        <div class="pillars" id="pillars"></div>
+      </div>
+
+      <div>
+        <div class="section-head"><div><span class="eyebrow">Pricing</span><h2>How you pay for compute</h2>
+        <p>Same instance, very different bill. Match the purchase option to how predictable the workload is.</p></div></div>
+        <div class="tbl-wrap"><table id="pricing"></table></div>
+        <div class="pillars" style="margin-top:14px">
+          <div class="pillar"><h3>Pay-as-you-go basics</h3><ul><li>Inbound data transfer is free; outbound to the internet is charged per GB.</li><li>Transfer between AZs costs money; within one AZ on private IPs is usually free.</li><li>Stopped EC2 instances stop compute billing, but attached EBS volumes are still billed.</li></ul></div>
+          <div class="pillar"><h3>Cost tools</h3><ul><li><b>Pricing Calculator</b>: estimate before you build.</li><li><b>Budgets</b>: alert when spend crosses a threshold.</li><li><b>Cost Explorer</b>: analyze and forecast spend.</li><li><b>Tags</b>: split the bill by team or project.</li></ul></div>
+          <div class="pillar"><h3>Support plans</h3><ul><li><b>Basic</b>: free, docs and forums.</li><li><b>Developer</b>: business-hours email.</li><li><b>Business</b>: 24/7, &lt;1 h for production down.</li><li><b>Enterprise</b>: Technical Account Manager, &lt;15 min for business-critical down.</li></ul></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head"><div><span class="eyebrow">Migration</span><h2>The 7 Rs of moving to the cloud</h2>
+        <p>Each application in a portfolio gets one strategy, from leaving it alone to rebuilding it cloud-native.</p></div></div>
+        <div class="rs" id="rs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section id="v-compare" data-view="compare" hidden>
+    <div class="section-head"><div><span class="eyebrow">Decision helper</span><h2>Which service should I use?</h2>
+    <p>Answer a few questions and get a recommendation with the reasoning behind it.</p></div></div>
+    <div class="scen" id="trees"></div>
+    <div class="decide">
+      <div class="card qbox" id="tree-q"></div>
+      <div class="card qbox" id="tree-side"></div>
+    </div>
+    <div class="section-head" style="margin-top:40px"><div><span class="eyebrow">Side by side</span><h2>Commonly confused services</h2>
+    <p>The comparisons that come up again and again in interviews and certification exams.</p></div></div>
+    <div class="scen" id="cmp-tabs"></div>
+    <div class="tbl-wrap"><table id="cmp"></table></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="v-quiz" data-view="quiz" hidden>
+    <div class="section-head"><div><span class="eyebrow">Scenario practice</span><h2>Test yourself</h2>
+    <p>Exam-style scenarios. Pick an answer to see why it is right, and jump to the service to review.</p></div></div>
+    <div class="quiz card" id="quiz"></div>
+  </section>
+</main>
+
+<script>
+const CATS = [
+  {id:"compute", name:"Compute"}, {id:"containers", name:"Containers"}, {id:"storage", name:"Storage"},
+  {id:"database", name:"Databases"}, {id:"networking", name:"Networking & delivery"}, {id:"security", name:"Security & identity"},
+  {id:"integration", name:"App integration"}, {id:"management", name:"Management & monitoring"}, {id:"analytics", name:"Analytics"},
+  {id:"ml", name:"AI & machine learning"}, {id:"devtools", name:"Developer tools"}
+];
+
+const S = [
+/* COMPUTE */
+{id:"ec2", name:"EC2", full:"Elastic Compute Cloud", cat:"compute", tag:"Resizable virtual servers in the cloud",
+ what:"Virtual machines you launch in minutes, choosing CPU, memory, storage and networking. You control the operating system and everything above it.",
+ use:["Lift-and-shift of existing applications","Long-running servers, legacy software, full OS control","GPU workloads such as ML training or video rendering"],
+ concepts:[["Instance types","Families by shape: t (burstable), m (general), c (compute), r (memory), g/p (GPU), i (storage). Example: m7g.large"],["AMI","Amazon Machine Image: the template (OS + software) an instance boots from"],["Security group","Stateful virtual firewall attached to the instance's network interface"],["User data","Script that runs on first boot to install and configure software"],["EBS vs instance store","EBS volumes persist; instance store is very fast but lost when the instance stops"],["Placement groups","Cluster (low latency), Spread (separate hardware), Partition (large distributed systems)"]],
+ analogy:"Renting a computer in someone else's data center, billed by the second.",
+ pricing:"Per second (Linux) by instance type. On-Demand, Savings Plans or Reserved Instances (up to 72% off), Spot (up to 90% off, can be reclaimed with a 2-minute warning).",
+ tip:"Steady 24/7 load → Savings Plans or Reserved Instances. Fault-tolerant batch → Spot. Short-term or unpredictable → On-Demand.",
+ related:["ebs","asg","elb","vpc","iam"]},
+{id:"lambda", name:"Lambda", cat:"compute", tag:"Run code without managing servers",
+ what:"Upload a function and Lambda runs it in response to events. It scales from zero to thousands of concurrent executions automatically, and you pay nothing while idle.",
+ use:["Event processing: S3 upload, queue message, database change","APIs behind API Gateway","Scheduled jobs and glue code between services"],
+ concepts:[["Trigger","The event source that invokes the function: API Gateway, S3, SQS, EventBridge, DynamoDB Streams"],["Limits","Max 15 minutes per invocation, 128 MB to 10 GB memory; CPU scales with memory"],["Cold start","Extra latency when a new execution environment starts; reduce with provisioned concurrency or SnapStart"],["Concurrency","Simultaneous executions; reserved concurrency guarantees or caps capacity"],["Execution role","IAM role that grants the function permission to call other services"],["Layers","Shared libraries packaged separately from function code"]],
+ analogy:"A vending machine for code: idle until someone presses a button, then it serves exactly that request.",
+ pricing:"Per request plus per GB-second of compute. Free tier: 1M requests and 400,000 GB-seconds each month.",
+ tip:"Runs longer than 15 minutes or needs a persistent process? Not Lambda. Use Fargate, ECS, Batch or EC2.",
+ code:`import json, boto3
+table = boto3.resource("dynamodb").Table("orders")
+
+def handler(event, context):
+    order = json.loads(event["body"])
+    table.put_item(Item=order)
+    return {"statusCode": 201, "body": json.dumps({"id": order["id"]})}`,
+ related:["apigw","sqs","eventbridge","dynamodb","stepfunctions"]},
+{id:"asg", name:"Auto Scaling", full:"Amazon EC2 Auto Scaling", cat:"compute", tag:"Add and remove EC2 instances automatically",
+ what:"Keeps the right number of healthy instances running across multiple AZs. Replaces failed instances and scales out or in with demand.",
+ use:["Web tiers with daily traffic peaks","Self-healing fleets that must always keep N instances"],
+ concepts:[["Min / desired / max","Capacity bounds; the group never goes below min or above max"],["Launch template","AMI, instance type, security groups and user data for new instances"],["Target tracking","Keep a metric at a value, such as average CPU at 50%"],["Scheduled and predictive","Scale ahead of known or forecast peaks"],["Health checks","EC2 status or load balancer health checks; failures are replaced"]],
+ analogy:"A restaurant manager who calls in more staff when the line grows and sends them home when it's quiet.",
+ pricing:"Free. You pay for the instances it launches.",
+ tip:"Auto Scaling group across 2+ AZs behind a load balancer is the classic answer for both high availability and elasticity.",
+ related:["ec2","elb","cloudwatch"]},
+{id:"beanstalk", name:"Elastic Beanstalk", cat:"compute", tag:"Deploy web apps without managing infrastructure",
+ what:"Upload code (Java, .NET, Node.js, Python, PHP, Ruby, Go or Docker) and Beanstalk provisions EC2, the load balancer, Auto Scaling and monitoring for you. You can still access the underlying resources.",
+ use:["Developers who want to ship a standard web app fast"],
+ concepts:[["Environment tiers","Web server tier or worker tier (reads from SQS)"],["Deployment policies","All at once, rolling, rolling with batch, immutable, blue/green via URL swap"]],
+ analogy:"A furnished apartment: move in with your code, the furniture is already set up.",
+ pricing:"Free. You pay for the resources it creates.",
+ tip:"Keyword: “developers upload code and don't want to manage infrastructure” → Elastic Beanstalk.",
+ related:["ec2","asg","elb"]},
+{id:"lightsail", name:"Lightsail", cat:"compute", tag:"Simple virtual private servers at a fixed monthly price",
+ what:"Bundles a VM, SSD storage, data transfer, DNS and a static IP for simple websites, WordPress and small apps.",
+ pricing:"Fixed monthly bundles.", tip:"Keywords: simple, predictable monthly price, little cloud experience.", related:["ec2"]},
+{id:"batch", name:"AWS Batch", cat:"compute", tag:"Run batch jobs at any scale",
+ what:"Queues jobs and provisions the right EC2 or Fargate capacity (often Spot) to run them, then scales back to zero.",
+ tip:"Long-running batch processing (more than 15 minutes) → Batch, not Lambda.", related:["ec2","fargate"]},
+
+/* CONTAINERS */
+{id:"ecs", name:"ECS", full:"Elastic Container Service", cat:"containers", tag:"AWS-native container orchestration",
+ what:"Run and scale Docker containers. Define tasks and services; run them on EC2 instances you manage or serverless on Fargate.",
+ use:["Microservices and web services in containers","Teams that want containers without learning Kubernetes"],
+ concepts:[["Task definition","Blueprint: image, CPU and memory, ports, environment, IAM task role"],["Service","Keeps N tasks running and registers them with a load balancer"],["Launch type","EC2 (you manage the hosts) or Fargate (no hosts to manage)"]],
+ analogy:"A shipping port that decides which ship (server) carries each container.",
+ pricing:"No charge for ECS itself; pay for EC2 or Fargate.", related:["fargate","ecr","eks","elb"]},
+{id:"eks", name:"EKS", full:"Elastic Kubernetes Service", cat:"containers", tag:"Managed Kubernetes",
+ what:"AWS runs a highly available Kubernetes control plane for you. Use standard kubectl, Helm and manifests.",
+ use:["Teams already invested in Kubernetes","Portability across clouds and on-premises"],
+ concepts:[["Control plane","Managed by AWS across three AZs"],["Data plane","Managed node groups, self-managed nodes, Fargate profiles, Karpenter or EKS Auto Mode"]],
+ pricing:"Per cluster per hour plus compute.", tip:"Question mentions Kubernetes → EKS. Otherwise the simplest container answer is usually ECS on Fargate.", related:["ecs","fargate","ecr"]},
+{id:"fargate", name:"Fargate", cat:"containers", tag:"Serverless compute for containers",
+ what:"Run containers on ECS or EKS without provisioning or patching servers. Set CPU and memory per task and pay while it runs.",
+ pricing:"Per vCPU-second and GB-second while tasks run.", tip:"Containers + “no servers to manage” → Fargate.", related:["ecs","eks","lambda"]},
+{id:"ecr", name:"ECR", full:"Elastic Container Registry", cat:"containers", tag:"Private container image registry",
+ what:"Store, version and scan Docker/OCI images. Integrates with ECS, EKS and Lambda container images.", related:["ecs","eks"]},
+
+/* STORAGE */
+{id:"s3", name:"S3", full:"Simple Storage Service", cat:"storage", tag:"Object storage for anything, at any scale",
+ what:"Store files (objects) in buckets and retrieve them over HTTPS. Virtually unlimited capacity, designed for 99.999999999% (eleven nines) durability.",
+ use:["Static websites, images and video","Backups, archives and data lakes","Logs and ML training data"],
+ concepts:[["Bucket and key","Bucket names are globally unique; each object has a key (path) and can be up to 5 TB"],["Storage classes","Standard, Intelligent-Tiering, Standard-IA, One Zone-IA, Glacier Instant / Flexible / Deep Archive"],["Lifecycle rules","Move objects to cheaper classes or delete them after N days"],["Versioning","Keeps every version; protects against accidental overwrite and delete"],["Bucket policy","JSON resource policy for access; Block Public Access is on by default"],["Replication","Cross-Region (CRR) or Same-Region (SRR) copies"],["Encryption","Encrypted by default (SSE-S3); SSE-KMS when you need key control and audit"]],
+ analogy:"An infinite coat check: hand over a file, get a ticket (the key), retrieve it any time.",
+ pricing:"Per GB-month stored + requests + data transferred out. Data in is free.",
+ tip:"S3 is not a disk or a file system: you can't install an OS on it. Rarely accessed → IA or Glacier. Unknown access pattern → Intelligent-Tiering.",
+ related:["glacier","cloudfront","athena","lambda","kms"]},
+{id:"ebs", name:"EBS", full:"Elastic Block Store", cat:"storage", tag:"Block storage volumes for EC2",
+ what:"Network-attached disks for EC2. A volume lives in one AZ and usually attaches to one instance at a time. Data persists independently of the instance.",
+ use:["Boot volumes","Databases you run yourself on EC2"],
+ concepts:[["Volume types","gp3 (general SSD), io2 (high-IOPS SSD), st1 (throughput HDD), sc1 (cold HDD)"],["Snapshots","Incremental backups stored in S3; copy across Regions"],["AZ-bound","To move to another AZ: snapshot, then restore in the new AZ"],["Multi-Attach","io1/io2 only, to instances in the same AZ"]],
+ analogy:"A USB hard drive plugged into one server.", pricing:"Per provisioned GB-month (plus IOPS/throughput above baseline), used or not.",
+ tip:"One instance needs a fast persistent disk → EBS. Many instances share files → EFS.", related:["ec2","efs","backup"]},
+{id:"efs", name:"EFS", full:"Elastic File System", cat:"storage", tag:"Shared Linux file system (NFS)",
+ what:"A fully managed NFS file system that many EC2 instances, containers and Lambda functions mount at the same time across AZs. Grows and shrinks automatically.",
+ pricing:"Per GB used; Infrequent Access and Archive classes cost less.",
+ tip:"Many Linux servers need the same files → EFS. Windows (SMB) → FSx for Windows File Server.", related:["ebs","fsx","ec2"]},
+{id:"fsx", name:"FSx", cat:"storage", tag:"Managed third-party file systems",
+ what:"Fully managed Windows File Server (SMB, Active Directory), Lustre (high-performance computing), NetApp ONTAP and OpenZFS.", related:["efs"]},
+{id:"glacier", name:"S3 Glacier", cat:"storage", tag:"Low-cost archive storage classes",
+ what:"S3 storage classes for data you rarely read. Glacier Instant Retrieval (milliseconds), Flexible Retrieval (minutes to hours) and Deep Archive (within 12 hours, lowest cost).",
+ tip:"Compliance records kept 7–10 years and almost never read → Glacier Deep Archive.", related:["s3"]},
+{id:"backup", name:"AWS Backup", cat:"storage", tag:"Centralized, policy-based backups",
+ what:"One backup plan for EBS, RDS, Aurora, DynamoDB, EFS, S3 and more, across accounts and Regions, with vault lock for immutability.", related:["ebs","rds"]},
+{id:"storagegw", name:"Storage Gateway", cat:"storage", tag:"Hybrid bridge from on-premises to AWS storage",
+ what:"An on-premises appliance that presents cloud-backed storage as file shares, iSCSI volumes or a virtual tape library.", related:["s3"]},
+{id:"snow", name:"Snowball", cat:"storage", tag:"Physical devices to move data offline",
+ what:"Rugged devices shipped to your site for transferring terabytes to petabytes when the network would take too long.",
+ tip:"Huge data set + slow or expensive network link → Snowball.", related:["s3","datasync"]},
+{id:"datasync", name:"DataSync", cat:"storage", tag:"Online data transfer service",
+ what:"Copies data over the network between on-premises NFS/SMB storage and S3, EFS or FSx, with scheduling and verification.", related:["s3","snow"]},
+
+/* DATABASE */
+{id:"rds", name:"RDS", full:"Relational Database Service", cat:"database", tag:"Managed relational databases",
+ what:"Run MySQL, PostgreSQL, MariaDB, Oracle, SQL Server or Db2 without managing hardware, OS patching or backups.",
+ use:["Traditional applications that need SQL, joins and transactions (OLTP)"],
+ concepts:[["Multi-AZ","Synchronous standby in another AZ with automatic failover. For availability, not for scaling reads"],["Read replicas","Asynchronous copies, in-Region or cross-Region, to scale reads"],["Automated backups","Daily snapshots plus transaction logs; point-in-time restore up to 35 days back"],["Maintenance window","AWS patches the engine during a window you choose"],["RDS Proxy","Pools connections; useful when many Lambda functions connect"]],
+ analogy:"A database that comes with a full-time DBA.", pricing:"Per instance-hour + storage + I/O + backup beyond the free amount.",
+ tip:"High availability → Multi-AZ. Read performance → read replicas. You can't SSH into RDS.",
+ related:["aurora","dynamodb","elasticache","secrets"]},
+{id:"aurora", name:"Aurora", cat:"database", tag:"Cloud-native MySQL and PostgreSQL",
+ what:"An AWS-built relational engine compatible with MySQL and PostgreSQL. Storage grows automatically to 128 TiB and keeps six copies across three AZs.",
+ concepts:[["Cluster volume","Shared storage with six copies across three AZs"],["Aurora Replicas","Up to 15 low-lag readers; one is promoted on failover"],["Serverless v2","Capacity scales in fine increments with load"],["Global Database","Cross-Region replication, typically under a second, for disaster recovery"]],
+ pricing:"Per instance-hour or capacity-unit-hour (Serverless) + storage + I/O (or I/O-Optimized).",
+ tip:"Need relational, highest performance and availability on AWS → Aurora.", related:["rds","dms"]},
+{id:"dynamodb", name:"DynamoDB", cat:"database", tag:"Serverless key-value and document NoSQL",
+ what:"Fully managed NoSQL with single-digit millisecond latency at any scale. No servers, no patching, no versions to upgrade.",
+ use:["High-traffic web, gaming, IoT, shopping carts, session state","Known access patterns at massive scale"],
+ concepts:[["Partition key / sort key","Primary key; a high-cardinality partition key spreads load evenly"],["Capacity modes","On-demand (pay per request) or provisioned (RCU/WCU with auto scaling)"],["GSI / LSI","Secondary indexes for other query patterns"],["DAX","In-memory cache for microsecond reads"],["Streams","Ordered change log; trigger Lambda on every write"],["Global tables","Multi-Region, active-active replication"],["TTL","Deletes expired items automatically"]],
+ analogy:"A giant coat check: give the ticket number, get the coat instantly. Ask for “all red coats” and it gets slow.",
+ pricing:"Per read/write request (on-demand) or provisioned capacity, plus storage.",
+ tip:"Serverless + NoSQL + millisecond latency → DynamoDB. Complex joins and ad-hoc SQL → RDS or Aurora.",
+ related:["lambda","elasticache","rds"]},
+{id:"elasticache", name:"ElastiCache", cat:"database", tag:"Managed in-memory cache (Valkey, Redis OSS, Memcached)",
+ what:"A sub-millisecond in-memory data store in front of a database to cache hot data or hold user sessions.",
+ concepts:[["Lazy loading","Read the cache first; on a miss, read the DB and fill the cache"],["Write-through","Update the cache every time you write the DB"],["Valkey/Redis vs Memcached","Valkey/Redis: replication, persistence, rich data types. Memcached: simple and multi-threaded"]],
+ tip:"Reduce database read load or store session state → ElastiCache.", related:["rds","dynamodb"]},
+{id:"redshift", name:"Redshift", cat:"database", tag:"Petabyte-scale data warehouse",
+ what:"A columnar, massively parallel SQL data warehouse for analytics (OLAP) across large historical data sets.",
+ concepts:[["Columnar storage","Queries read only the columns they need"],["Spectrum","Query data in S3 without loading it"],["Serverless","Pay for compute used, no cluster sizing"]],
+ tip:"Business intelligence and analytics over years of data → Redshift. Day-to-day transactions → RDS.", related:["s3","quicksight","glue"]},
+{id:"documentdb", name:"DocumentDB", cat:"database", tag:"MongoDB-compatible document database",
+ what:"Managed JSON document database that works with MongoDB drivers and tools.", related:["dynamodb"]},
+{id:"neptune", name:"Neptune", cat:"database", tag:"Graph database",
+ what:"Store and query highly connected data: social networks, fraud rings, recommendation engines, knowledge graphs.", related:["dynamodb"]},
+{id:"dms", name:"DMS", full:"Database Migration Service", cat:"database", tag:"Migrate databases to AWS",
+ what:"Moves data with minimal downtime by continuously replicating changes. Schema Conversion handles engine changes such as Oracle → Aurora PostgreSQL.", related:["rds","aurora"]},
+
+/* NETWORKING */
+{id:"vpc", name:"VPC", full:"Virtual Private Cloud", cat:"networking", tag:"Your private, isolated network in AWS",
+ what:"A logically isolated virtual network in one Region where you define IP ranges, subnets, routing and gateways.",
+ concepts:[["CIDR block","The VPC's IP range, e.g. 10.0.0.0/16 (65,536 addresses)"],["Subnet","A slice of the VPC in exactly one AZ. Public if its route table points to an Internet Gateway"],["Internet Gateway","Lets public subnets reach, and be reached from, the internet"],["NAT Gateway","Lets private subnets make outbound connections without being reachable from outside"],["Security group","Stateful, instance-level, allow rules only"],["Network ACL","Stateless, subnet-level, allow and deny rules evaluated in number order"],["VPC endpoints","Private access to S3/DynamoDB (gateway) or other services (interface / PrivateLink) without the internet"],["VPC peering","Private link between two VPCs; not transitive"]],
+ analogy:"Your own fenced office floor in a shared building: you design the rooms, doors and who gets a key.",
+ pricing:"The VPC is free; NAT Gateways, endpoints, public IPv4 addresses and data processing are billed.",
+ tip:"Private instance must download patches → NAT Gateway in a public subnet. Private access to S3 without NAT → gateway endpoint.",
+ related:["elb","route53","tgw","directconnect"]},
+{id:"route53", name:"Route 53", cat:"networking", tag:"DNS and domain registration",
+ what:"Highly available DNS that translates names like example.com into IP addresses, with health checks and smart routing.",
+ concepts:[["Simple","One record, no health checks"],["Weighted","Split traffic by percentage: A/B tests, canary releases"],["Latency","Send users to the Region with the lowest latency"],["Failover","Active-passive with health checks for disaster recovery"],["Geolocation / geoproximity","Route by user location, e.g. EU users to EU servers"],["Alias record","Points to AWS resources (ALB, CloudFront, S3), works at the zone apex, free queries"]],
+ pricing:"Per hosted zone per month + per million queries.", tip:"The name comes from DNS's port 53.", related:["cloudfront","elb"]},
+{id:"cloudfront", name:"CloudFront", cat:"networking", tag:"Global content delivery network (CDN)",
+ what:"Caches content at hundreds of edge locations so users download it from somewhere nearby, cutting latency and origin load.",
+ concepts:[["Origin","Where content comes from: S3, ALB, EC2 or any HTTP server"],["Origin Access Control","Lets only CloudFront read a private S3 bucket"],["TTL and invalidation","Control how long content stays cached"],["Edge functions","CloudFront Functions and Lambda@Edge change requests at the edge"]],
+ pricing:"Per GB delivered + per request; varies by geography.",
+ tip:"Global users + slow static content → CloudFront. Non-HTTP traffic or static anycast IPs → Global Accelerator.", related:["s3","waf","shield","route53"]},
+{id:"elb", name:"Elastic Load Balancing", cat:"networking", tag:"Spread traffic across healthy targets",
+ what:"Distributes incoming traffic across EC2 instances, containers, IPs and Lambda functions in multiple AZs, and stops sending traffic to unhealthy targets.",
+ concepts:[["ALB","Layer 7 (HTTP/HTTPS): routes by path, host, header; good for microservices"],["NLB","Layer 4 (TCP/UDP/TLS): millions of requests per second, static IP per AZ"],["GWLB","Layer 3: inserts third-party firewalls and inspection appliances"],["Health checks","Targets failing checks are taken out of rotation"],["Sticky sessions","Pin a user to the same target with a cookie"]],
+ tip:"HTTP routing by URL path → ALB. Extreme performance or static IP → NLB.", related:["asg","ec2","acm"]},
+{id:"apigw", name:"API Gateway", cat:"networking", tag:"Create, publish and secure APIs",
+ what:"The front door for APIs: routing, authorization, throttling, caching and request validation, usually in front of Lambda.",
+ concepts:[["HTTP vs REST APIs","HTTP APIs are cheaper and faster; REST APIs add usage plans, API keys, caching"],["WebSocket APIs","Two-way real-time messaging"],["Authorizers","Cognito, JWT, IAM or a Lambda authorizer"],["Throttling","Rate and burst limits protect the backend"]],
+ pricing:"Per million API calls + data transfer.", related:["lambda","cognito","waf"]},
+{id:"directconnect", name:"Direct Connect", cat:"networking", tag:"Dedicated private connection to AWS",
+ what:"A physical network link from your data center to AWS: consistent latency, 1 to 100 Gbps, doesn't touch the public internet. Takes weeks to provision.",
+ tip:"Consistent performance or very large ongoing transfers → Direct Connect. Need it this week → Site-to-Site VPN.", related:["vpn","vpc"]},
+{id:"vpn", name:"Site-to-Site VPN", cat:"networking", tag:"Encrypted tunnel over the internet",
+ what:"IPsec tunnels between your network and a VPC. Up in minutes; often a backup path for Direct Connect.", related:["directconnect","vpc"]},
+{id:"tgw", name:"Transit Gateway", cat:"networking", tag:"Hub that connects many VPCs and networks",
+ what:"A regional hub-and-spoke router connecting thousands of VPCs and on-premises networks, replacing tangled peering meshes.", related:["vpc"]},
+{id:"globalaccel", name:"Global Accelerator", cat:"networking", tag:"Route users over the AWS global network",
+ what:"Two static anycast IP addresses send traffic over the AWS backbone to the nearest healthy endpoint, with fast cross-Region failover.", related:["cloudfront"]},
+
+/* SECURITY */
+{id:"iam", name:"IAM", full:"Identity and Access Management", cat:"security", tag:"Control who can do what in your account",
+ what:"A global service to manage identities (users, groups, roles) and permissions (policies) for every AWS API call.",
+ concepts:[["Root user","Created with the account and has full access. Turn on MFA, lock it away, use it only for a few account tasks"],["Users and groups","Long-term identities for people; attach policies to groups, not individuals"],["Roles","Temporary credentials assumed by services, apps or federated users. Prefer roles over access keys"],["Policy","JSON with Effect, Action, Resource, Condition. An explicit Deny always wins"],["Least privilege","Grant only what's needed; IAM Access Analyzer helps trim"],["IAM Identity Center","Single sign-on for people across many accounts"]],
+ analogy:"The building's badge system: who you are (authentication) and which doors open (authorization).",
+ pricing:"Free.", tip:"An EC2 instance needs S3 access → attach an IAM role. Never store access keys on the instance.",
+ code:`{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject"],
+    "Resource": "arn:aws:s3:::reports-bucket/*",
+    "Condition": {"Bool": {"aws:SecureTransport": "true"}}
+  }]
+}`,
+ related:["organizations","kms","cognito","cloudtrail"]},
+{id:"organizations", name:"Organizations", cat:"security", tag:"Manage many AWS accounts centrally",
+ what:"Group accounts into organizational units, get consolidated billing with volume discounts, and apply Service Control Policies (SCPs) as permission guardrails.",
+ tip:"SCPs never grant permissions; they cap the maximum any identity in a member account can do.", related:["iam","controltower"]},
+{id:"kms", name:"KMS", full:"Key Management Service", cat:"security", tag:"Create and control encryption keys",
+ what:"Managed keys protected by hardware security modules and integrated with S3, EBS, RDS and most other services. Every key use is logged in CloudTrail.",
+ concepts:[["AWS managed vs customer managed","Customer managed keys give you key policies, rotation control and disabling"],["Envelope encryption","Data keys encrypt data; the KMS key encrypts the data keys"],["CloudHSM","Single-tenant HSMs when you must control the hardware"]],
+ related:["s3","ebs","secrets"]},
+{id:"secrets", name:"Secrets Manager", cat:"security", tag:"Store and rotate secrets",
+ what:"Keeps database passwords, API keys and tokens encrypted, and rotates them automatically (built in for RDS and Aurora).",
+ tip:"Automatic rotation → Secrets Manager. Plain configuration values → Systems Manager Parameter Store (cheaper).", related:["rds","kms","ssm"]},
+{id:"cognito", name:"Cognito", cat:"security", tag:"Sign-up and sign-in for your app's users",
+ what:"User pools handle registration, sign-in, MFA and social or SAML login, and issue JWTs. Identity pools exchange them for temporary AWS credentials.",
+ tip:"Millions of customers logging into a web or mobile app → Cognito. Employees → IAM Identity Center.", related:["apigw","iam"]},
+{id:"waf", name:"WAF", full:"Web Application Firewall", cat:"security", tag:"Filter malicious web requests",
+ what:"Rules on CloudFront, ALB, API Gateway and others block SQL injection, cross-site scripting, bad IPs and request floods. Managed rule groups get you started.",
+ tip:"Block SQL injection or rate-limit an IP at layer 7 → WAF.", related:["shield","cloudfront","elb"]},
+{id:"shield", name:"Shield", cat:"security", tag:"DDoS protection",
+ what:"Shield Standard protects every customer against common layer 3/4 attacks at no cost. Shield Advanced adds a 24/7 response team, attack visibility and cost protection.", related:["waf","cloudfront"]},
+{id:"guardduty", name:"GuardDuty", cat:"security", tag:"Intelligent threat detection",
+ what:"Analyzes CloudTrail, VPC Flow Logs, DNS logs and more with ML and threat intelligence to flag compromised instances, crypto mining and unusual API activity.", related:["securityhub","cloudtrail"]},
+{id:"inspector", name:"Inspector", cat:"security", tag:"Automated vulnerability scanning",
+ what:"Continuously scans EC2 instances, ECR images and Lambda functions for known software vulnerabilities and unintended network exposure.", related:["guardduty"]},
+{id:"macie", name:"Macie", cat:"security", tag:"Find sensitive data in S3",
+ what:"Uses ML and pattern matching to discover personal data such as names, passport and card numbers in S3 buckets.", related:["s3"]},
+{id:"securityhub", name:"Security Hub", cat:"security", tag:"Single view of security posture",
+ what:"Aggregates findings from GuardDuty, Inspector, Macie and partners, and checks accounts against standards such as CIS and AWS Foundational Best Practices.", related:["guardduty","config"]},
+{id:"acm", name:"Certificate Manager", cat:"security", tag:"Free public TLS certificates",
+ what:"Provisions and automatically renews SSL/TLS certificates for load balancers, CloudFront and API Gateway.", related:["elb","cloudfront"]},
+
+/* INTEGRATION */
+{id:"sqs", name:"SQS", full:"Simple Queue Service", cat:"integration", tag:"Fully managed message queues",
+ what:"Producers put messages on a queue; consumers poll and process them at their own pace. Decouples components and absorbs traffic spikes.",
+ concepts:[["Standard queue","Nearly unlimited throughput, at-least-once delivery, best-effort order"],["FIFO queue","Exactly-once processing and strict order, lower throughput"],["Visibility timeout","A message is hidden while being processed; it reappears if not deleted in time"],["Dead-letter queue","Messages that keep failing move here for inspection"],["Long polling","Wait up to 20 s for messages: fewer empty responses, lower cost"],["Retention","4 days by default, up to 14 days"]],
+ analogy:"The ticket rail in a restaurant kitchen: orders wait in line until a cook is free.",
+ pricing:"Per million requests; the first million each month are free.",
+ tip:"Decouple, buffer or smooth spikes → SQS. One message to many receivers → SNS (or SNS → many SQS queues: fan-out).",
+ related:["sns","lambda","eventbridge"]},
+{id:"sns", name:"SNS", full:"Simple Notification Service", cat:"integration", tag:"Pub/sub messaging and notifications",
+ what:"Publish once to a topic and SNS pushes the message to every subscriber: SQS queues, Lambda, HTTP endpoints, email, SMS and mobile push.",
+ concepts:[["Fan-out","One topic → several SQS queues so each system processes its own copy"],["Filter policies","Subscribers receive only messages matching attributes"],["FIFO topics","Ordered, deduplicated delivery to FIFO queues"]],
+ tip:"Push to many subscribers at once → SNS.", related:["sqs","eventbridge","cloudwatch"]},
+{id:"eventbridge", name:"EventBridge", cat:"integration", tag:"Serverless event bus and scheduler",
+ what:"Routes events from AWS services, your apps and SaaS partners to targets using rules that match on event content. Scheduler runs one-time or cron jobs.",
+ concepts:[["Event bus","Default bus for AWS events, custom buses for your apps, partner buses for SaaS"],["Rules","Pattern match on any field, then send to targets"],["Scheduler","Cron and rate schedules at scale"],["Archive and replay","Store events and replay them later"]],
+ tip:"React to changes in AWS services or SaaS apps, or run cron jobs serverlessly → EventBridge.", related:["lambda","sns","stepfunctions"]},
+{id:"stepfunctions", name:"Step Functions", cat:"integration", tag:"Visual workflows that coordinate services",
+ what:"State machines that orchestrate Lambda functions and 200+ AWS services with retries, branching, parallel steps, waits and human approval.",
+ concepts:[["Standard workflows","Up to one year, exactly-once, full history"],["Express workflows","High volume, up to five minutes, cheaper"]],
+ tip:"Multi-step business process with retries and error handling → Step Functions.", related:["lambda","eventbridge"]},
+{id:"kinesis", name:"Kinesis Data Streams", cat:"integration", tag:"Real-time data streaming",
+ what:"Ingest and process large streams of records such as clickstreams, logs and IoT telemetry in real time. Several consumers can read and replay the same data.",
+ concepts:[["Shards","Units of capacity; ordering is per shard"],["Retention","24 hours by default, up to 365 days"],["Managed Flink","Run Apache Flink to analyze streams in real time"]],
+ tip:"Real-time analytics on streaming data with replay → Kinesis Data Streams. Just deliver a stream into S3 → Data Firehose.", related:["firehose","lambda"]},
+{id:"mq", name:"Amazon MQ", cat:"integration", tag:"Managed ActiveMQ and RabbitMQ",
+ what:"For moving existing apps that speak AMQP, MQTT, STOMP or JMS without rewriting them for SQS/SNS.", related:["sqs"]},
+
+/* MANAGEMENT */
+{id:"cloudwatch", name:"CloudWatch", cat:"management", tag:"Metrics, logs and alarms",
+ what:"Collects metrics and logs from AWS resources and your apps, visualizes them on dashboards, and triggers alarms that notify or act.",
+ concepts:[["Metrics","Basic EC2 metrics every 5 minutes, detailed every minute. Memory and disk need the CloudWatch agent"],["Alarms","Notify through SNS, trigger Auto Scaling or stop/reboot an instance"],["Logs and Logs Insights","Store logs and query them with a SQL-like language"],["Synthetics","Canaries that test your endpoints on a schedule"]],
+ tip:"Performance and health (“is CPU high?”) → CloudWatch.", related:["cloudtrail","config","sns"]},
+{id:"cloudtrail", name:"CloudTrail", cat:"management", tag:"A record of every API call",
+ what:"Logs who did what, when and from where in your account. 90 days of event history are free; create a trail to keep logs in S3 longer.",
+ tip:"“Who deleted this bucket?” → CloudTrail. “Is CPU high?” → CloudWatch. “Was this resource compliant last week?” → Config.", related:["cloudwatch","config","guardduty"]},
+{id:"config", name:"AWS Config", cat:"management", tag:"Track configuration and compliance",
+ what:"Records how resources are configured over time and evaluates them against rules, such as “all S3 buckets must be encrypted”, with optional auto-remediation.", related:["cloudtrail","securityhub"]},
+{id:"cloudformation", name:"CloudFormation", cat:"management", tag:"Infrastructure as code with templates",
+ what:"Describe resources in YAML or JSON templates; CloudFormation creates, updates and deletes them together as a stack, in the right order.",
+ concepts:[["Stack","A set of resources managed as one unit"],["Change set","Preview what an update will change before applying it"],["Drift detection","Find resources changed outside the template"],["StackSets","Deploy one template across many accounts and Regions"]],
+ code:`Resources:
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: !Ref LatestAmiId`,
+ tip:"Repeatable environments, “infrastructure as code” → CloudFormation (or CDK, which generates it).", related:["cdk","codepipeline"]},
+{id:"ssm", name:"Systems Manager", cat:"management", tag:"Operate fleets of servers",
+ what:"Patch Manager, Run Command, Session Manager (a browser shell without SSH keys or open ports), Parameter Store and inventory for EC2 and on-premises servers.",
+ tip:"Shell access with no bastion host and no port 22 → Session Manager.", related:["ec2","secrets"]},
+{id:"trustedadvisor", name:"Trusted Advisor", cat:"management", tag:"Best-practice checks for your account",
+ what:"Checks for cost savings, performance, security, fault tolerance and service quotas. Full checks come with Business support and above.", related:["costexplorer"]},
+{id:"costexplorer", name:"Cost Explorer & Budgets", cat:"management", tag:"Understand and control spending",
+ what:"Cost Explorer visualizes and forecasts spend; Budgets alert you when cost or usage crosses a threshold; cost allocation tags split the bill by team.", related:["trustedadvisor","organizations"]},
+{id:"controltower", name:"Control Tower", cat:"management", tag:"Governed multi-account landing zone",
+ what:"Sets up a best-practice multi-account environment with Organizations, IAM Identity Center, guardrails and centralized logging.", related:["organizations"]},
+
+/* ANALYTICS */
+{id:"athena", name:"Athena", cat:"analytics", tag:"Serverless SQL queries on S3",
+ what:"Point Athena at data in S3 (CSV, JSON, Parquet, ORC) and query it with standard SQL. No servers, no loading.",
+ pricing:"Per TB of data scanned. Columnar formats and partitions cut both cost and time.",
+ tip:"Ad-hoc SQL on files in S3 → Athena.", related:["s3","glue","quicksight"]},
+{id:"glue", name:"Glue", cat:"analytics", tag:"Serverless data integration (ETL)",
+ what:"Crawlers discover schemas into the Data Catalog; Spark-based ETL jobs clean and transform data; DataBrew prepares data visually.", related:["athena","s3","redshift"]},
+{id:"emr", name:"EMR", cat:"analytics", tag:"Managed Spark and Hadoop",
+ what:"Run big-data frameworks such as Apache Spark, Hive and Presto on clusters, on EKS or serverless.", related:["glue","s3"]},
+{id:"quicksight", name:"QuickSight", cat:"analytics", tag:"Business intelligence dashboards",
+ what:"Serverless BI for interactive dashboards and natural-language questions over Athena, Redshift, RDS and more.", related:["athena","redshift"]},
+{id:"opensearch", name:"OpenSearch Service", cat:"analytics", tag:"Search and log analytics",
+ what:"Managed OpenSearch for full-text search, log analytics and observability dashboards.", related:["firehose","cloudwatch"]},
+{id:"firehose", name:"Data Firehose", cat:"analytics", tag:"Load streaming data into data stores",
+ what:"Delivers streaming data to S3, Redshift, OpenSearch and partners with buffering, compression and format conversion. No code, no capacity to manage.", related:["kinesis","s3"]},
+{id:"lakeformation", name:"Lake Formation", cat:"analytics", tag:"Build and secure data lakes",
+ what:"Central, fine-grained permissions (down to column and row) over data in S3 shared with Athena, Redshift and EMR.", related:["glue","athena"]},
+
+/* ML */
+{id:"bedrock", name:"Bedrock", cat:"ml", tag:"Generative AI with foundation models",
+ what:"API access to foundation models from Anthropic, Meta, Mistral, Amazon and others, plus Knowledge Bases (RAG), Agents and Guardrails, without managing infrastructure.",
+ tip:"Build a generative AI app without training a model → Bedrock.", related:["sagemaker","lambda"]},
+{id:"sagemaker", name:"SageMaker AI", cat:"ml", tag:"Build, train and deploy ML models",
+ what:"End-to-end platform: notebooks, data labeling, managed training, hyperparameter tuning, model registry and hosted endpoints.",
+ tip:"Data scientists building custom models → SageMaker AI.", related:["bedrock","s3"]},
+{id:"rekognition", name:"Rekognition", cat:"ml", tag:"Image and video analysis",
+ what:"Detect objects, faces, text and unsafe content in images and video with a single API call."},
+{id:"comprehend", name:"Comprehend", cat:"ml", tag:"Natural language processing",
+ what:"Find sentiment, entities, key phrases and language in text, with no ML experience."},
+{id:"textract", name:"Textract", cat:"ml", tag:"Extract text and data from documents",
+ what:"Reads printed and handwritten text, forms and tables from scanned documents."},
+{id:"transcribe", name:"Transcribe & Polly", cat:"ml", tag:"Speech to text, and text to speech",
+ what:"Transcribe turns audio into text (call centers, subtitles). Polly turns text into lifelike speech."},
+{id:"lex", name:"Lex", cat:"ml", tag:"Conversational chatbots",
+ what:"Build voice and text chatbots with speech recognition and language understanding; powers Amazon Connect contact flows."},
+
+/* DEVTOOLS */
+{id:"codepipeline", name:"CodePipeline", cat:"devtools", tag:"Continuous delivery pipelines",
+ what:"Automates release stages (source, build, test, deploy) every time code changes.", related:["codebuild","codedeploy"]},
+{id:"codebuild", name:"CodeBuild", cat:"devtools", tag:"Managed build and test service",
+ what:"Compiles code, runs tests and produces artifacts in fresh containers. Pay per build minute.", related:["codepipeline"]},
+{id:"codedeploy", name:"CodeDeploy", cat:"devtools", tag:"Automated deployments",
+ what:"Deploys to EC2, on-premises servers, Lambda and ECS with in-place, rolling, canary or blue/green strategies.", related:["codepipeline"]},
+{id:"cdk", name:"CDK", full:"Cloud Development Kit", cat:"devtools", tag:"Infrastructure as real code",
+ what:"Define infrastructure in TypeScript, Python, Java, C# or Go; CDK synthesizes CloudFormation templates.", related:["cloudformation"]},
+{id:"xray", name:"X-Ray", cat:"devtools", tag:"Distributed tracing",
+ what:"Traces requests across microservices to find bottlenecks and errors; supports OpenTelemetry via CloudWatch Application Signals.", related:["cloudwatch","lambda"]}
+];
+const byId = Object.fromEntries(S.map(s=>[s.id,s]));
+const catById = Object.fromEntries(CATS.map(c=>[c.id,c]));
+
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $ = s => document.querySelector(s);
+
+/* ---------- learned progress (per-viewer convenience) ---------- */
+let learned = new Set();
+try { learned = new Set(JSON.parse(localStorage.getItem("atlas-learned") || "[]")); } catch(e) {}
+function saveLearned(){ try{ localStorage.setItem("atlas-learned", JSON.stringify([...learned])); }catch(e){} updateProgress(); }
+function updateProgress(){
+  $("#prog-label").textContent = `${learned.size} / ${S.length} learned`;
+  $("#prog-bar").style.width = (learned.size / S.length * 100) + "%";
+}
+
+/* ---------- EXPLORE ---------- */
+let selCat = null, query = "", selSvc = "ec2";
+function svcChip(id){
+  const s = byId[id]; if(!s) return "";
+  return `<button class="chip" data-go="${s.id}" style="--cat:var(--c-${s.cat})"><span class="dot"></span>${esc(s.name)}</button>`;
+}
+function renderCats(){
+  $("#cats").innerHTML = `<button class="chip" data-cat="" aria-pressed="${selCat===null}">All</button>` +
+    CATS.map(c=>`<button class="chip" data-cat="${c.id}" aria-pressed="${selCat===c.id}" style="--cat:var(--c-${c.id})"><span class="dot"></span>${esc(c.name)}</button>`).join("");
+}
+function matches(s){
+  if(selCat && s.cat!==selCat) return false;
+  if(!query) return true;
+  const hay = [s.name,s.full,s.tag,s.what,(s.concepts||[]).map(c=>c.join(" ")).join(" ")].join(" ").toLowerCase();
+  return query.split(/\s+/).every(w=>hay.includes(w));
+}
+function renderList(){
+  let html = "";
+  for(const c of CATS){
+    const items = S.filter(s=>s.cat===c.id && matches(s));
+    if(!items.length) continue;
+    html += `<div class="svc-group" style="--cat:var(--c-${c.id})"><span class="dot"></span>${esc(c.name)}</div>`;
+    html += items.map(s=>`<button class="svc-item" data-svc="${s.id}" aria-current="${s.id===selSvc}" style="--cat:var(--c-${s.cat})">
+      <span class="dot"></span><b>${esc(s.name)}</b>${learned.has(s.id)?'<span class="ok">✓ learned</span>':'<span></span>'}<span class="t">${esc(s.tag)}</span></button>`).join("");
+  }
+  $("#svc-list").innerHTML = html || `<div class="empty">No services match “${esc(query)}”. Try a broader word such as “storage” or “queue”.</div>`;
+}
+function renderDetail(){
+  const s = byId[selSvc]; const c = catById[s.cat];
+  const isL = learned.has(s.id);
+  $("#detail").style.setProperty("--cat", `var(--c-${s.cat})`);
+  $("#detail").innerHTML = `
+    <div class="detail-head">
+      <div style="min-width:0">
+        <span class="catpill"><span class="dot"></span>${esc(c.name)}</span>
+        <h2>${esc(s.name)}</h2>
+        ${s.full?`<div class="full">${esc(s.full)}</div>`:""}
+        <p class="tagline">${esc(s.tag)}</p>
+      </div>
+      <button class="btn ${isL?"done":""}" id="learn-btn" aria-pressed="${isL}">${isL?"✓ Learned":"Mark as learned"}</button>
+    </div>
+    <div class="detail-grid">
+      <div class="block">
+        <h4>What it is</h4><p class="what">${esc(s.what)}</p>
+        ${s.use?`<h4 style="margin-top:8px">Use it for</h4><ul class="uses">${s.use.map(u=>`<li>${esc(u)}</li>`).join("")}</ul>`:""}
+      </div>
+      <div class="block">
+        ${s.analogy?`<div class="analogy"><b>Think of it as</b>${esc(s.analogy)}</div>`:""}
+        ${s.pricing?`<h4>How you pay</h4><p class="price">${esc(s.pricing)}</p>`:""}
+        ${s.tip?`<div class="tip"><b>Exam and interview tip</b>${esc(s.tip)}</div>`:""}
+      </div>
+    </div>
+    ${s.concepts?`<div class="block"><h4>Key concepts</h4><div class="concepts">${s.concepts.map(([t,d])=>`<div class="concept"><b>${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div></div>`:""}
+    ${s.code?`<div class="block"><h4>Example</h4><pre class="code"><code>${esc(s.code)}</code></pre></div>`:""}
+    ${s.related?`<div class="block"><h4>Often used with</h4><div class="related">${s.related.map(svcChip).join("")}</div></div>`:""}
+  `;
+}
+function selectSvc(id, scroll){
+  if(!byId[id]) return;
+  selSvc = id; renderList(); renderDetail();
+  if(location.hash !== "#explore") showTab("explore", true);
+  if(scroll && window.matchMedia("(max-width: 860px)").matches) $("#detail").scrollIntoView({behavior:"smooth", block:"start"});
+  else if(scroll) window.scrollTo({top:0, behavior:"smooth"});
+}
+$("#cats").addEventListener("click", e=>{ const b=e.target.closest("[data-cat]"); if(!b) return; selCat=b.dataset.cat||null; renderCats(); renderList(); });
+$("#svc-list").addEventListener("click", e=>{ const b=e.target.closest("[data-svc]"); if(b) selectSvc(b.dataset.svc, true); });
+$("#q").addEventListener("input", e=>{ query=e.target.value.trim().toLowerCase(); renderList(); });
+$("#q").addEventListener("keydown", e=>{ if(e.key==="Enter"){ const first=S.find(matches); if(first) selectSvc(first.id, true);} });
+$("#detail").addEventListener("click", e=>{
+  if(e.target.closest("#learn-btn")){ learned.has(selSvc)?learned.delete(selSvc):learned.add(selSvc); saveLearned(); renderDetail(); renderList(); }
+});
+document.addEventListener("click", e=>{ const g=e.target.closest("[data-go]"); if(g){ e.preventDefault(); selectSvc(g.dataset.go, true);} });
+document.addEventListener("keydown", e=>{
+  if(e.key==="/" && document.activeElement.tagName!=="INPUT"){ e.preventDefault(); showTab("explore"); $("#q").focus(); }
+});
+
+/* ---------- ARCHITECTURES ---------- */
+const NW=128, NH=48;
+const ARCH = {
+  web: { name:"Three-tier web app",
+    groups:[
+      {k:"region",x:20,y:100,w:960,h:505,l:"REGION · us-east-1"},
+      {k:"vpc",x:40,y:135,w:750,h:455,l:"VPC 10.0.0.0/16"},
+      {k:"az",x:55,y:165,w:350,h:410,l:"AZ us-east-1a"},
+      {k:"az",x:425,y:165,w:350,h:410,l:"AZ us-east-1b"},
+      {k:"public",x:65,y:190,w:330,h:100,l:"Public subnet 10.0.1.0/24"},
+      {k:"public",x:435,y:190,w:330,h:100,l:"Public subnet 10.0.2.0/24"},
+      {k:"private",x:65,y:300,w:330,h:120,l:"Private app subnet"},
+      {k:"private",x:435,y:300,w:330,h:120,l:"Private app subnet"},
+      {k:"private",x:65,y:430,w:330,h:135,l:"Private data subnet"},
+      {k:"private",x:435,y:430,w:330,h:135,l:"Private data subnet"}
+    ],
+    nodes:[
+      {id:"users",svc:null,label:"Users",sub:"Browser / mobile",x:90,y:45,role:"People around the world opening your site."},
+      {id:"r53",svc:"route53",label:"Route 53",sub:"DNS",x:280,y:45,role:"Resolves shop.example.com to the CloudFront distribution using an alias record."},
+      {id:"cf",svc:"cloudfront",label:"CloudFront",sub:"CDN at the edge",x:470,y:45,role:"Serves cached images, CSS and JS from the nearest edge location, and forwards dynamic requests to the ALB."},
+      {id:"waf",svc:"waf",label:"WAF",sub:"Layer 7 filter",x:650,y:45,role:"Attached to CloudFront; blocks SQL injection, XSS and abusive IPs before they reach your app."},
+      {id:"nata",svc:"vpc",label:"NAT Gateway",sub:"Outbound only",x:150,y:250,role:"Lets private instances in AZ a download patches without accepting inbound connections."},
+      {id:"alb",svc:"elb",label:"ALB",sub:"Spans both AZs",x:415,y:250,role:"Application Load Balancer in both public subnets; health-checks instances and spreads traffic across AZs."},
+      {id:"natb",svc:"vpc",label:"NAT Gateway",sub:"Outbound only",x:680,y:250,role:"One NAT Gateway per AZ, so losing one AZ doesn't cut off the other's internet access."},
+      {id:"ec2a",svc:"asg",label:"EC2 · app",sub:"Auto Scaling group",x:230,y:368,role:"App servers in a private subnet, managed by an Auto Scaling group that spans both AZs."},
+      {id:"ec2b",svc:"asg",label:"EC2 · app",sub:"Auto Scaling group",x:600,y:368,role:"Same Auto Scaling group, second AZ. If AZ a fails, the group launches replacements here."},
+      {id:"rds",svc:"rds",label:"RDS primary",sub:"PostgreSQL",x:160,y:500,role:"Primary database handling reads and writes. Only reachable from the app tier's security group."},
+      {id:"cache",svc:"elasticache",label:"ElastiCache",sub:"Valkey / Redis",x:320,y:500,role:"Caches hot queries and stores sessions, cutting database load and latency."},
+      {id:"standby",svc:"rds",label:"RDS standby",sub:"Multi-AZ",x:600,y:500,role:"Synchronous standby copy. Not readable; promoted automatically if the primary or its AZ fails."},
+      {id:"s3",svc:"s3",label:"S3",sub:"Static assets",x:885,y:200,role:"Stores images, CSS and JS. Private bucket readable only by CloudFront through Origin Access Control."},
+      {id:"sm",svc:"secrets",label:"Secrets Mgr",sub:"DB credentials",x:885,y:330,role:"Holds the database password and rotates it; app servers fetch it with their IAM role."},
+      {id:"cw",svc:"cloudwatch",label:"CloudWatch",sub:"Metrics & alarms",x:885,y:460,role:"Collects metrics and logs; a CPU alarm drives Auto Scaling, others page the on-call engineer."}
+    ],
+    edges:[["users","r53"],["users","cf"],["r53","cf"],["cf","waf"],["cf","s3"],["cf","alb"],["alb","ec2a"],["alb","ec2b"],["ec2a","cache"],["ec2a","rds"],["ec2b","rds"],["rds","standby"],["ec2a","nata"],["ec2b","natb"],["ec2b","sm"],["ec2b","cw"]],
+    steps:[
+      {t:"A user opens shop.example.com. Route 53 answers the DNS query with the CloudFront distribution.", n:["users","r53"], e:["users-r53"]},
+      {t:"The browser connects to the nearest CloudFront edge location. WAF inspects the request first.", n:["users","cf","waf"], e:["users-cf","cf-waf"]},
+      {t:"Static files come from the edge cache, or from the private S3 bucket on a cache miss.", n:["cf","s3"], e:["cf-s3"]},
+      {t:"Dynamic requests such as “add to cart” go to the Application Load Balancer.", n:["cf","alb"], e:["cf-alb"]},
+      {t:"The ALB sends each request to a healthy EC2 instance in either AZ.", n:["alb","ec2a","ec2b"], e:["alb-ec2a","alb-ec2b"]},
+      {t:"The app checks ElastiCache first. Cache hit: answer in under a millisecond.", n:["ec2a","cache"], e:["ec2a-cache"]},
+      {t:"Cache miss: query RDS. Every write is copied synchronously to the standby in the other AZ.", n:["ec2a","ec2b","rds","standby"], e:["ec2a-rds","ec2b-rds","rds-standby"]},
+      {t:"Instances use their IAM role to read the DB password from Secrets Manager and ship metrics to CloudWatch.", n:["ec2b","sm","cw"], e:["ec2b-sm","ec2b-cw"]},
+      {t:"Private instances reach the internet for updates only through the NAT Gateway in their own AZ.", n:["ec2a","ec2b","nata","natb"], e:["ec2a-nata","ec2b-natb"]},
+      {t:"AZ a fails: RDS promotes the standby, the ALB stops routing to AZ a, Auto Scaling adds instances in AZ b. Users barely notice.", n:["alb","ec2b","standby"], e:["alb-ec2b","ec2b-rds"], dim:["ec2a","rds","cache","nata"]}
+    ]},
+  serverless: { name:"Serverless API",
+    groups:[{k:"region",x:375,y:60,w:605,h:545,l:"REGION · eu-west-1"}],
+    nodes:[
+      {id:"users",svc:null,label:"Users",sub:"Web app",x:90,y:260,role:"A single-page app running in the browser."},
+      {id:"cf",svc:"cloudfront",label:"CloudFront",sub:"Global CDN",x:250,y:110,role:"Delivers the single-page app quickly worldwide over HTTPS."},
+      {id:"s3",svc:"s3",label:"S3",sub:"SPA files",x:470,y:110,role:"Holds the built HTML, JS and CSS of the front end."},
+      {id:"cog",svc:"cognito",label:"Cognito",sub:"User pool",x:470,y:420,role:"Handles sign-up, sign-in and MFA, and issues JWT tokens."},
+      {id:"api",svc:"apigw",label:"API Gateway",sub:"HTTP API",x:470,y:260,role:"Validates the JWT, throttles traffic and invokes Lambda per request."},
+      {id:"fn",svc:"lambda",label:"Lambda",sub:"API handler",x:670,y:260,role:"Runs your business logic per request; scales to zero when idle."},
+      {id:"ddb",svc:"dynamodb",label:"DynamoDB",sub:"Orders table",x:870,y:260,role:"Stores orders with millisecond reads and writes, on-demand capacity."},
+      {id:"sqs",svc:"sqs",label:"SQS",sub:"Jobs queue",x:670,y:420,role:"Buffers slow jobs such as invoice PDFs so the API can reply immediately."},
+      {id:"worker",svc:"lambda",label:"Lambda",sub:"Worker",x:870,y:420,role:"Polls SQS in batches; failed messages retry, then land in a dead-letter queue."},
+      {id:"sns",svc:"sns",label:"SNS",sub:"Notify",x:870,y:550,role:"Fans out “order shipped” to email, SMS and other systems."},
+      {id:"eb",svc:"eventbridge",label:"EventBridge",sub:"Schedule",x:670,y:550,role:"Runs the worker every night at 02:00 to clean up abandoned carts."},
+      {id:"cw",svc:"cloudwatch",label:"CloudWatch",sub:"Logs & metrics",x:870,y:110,role:"Every Lambda writes logs automatically; alarms watch errors and throttles."}
+    ],
+    edges:[["users","cf"],["cf","s3"],["users","cog"],["users","api"],["api","cog"],["api","fn"],["fn","ddb"],["fn","sqs"],["sqs","worker"],["worker","ddb"],["worker","sns"],["eb","worker"],["fn","cw"]],
+    steps:[
+      {t:"The browser loads the single-page app from S3 through CloudFront.", n:["users","cf","s3"], e:["users-cf","cf-s3"]},
+      {t:"The user signs in with Cognito and receives JWT tokens.", n:["users","cog"], e:["users-cog"]},
+      {t:"The app calls API Gateway with the token. The JWT authorizer checks it against Cognito.", n:["users","api","cog"], e:["users-api","api-cog"]},
+      {t:"API Gateway invokes Lambda. A new execution environment spins up only if needed.", n:["api","fn"], e:["api-fn"]},
+      {t:"Lambda writes the order to DynamoDB in a few milliseconds.", n:["fn","ddb"], e:["fn-ddb"]},
+      {t:"Slow work, like rendering an invoice PDF, goes on the SQS queue. The API responds right away.", n:["fn","sqs"], e:["fn-sqs"]},
+      {t:"The worker Lambda pulls messages in batches and updates the order.", n:["sqs","worker","ddb"], e:["sqs-worker","worker-ddb"]},
+      {t:"The worker publishes to SNS, which emails the customer and notifies the warehouse.", n:["worker","sns"], e:["worker-sns"]},
+      {t:"Separately, an EventBridge schedule runs nightly cleanup with the same worker.", n:["eb","worker"], e:["eb-worker"]},
+      {t:"Logs and metrics flow to CloudWatch. With no traffic, the bill is close to zero.", n:["fn","cw"], e:["fn-cw"]}
+    ]},
+  data: { name:"Analytics data lake",
+    groups:[{k:"region",x:190,y:60,w:790,h:545,l:"REGION · ap-southeast-1"}],
+    nodes:[
+      {id:"src",svc:null,label:"Apps & IoT",sub:"Clickstream events",x:90,y:260,role:"Websites, mobile apps and devices emitting events continuously."},
+      {id:"fh",svc:"firehose",label:"Data Firehose",sub:"Buffer & deliver",x:290,y:260,role:"Buffers events for a minute or a few MB, compresses and writes them to S3."},
+      {id:"raw",svc:"s3",label:"S3 raw zone",sub:"JSON as received",x:480,y:130,role:"The landing zone: cheap, durable, never modified."},
+      {id:"glue",svc:"glue",label:"Glue ETL",sub:"Spark job",x:680,y:130,role:"Cleans data, converts it to Parquet and partitions by date."},
+      {id:"cur",svc:"s3",label:"S3 curated",sub:"Parquet, partitioned",x:880,y:130,role:"Query-ready data. Columnar Parquet lets queries read only what they need."},
+      {id:"cat",svc:"glue",label:"Data Catalog",sub:"Tables & schemas",x:680,y:290,role:"Crawlers record table definitions that Athena, Redshift and EMR all share."},
+      {id:"lf",svc:"lakeformation",label:"Lake Formation",sub:"Permissions",x:480,y:400,role:"Grants analysts access to specific tables, columns and rows."},
+      {id:"ath",svc:"athena",label:"Athena",sub:"Serverless SQL",x:680,y:440,role:"Runs SQL directly on S3; you pay for the data each query scans."},
+      {id:"qs",svc:"quicksight",label:"QuickSight",sub:"Dashboards",x:880,y:440,role:"Business dashboards built on Athena queries."},
+      {id:"rs",svc:"redshift",label:"Redshift",sub:"Warehouse",x:880,y:290,role:"For heavy, recurring BI workloads; Spectrum reads the curated S3 data too."},
+      {id:"an",svc:null,label:"Analysts",sub:"SQL & BI users",x:290,y:520,role:"People asking questions of the data."}
+    ],
+    edges:[["src","fh"],["fh","raw"],["raw","glue"],["glue","cur"],["glue","cat"],["ath","cat"],["ath","cur"],["lf","cat"],["qs","ath"],["cur","rs"],["an","lf"],["an","qs"]],
+    steps:[
+      {t:"Apps and devices send a continuous stream of click and sensor events.", n:["src","fh"], e:["src-fh"]},
+      {t:"Data Firehose batches the events and writes compressed files to the S3 raw zone.", n:["fh","raw"], e:["fh-raw"]},
+      {t:"A Glue job reads the raw data, cleans it and writes partitioned Parquet to the curated zone.", n:["raw","glue","cur"], e:["raw-glue","glue-cur"]},
+      {t:"Table definitions land in the Glue Data Catalog so every engine sees the same schema.", n:["glue","cat"], e:["glue-cat"]},
+      {t:"Lake Formation decides which analyst can see which tables and columns.", n:["an","lf","cat"], e:["an-lf","lf-cat"]},
+      {t:"Athena runs SQL on the curated files. Partitions and Parquet make queries cheaper and faster.", n:["ath","cat","cur"], e:["ath-cat","ath-cur"]},
+      {t:"QuickSight dashboards query Athena for business users.", n:["an","qs","ath"], e:["an-qs","qs-ath"]},
+      {t:"Heavy recurring reporting moves to Redshift, which also reads S3 directly through Spectrum.", n:["cur","rs"], e:["cur-rs"]}
+    ]}
+};
+let scen = "web", step = -1, playing = null, selNode = null;
+function renderScen(){
+  $("#scen").innerHTML = Object.entries(ARCH).map(([k,a])=>`<button class="seg" data-scen="${k}" aria-pressed="${k===scen}">${esc(a.name)}</button>`).join("");
+}
+function drawArch(){
+  const a = ARCH[scen]; const pos = Object.fromEntries(a.nodes.map(n=>[n.id,n]));
+  const g = a.groups.map(gr=>`<rect class="g-${gr.k}" x="${gr.x}" y="${gr.y}" width="${gr.w}" height="${gr.h}" rx="${gr.k==="public"||gr.k==="private"?6:12}"/>
+    <text class="g-label" x="${gr.x+10}" y="${gr.y+(gr.k==="public"||gr.k==="private"?16:20)}">${esc(gr.l)}</text>`).join("");
+  const e = a.edges.map(([f,t])=>{ const A=pos[f],B=pos[t]; return `<line class="edge" id="e-${f}-${t}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"/>`; }).join("");
+  const n = a.nodes.map(nd=>{
+    const cat = nd.svc ? byId[nd.svc].cat : null;
+    const col = cat ? `var(--c-${cat})` : "var(--muted)";
+    return `<g class="node" id="n-${nd.id}" data-node="${nd.id}" tabindex="0" role="button" aria-label="${esc(nd.label)}">
+      <rect class="box" x="${nd.x-NW/2}" y="${nd.y-NH/2}" width="${NW}" height="${NH}" rx="8"/>
+      <rect class="stripe" x="${nd.x-NW/2}" y="${nd.y-NH/2}" width="5" height="${NH}" rx="2" fill="${col}" style="fill:${col}"/>
+      <text class="n" x="${nd.x-NW/2+14}" y="${nd.y-3}">${esc(nd.label)}</text>
+      <text class="s" x="${nd.x-NW/2+14}" y="${nd.y+13}">${esc(nd.sub)}</text></g>`;
+  }).join("");
+  $("#arch-svg").innerHTML = g + e + n;
+  $("#steps").innerHTML = a.steps.map((s,i)=>`<li><button data-step="${i}">${esc(s.t)}</button></li>`).join("");
+  applyStep();
+  renderNodeInfo();
+}
+function applyStep(){
+  const a = ARCH[scen];
+  document.querySelectorAll("#arch-svg .node").forEach(el=>el.classList.remove("on","dim"));
+  document.querySelectorAll("#arch-svg .edge").forEach(el=>el.classList.remove("on"));
+  document.querySelectorAll("#steps button").forEach((b,i)=>b.setAttribute("aria-current", i===step?"step":"false"));
+  if(step<0) return;
+  const s = a.steps[step];
+  s.n.forEach(id=>document.getElementById("n-"+id)?.classList.add("on"));
+  (s.dim||[]).forEach(id=>document.getElementById("n-"+id)?.classList.add("dim"));
+  s.e.forEach(id=>document.getElementById("e-"+id)?.classList.add("on"));
+  const btn = document.querySelector(`#steps button[data-step="${step}"]`);
+  if(btn && playing) btn.scrollIntoView({block:"nearest"});
+}
+function renderNodeInfo(){
+  const a = ARCH[scen];
+  const nd = a.nodes.find(n=>n.id===selNode);
+  document.querySelectorAll("#arch-svg .node").forEach(el=>el.classList.toggle("sel", el.dataset.node===selNode));
+  if(!nd){ $("#node-info").innerHTML = `<span class="eyebrow">Component details</span><p class="muted">Click any box in the diagram to see what it does in this design.</p>`; return; }
+  const s = nd.svc ? byId[nd.svc] : null;
+  $("#node-info").innerHTML = `<span class="eyebrow">Component details</span>
+    <h3>${esc(nd.label)}</h3>
+    ${s?`<span class="catpill" style="--cat:var(--c-${s.cat})"><span class="dot"></span>${esc(s.name)} · ${esc(s.tag)}</span>`:""}
+    <p>${esc(nd.role)}</p>
+    ${s?`<button class="btn" data-go="${s.id}">Study ${esc(s.name)} →</button>`:""}`;
+}
+function stopPlay(){ if(playing){ clearInterval(playing); playing=null; $("#play").textContent="Play"; } }
+$("#scen").addEventListener("click", e=>{ const b=e.target.closest("[data-scen]"); if(!b) return; stopPlay(); scen=b.dataset.scen; step=-1; selNode=null; renderScen(); drawArch(); });
+$("#arch-svg").addEventListener("click", e=>{ const g=e.target.closest("[data-node]"); if(!g) return; selNode=g.dataset.node; renderNodeInfo(); });
+$("#arch-svg").addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ const g=e.target.closest("[data-node]"); if(g){ e.preventDefault(); selNode=g.dataset.node; renderNodeInfo(); } } });
+$("#steps").addEventListener("click", e=>{ const b=e.target.closest("[data-step]"); if(!b) return; stopPlay(); step=+b.dataset.step; applyStep(); });
+$("#next").addEventListener("click", ()=>{ stopPlay(); step=Math.min(step+1, ARCH[scen].steps.length-1); applyStep(); });
+$("#prev").addEventListener("click", ()=>{ stopPlay(); step=Math.max(step-1, 0); applyStep(); });
+$("#play").addEventListener("click", ()=>{
+  if(playing){ stopPlay(); return; }
+  const n = ARCH[scen].steps.length;
+  if(step>=n-1) step=-1;
+  $("#play").textContent="Pause";
+  step++; applyStep();
+  playing = setInterval(()=>{ if(step>=n-1){ stopPlay(); return; } step++; applyStep(); }, 3000);
+});
+
+/* ---------- CONCEPTS ---------- */
+const RESP = {
+  cols:["EC2","RDS","Lambda","S3"],
+  rows:[
+    ["Your data and its classification",["you","you","you","you"]],
+    ["Identity and access (IAM, policies)",["you","you","you","you"]],
+    ["Encryption settings",["you","you","you","you"]],
+    ["Application code and configuration",["you","you","you","—"]],
+    ["Network rules (security groups, NACLs)",["you","you","shared","aws"]],
+    ["Operating system patching",["you","aws","aws","aws"]],
+    ["Runtime / database engine patching",["you","shared","aws","aws"]],
+    ["Virtualization and host",["aws","aws","aws","aws"]],
+    ["Physical hardware, network and facilities",["aws","aws","aws","aws"]]
+  ]
+};
+const LABEL = {you:"You", aws:"AWS", shared:"Shared", "—":"n/a"};
+$("#resp").innerHTML = `<thead><tr><th style="text-align:left">Layer</th>${RESP.cols.map(c=>`<th style="text-align:center">${c}</th>`).join("")}</tr></thead>
+  <tbody>${RESP.rows.map(([l,v])=>`<tr><th>${esc(l)}</th>${v.map(x=>`<td class="${x==="—"?"aws":x}">${LABEL[x]}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+const PILLARS = [
+  {n:"Operational excellence", d:"Run and improve systems with automation.", p:["Define infrastructure as code","Make small, frequent, reversible changes","Learn from failures with post-incident reviews"], s:["cloudformation","cloudwatch","ssm"]},
+  {n:"Security", d:"Protect data, systems and assets.", p:["Strong identity foundation, least privilege","Traceability: log and audit everything","Encrypt in transit and at rest"], s:["iam","kms","guardduty"]},
+  {n:"Reliability", d:"Recover from failure and meet demand.", p:["Deploy across multiple AZs","Scale horizontally instead of bigger boxes","Test recovery procedures regularly"], s:["asg","elb","backup"]},
+  {n:"Performance efficiency", d:"Use resources efficiently as demand changes.", p:["Use managed and serverless services","Go global in minutes with edge caching","Experiment with instance types and caching"], s:["cloudfront","elasticache","lambda"]},
+  {n:"Cost optimization", d:"Deliver value at the lowest price.", p:["Pay only for what you use","Right-size and buy commitments for steady load","Measure spend per team with tags"], s:["costexplorer","trustedadvisor","ec2"]},
+  {n:"Sustainability", d:"Minimize environmental impact.", p:["Maximize utilization; turn off idle resources","Choose efficient hardware such as Graviton","Move rarely used data to colder storage"], s:["asg","glacier","fargate"]}
+];
+$("#pillars").innerHTML = PILLARS.map(p=>`<div class="pillar"><h3>${p.n}</h3><p class="muted" style="font-size:.9rem">${p.d}</p><ul>${p.p.map(x=>`<li>${x}</li>`).join("")}</ul><div class="svc-links">${p.s.map(svcChip).join("")}</div></div>`).join("");
+
+const PRICING = [
+  ["On-Demand","None","Pay per second, stop any time","Short, spiky or unpredictable workloads, development"],
+  ["Savings Plans","1 or 3 years, $/hour commitment","Up to 72%","Steady usage across EC2, Fargate and Lambda; flexible on instance family and Region (Compute SP)"],
+  ["Reserved Instances","1 or 3 years, specific instance","Up to 72%","Steady databases and servers (RDS, ElastiCache, Redshift also offer reservations)"],
+  ["Spot Instances","None; AWS can reclaim with 2-minute notice","Up to 90%","Fault-tolerant batch, CI, big data, rendering"],
+  ["Dedicated Hosts","Optional reservation","Most expensive","Bring-your-own licenses tied to sockets or cores, strict compliance"]
+];
+$("#pricing").innerHTML = `<thead><tr><th>Option</th><th>Commitment</th><th>Discount vs On-Demand</th><th>Best for</th></tr></thead>
+  <tbody>${PRICING.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="mono">${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody>`;
+
+const RS = [
+  ["Retire","Switch it off. Nobody uses it anymore.","Effort: none"],
+  ["Retain","Keep it on-premises for now.","Effort: none"],
+  ["Rehost","Lift and shift as-is onto EC2, e.g. with Application Migration Service.","Effort: low"],
+  ["Relocate","Move a VMware environment as a whole to VMware-based hosting on AWS.","Effort: low"],
+  ["Replatform","Lift, tinker and shift: e.g. move a self-run database onto RDS.","Effort: medium"],
+  ["Repurchase","Drop the product for SaaS, e.g. an in-house CRM for a SaaS CRM.","Effort: medium"],
+  ["Refactor","Re-architect cloud-native: containers, serverless, managed services.","Effort: high"]
+];
+$("#rs").innerHTML = RS.map(r=>`<div class="r"><b>${r[0]}</b><p>${r[1]}</p><em>${r[2]}</em></div>`).join("");
+
+/* ---------- COMPARE & DECIDE ---------- */
+const TREES = {
+  compute:{name:"Pick compute", start:"a", nodes:{
+    a:{q:"Does each task run longer than 15 minutes, or need an always-on process?", o:[["Yes","c"],["No","b"]]},
+    b:{q:"Is the work triggered by events, such as an HTTP request, file upload or queue message?", o:[["Yes, event-driven",{svc:"lambda",why:"Short, event-driven work is Lambda's sweet spot: no servers, scale per request, pay only while running."}],["No","c"]]},
+    c:{q:"Is the application packaged as containers?", o:[["Yes","d"],["No","e"]]},
+    d:{q:"Does your team already run Kubernetes?", o:[["Yes",{svc:"eks",why:"Keep your Kubernetes tooling and manifests; AWS runs the control plane. Use Fargate or managed nodes for the workers."}],["No",{svc:"fargate",why:"ECS on Fargate is the simplest way to run containers: no cluster nodes to patch, scale per task."}]]},
+    e:{q:"Do you need full OS control, special licenses, or GPUs?", o:[["Yes",{svc:"ec2",why:"EC2 gives full control of the OS and hardware choice. Put it in an Auto Scaling group across AZs."}],["No","f"]]},
+    f:{q:"Would you rather just upload code and let AWS manage the servers?", o:[["Yes, a standard web app",{svc:"beanstalk",why:"Beanstalk provisions EC2, load balancer and scaling from your code, and you can still tune the resources."}],["No, I need a simple fixed-price server",{svc:"lightsail",why:"Lightsail bundles a server, storage and networking at a predictable monthly price."}]]}
+  }},
+  database:{name:"Pick a database", start:"a", nodes:{
+    a:{q:"Is your data relational, with joins and transactions?", o:[["Yes","b"],["No","d"]]},
+    b:{q:"Is the main job analytics over large historical data rather than live transactions?", o:[["Yes, reporting and BI",{svc:"redshift",why:"Columnar, massively parallel storage is built for scanning billions of rows in analytics queries."}],["No, live app transactions","c"]]},
+    c:{q:"Do you need the highest performance and availability, or does load vary a lot?", o:[["Yes",{svc:"aurora",why:"Six copies across three AZs, fast failover, up to 15 replicas, and Serverless v2 for variable load."}],["No, a standard engine is fine",{svc:"rds",why:"Managed MySQL, PostgreSQL, SQL Server, Oracle and more. Turn on Multi-AZ for production."}]]},
+    d:{q:"What shape is the data?", o:[["Key-value or documents at huge scale",{svc:"dynamodb",why:"Serverless, single-digit millisecond latency at any scale, pay per request."}],["Temporary hot data, sessions, leaderboards",{svc:"elasticache",why:"In-memory means sub-millisecond reads; put it in front of your main database."}],["Highly connected relationships",{svc:"neptune",why:"Graph queries walk relationships (friends of friends, fraud rings) efficiently."}],["Existing MongoDB workload",{svc:"documentdb",why:"Compatible with MongoDB drivers, so the app needs few changes."}]]}
+  }},
+  storage:{name:"Pick storage", start:"a", nodes:{
+    a:{q:"How will the data be accessed?", o:[["As objects over HTTP: images, backups, logs","b"],["As a disk attached to one server",{svc:"ebs",why:"Low-latency block storage for one instance: boot volumes and self-managed databases."}],["As a shared folder for many servers","c"]]},
+    b:{q:"How often is it read?", o:[["Frequently",{svc:"s3",why:"S3 Standard: millisecond access, eleven nines durability, across 3+ AZs."}],["Unknown or changing",{svc:"s3",why:"Use S3 Intelligent-Tiering: it moves objects between tiers automatically, with no retrieval fees."}],["Rarely, but must be instant",{svc:"glacier",why:"Glacier Instant Retrieval: archive pricing with millisecond reads."}],["Archive, hours of wait is fine",{svc:"glacier",why:"Glacier Deep Archive is the cheapest storage in AWS; retrieval within 12 hours."}]]},
+    c:{q:"Which operating systems or workload?", o:[["Linux servers and containers",{svc:"efs",why:"Managed NFS that many instances mount across AZs, growing automatically."}],["Windows servers (SMB, Active Directory)",{svc:"fsx",why:"FSx for Windows File Server is native SMB with AD integration."}],["High-performance computing",{svc:"fsx",why:"FSx for Lustre delivers hundreds of GB/s for HPC and ML, and links to S3."}]]}
+  }}
+};
+let tree = "compute", path = [];
+function renderTrees(){ $("#trees").innerHTML = Object.entries(TREES).map(([k,t])=>`<button class="seg" data-tree="${k}" aria-pressed="${k===tree}">${t.name}</button>`).join(""); }
+function renderTree(){
+  const T = TREES[tree];
+  let cur = T.start, result = null;
+  const trail = [];
+  for(const choice of path){
+    const nd = T.nodes[cur]; const opt = nd.o[choice];
+    trail.push([nd.q, opt[0]]);
+    if(typeof opt[1]==="string") cur = opt[1]; else { result = opt[1]; break; }
+  }
+  if(result){
+    const s = byId[result.svc];
+    $("#tree-q").innerHTML = `<span class="eyebrow">Recommendation</span>
+      <div class="result" style="--cat:var(--c-${s.cat})"><span class="catpill"><span class="dot"></span>${esc(catById[s.cat].name)}</span><h3>${esc(s.name)}</h3><p>${esc(result.why)}</p></div>
+      <div class="player"><button class="btn primary" data-go="${s.id}">Study ${esc(s.name)} →</button><button class="btn" id="tree-reset">Start over</button></div>`;
+  } else {
+    const nd = T.nodes[cur];
+    $("#tree-q").innerHTML = `<span class="eyebrow">Question ${trail.length+1}</span><p class="q">${esc(nd.q)}</p>
+      <div class="opts">${nd.o.map((o,i)=>`<button class="opt" data-choice="${i}">${esc(o[0])}</button>`).join("")}</div>
+      ${trail.length?`<div><button class="btn" id="tree-back">Back</button></div>`:""}`;
+  }
+  $("#tree-side").innerHTML = `<span class="eyebrow">Your answers</span>` + (trail.length
+    ? `<div class="trail">${trail.map(([q,a])=>`<div>${esc(q)}<br><b>→ ${esc(a)}</b></div>`).join("")}</div>`
+    : `<p class="muted">Your path appears here as you answer. Each branch reflects the trade-offs AWS architects weigh: run time, packaging, control and access pattern.</p>`);
+}
+$("#trees").addEventListener("click", e=>{ const b=e.target.closest("[data-tree]"); if(!b) return; tree=b.dataset.tree; path=[]; renderTrees(); renderTree(); });
+$("#tree-q").addEventListener("click", e=>{
+  const c=e.target.closest("[data-choice]"); if(c){ path.push(+c.dataset.choice); renderTree(); return; }
+  if(e.target.closest("#tree-reset")){ path=[]; renderTree(); }
+  if(e.target.closest("#tree-back")){ path.pop(); renderTree(); }
+});
+
+const CMP = {
+  storage:{name:"S3 vs EBS vs EFS", cols:["S3","EBS","EFS","Instance store"], rows:[
+    ["Type","Object","Block","File (NFS)","Block, temporary"],
+    ["Attached to","Accessed by API from anywhere","One EC2 instance, same AZ","Thousands of clients across AZs","Only its host instance"],
+    ["Durability","11 nines, 3+ AZs","Replicated within one AZ","Replicated across AZs","Lost on stop or hardware failure"],
+    ["Capacity","Unlimited, 5 TB per object","Up to 64 TiB per volume","Grows automatically to petabytes","Fixed by instance type"],
+    ["Typical use","Media, backups, data lakes","Boot disks, databases","Shared content, home directories","Caches, scratch space"],
+    ["You pay for","GB stored + requests","GB provisioned","GB actually used","Included in instance price"]]},
+  db:{name:"RDS vs Aurora vs DynamoDB", cols:["RDS","Aurora","DynamoDB","ElastiCache","Redshift"], rows:[
+    ["Model","Relational (6 engines)","Relational (MySQL/PostgreSQL)","Key-value / document","In-memory key-value","Relational, columnar"],
+    ["Workload","OLTP","OLTP, high scale","OLTP, massive scale","Caching, sessions","OLAP analytics"],
+    ["Scaling","Bigger instance + read replicas","Up to 15 replicas, Serverless v2","Automatic, virtually unlimited","Shards and replicas","Add nodes or serverless"],
+    ["Latency","Milliseconds","Milliseconds","Single-digit ms","Sub-millisecond","Seconds for big queries"],
+    ["Choose when","Standard SQL app","SQL with top availability","Known access patterns, any scale","Speed up reads","BI over years of data"]]},
+  msg:{name:"SQS vs SNS vs EventBridge vs Kinesis", cols:["SQS","SNS","EventBridge","Kinesis Data Streams"], rows:[
+    ["Pattern","Queue, consumers pull","Pub/sub, pushes to subscribers","Event bus with content-based rules","Ordered stream of records"],
+    ["Who receives","One consumer per message","Every subscriber gets a copy","Every matching rule's targets","Many consumers, each at its own position"],
+    ["Keeps messages","Up to 14 days","No","Optional archive and replay","24 hours to 365 days, replayable"],
+    ["Ordering","FIFO queues","FIFO topics","Not guaranteed","Per shard"],
+    ["Use when","Decouple and buffer work","Fan-out notifications","React to AWS/SaaS events, route by content","Real-time analytics, high-volume streams"]]},
+  compute:{name:"EC2 vs Lambda vs Fargate", cols:["EC2","Lambda","Fargate","Elastic Beanstalk"], rows:[
+    ["You manage","OS, runtime, scaling, patching","Only your code","Container image and task size","Code; AWS runs the stack"],
+    ["Max run time","Unlimited","15 minutes","Unlimited","Unlimited"],
+    ["Scaling","Auto Scaling groups","Automatic per request","Service auto scaling per task","Built-in Auto Scaling"],
+    ["Billing","Per second while running","Per request + GB-second","Per vCPU and GB per second","Underlying resources"],
+    ["Best for","Full control, legacy, GPUs","Event-driven, spiky, glue code","Containers without servers","Quick standard web apps"]]},
+  sg:{name:"Security group vs NACL", cols:["Security group","Network ACL"], rows:[
+    ["Applies to","Instance (network interface)","Whole subnet"],
+    ["State","Stateful: return traffic is allowed automatically","Stateless: return traffic needs its own rule"],
+    ["Rules","Allow only","Allow and deny"],
+    ["Evaluation","All rules evaluated together","In number order, first match wins"],
+    ["Default","New SG: deny all inbound, allow all outbound","Default NACL allows all; a new custom NACL denies all"],
+    ["Typical use","Main firewall for each tier","Block a specific IP range at the subnet edge"]]},
+  lb:{name:"ALB vs NLB vs GWLB", cols:["Application LB","Network LB","Gateway LB"], rows:[
+    ["OSI layer","7 (HTTP/HTTPS, gRPC)","4 (TCP, UDP, TLS)","3 (IP packets)"],
+    ["Routes by","Path, host, header, query string","Port and protocol","Sends all traffic through appliances"],
+    ["Performance","High","Millions of requests per second, ultra-low latency","Scales appliance fleets"],
+    ["Static IP","No (use Global Accelerator)","Yes, one per AZ","No"],
+    ["Use when","Web apps, microservices, containers","Gaming, IoT, extreme throughput","Third-party firewalls, IDS/IPS"]]},
+  ha:{name:"Multi-AZ vs read replicas", cols:["RDS Multi-AZ","RDS read replica","Aurora replica"], rows:[
+    ["Purpose","High availability","Scale reads","Both"],
+    ["Replication","Synchronous","Asynchronous","Shared storage, very low lag"],
+    ["Can serve reads","No (classic standby)","Yes","Yes"],
+    ["Location","Another AZ, same Region","Same or another Region","Same Region (Global Database for cross-Region)"],
+    ["On failure","Automatic failover in 1–2 minutes","Manual promotion","Automatic promotion, usually under 30 seconds"]]},
+  mon:{name:"CloudWatch vs CloudTrail vs Config", cols:["CloudWatch","CloudTrail","AWS Config"], rows:[
+    ["Answers","How is it performing?","Who did what, and when?","How is it configured, and is it compliant?"],
+    ["Data","Metrics, logs, alarms","API call history","Resource configuration timeline"],
+    ["Example","Alarm when CPU > 80% for 5 min","Find who terminated an instance","Flag any unencrypted S3 bucket"]]}
+};
+let cmp = "storage";
+function renderCmp(){
+  $("#cmp-tabs").innerHTML = Object.entries(CMP).map(([k,c])=>`<button class="seg" data-cmp="${k}" aria-pressed="${k===cmp}">${c.name}</button>`).join("");
+  const c = CMP[cmp];
+  $("#cmp").innerHTML = `<thead><tr><th></th>${c.cols.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead>
+    <tbody>${c.rows.map(r=>`<tr><th>${esc(r[0])}</th>${r.slice(1).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+}
+$("#cmp-tabs").addEventListener("click", e=>{ const b=e.target.closest("[data-cmp]"); if(!b) return; cmp=b.dataset.cmp; renderCmp(); });
+
+/* ---------- QUIZ ---------- */
+const QZ = [
+  {q:"A nightly data-processing job takes 3 hours, can be stopped and restarted, and must be as cheap as possible. What should it run on?", o:["Lambda","On-Demand EC2 instances","EC2 Spot Instances","Dedicated Hosts"], a:2, why:"Spot gives up to 90% off and suits interruptible work. Lambda can't run longer than 15 minutes.", s:"ec2"},
+  {q:"A web app on EC2 must keep serving users if an entire Availability Zone fails. What is the best design?", o:["One larger EC2 instance with EBS snapshots","An Auto Scaling group across two AZs behind an Application Load Balancer","Two instances in the same AZ behind a load balancer","An instance in each AZ with Route 53 simple routing"], a:1, why:"Spreading an Auto Scaling group across AZs behind an ALB survives an AZ failure and replaces capacity automatically.", s:"asg"},
+  {q:"A company must keep financial records for 10 years. They will almost never be read, and a 12-hour retrieval time is acceptable. Cheapest option?", o:["S3 Standard","S3 Standard-IA","S3 Glacier Deep Archive","EBS cold HDD (sc1)"], a:2, why:"Deep Archive is the lowest-cost storage class, built for long-term retention with retrieval in hours.", s:"glacier"},
+  {q:"Someone deleted a production S3 bucket last night. Which service tells you who did it?", o:["CloudWatch","CloudTrail","AWS Config","Trusted Advisor"], a:1, why:"CloudTrail records every API call with the identity, time and source IP.", s:"cloudtrail"},
+  {q:"An application on EC2 needs to read objects from an S3 bucket. What is the most secure approach?", o:["Store an IAM user's access keys in a config file","Make the bucket public","Attach an IAM role to the EC2 instance","Put the keys in the instance's user data"], a:2, why:"A role provides temporary, automatically rotated credentials. Long-term keys on servers are a common breach cause.", s:"iam"},
+  {q:"An order service sends work to a slow invoicing service. During sales, invoicing falls behind and orders fail. How do you decouple them?", o:["Put an SQS queue between them","Use a bigger instance for invoicing","Add CloudFront in front","Use Route 53 weighted routing"], a:0, why:"SQS buffers requests so the order service stays fast and invoicing works through the backlog at its own pace.", s:"sqs"},
+  {q:"An RDS PostgreSQL database is overloaded by reporting queries that only read data. What helps most?", o:["Enable Multi-AZ","Create read replicas and point reports at them","Switch to a larger EBS volume","Enable automated backups"], a:1, why:"Read replicas offload read traffic. Multi-AZ is for availability; its standby doesn't serve reads.", s:"rds"},
+  {q:"Instances in a private subnet need to download OS updates from the internet but must not accept inbound connections. What do you add?", o:["An Internet Gateway attached to the private subnet","A NAT Gateway in a public subnet","A VPC peering connection","A gateway VPC endpoint"], a:1, why:"A NAT Gateway allows outbound-only internet access for private subnets.", s:"vpc"},
+  {q:"A mobile game needs a serverless database with single-digit millisecond latency at millions of requests per second. Which one?", o:["RDS for MySQL","Redshift","DynamoDB","Neptune"], a:2, why:"DynamoDB is serverless NoSQL built for consistent low latency at any scale.", s:"dynamodb"},
+  {q:"Twenty Linux EC2 instances across three AZs must read and write the same set of files. Which storage?", o:["EBS with Multi-Attach","EFS","Instance store","S3 Glacier"], a:1, why:"EFS is a shared NFS file system mounted by many instances across AZs. EBS Multi-Attach is limited to one AZ.", s:"efs"},
+  {q:"Under the shared responsibility model, who patches the guest operating system on an EC2 instance?", o:["AWS","The customer","Shared equally","The AMI publisher"], a:1, why:"With EC2 (infrastructure as a service) the customer owns the OS and everything above it.", s:"ec2"},
+  {q:"Analysts want to run SQL directly on Parquet files in S3 without managing any servers. Which service?", o:["Athena","EMR","RDS","ElastiCache"], a:0, why:"Athena is serverless SQL over S3, billed per data scanned.", s:"athena"},
+  {q:"A web app behind an ALB is being hit by SQL injection attempts. What blocks them?", o:["Shield Standard","A security group rule","AWS WAF","Network ACL"], a:2, why:"WAF inspects HTTP requests at layer 7. Security groups and NACLs only see IPs and ports.", s:"waf"},
+  {q:"When an order is placed, the same message must go to an email list, an SQS queue for shipping and a Lambda for analytics. Which service?", o:["SQS","SNS","Step Functions","Kinesis Data Streams"], a:1, why:"SNS pushes one published message to many subscribers of different types: fan-out.", s:"sns"},
+  {q:"You need to block one malicious IP range from reaching every instance in a subnet. Which control supports an explicit deny rule?", o:["Security group","Network ACL","IAM policy","Route table"], a:1, why:"Security groups only allow. NACLs support deny rules at the subnet level.", s:"vpc"},
+  {q:"Users in Asia complain that product images load slowly from a bucket in us-east-1. Simplest fix?", o:["Use S3 Transfer Acceleration for downloads","Put CloudFront in front of the bucket","Move to a larger EC2 instance","Enable S3 versioning"], a:1, why:"CloudFront caches the images at edge locations near users.", s:"cloudfront"},
+  {q:"The team wants every environment created from version-controlled templates so they are identical. Which service?", o:["CloudFormation","Systems Manager Run Command","Elastic Beanstalk","Trusted Advisor"], a:0, why:"CloudFormation is infrastructure as code: templates create the same stack every time.", s:"cloudformation"},
+  {q:"Developers want to upload a Java web app and have capacity, load balancing and scaling handled for them, while keeping access to the EC2 instances. Which service?", o:["Lambda","Elastic Beanstalk","Lightsail","EKS"], a:1, why:"Beanstalk deploys code onto managed EC2, load balancer and Auto Scaling while leaving the resources accessible.", s:"beanstalk"}
+];
+let qi = 0, answers = [];
+function renderQuiz(){
+  const done = answers.filter(a=>a!==undefined);
+  const right = done.filter((a,i)=>a===QZ[i].a).length;
+  const dots = QZ.map((q,i)=>`<i class="${answers[i]===undefined?(i===qi?"c":""):(answers[i]===q.a?"r":"w")}"></i>`).join("");
+  if(qi >= QZ.length){
+    const pct = Math.round(right/QZ.length*100);
+    const missed = QZ.filter((q,i)=>answers[i]!==q.a);
+    $("#quiz").innerHTML = `<div class="qcard"><span class="eyebrow">Your result</span>
+      <div class="score">${right} / ${QZ.length}</div>
+      <p>${pct>=80?"Strong. You're thinking like an architect.":pct>=60?"Good foundation. Review the services you missed.":"Worth another pass. Study the services below, then retry."}</p>
+      ${missed.length?`<div class="block"><h4>Review these</h4><div class="related">${[...new Set(missed.map(q=>q.s))].map(svcChip).join("")}</div></div>`:""}
+      <div><button class="btn primary" id="q-restart">Try again</button></div></div>`;
+    return;
+  }
+  const q = QZ[qi], ans = answers[qi];
+  $("#quiz").innerHTML = `<div class="qmeta"><span class="eyebrow">Question ${qi+1} of ${QZ.length} · ${right} correct</span><div class="dots">${dots}</div></div>
+    <div class="qcard"><p class="q">${esc(q.q)}</p>
+    <div class="opts">${q.o.map((o,i)=>{
+      let cls=""; if(ans!==undefined){ if(i===q.a) cls="right"; else if(i===ans) cls="wrong"; }
+      return `<button class="opt ${cls}" data-ans="${i}" ${ans!==undefined?"disabled":""}>${String.fromCharCode(65+i)}. ${esc(o)}</button>`;}).join("")}</div>
+    ${ans!==undefined?`<div class="why"><b>${ans===q.a?"Correct.":"Not quite."}</b> ${esc(q.why)}</div>
+      <div class="player"><button class="btn primary" id="q-next">${qi===QZ.length-1?"See result":"Next question"}</button>${svcChip(q.s)}</div>`:""}
+    </div>`;
+}
+$("#quiz").addEventListener("click", e=>{
+  const b = e.target.closest("[data-ans]");
+  if(b && answers[qi]===undefined){ answers[qi]=+b.dataset.ans; renderQuiz(); return; }
+  if(e.target.closest("#q-next")){ qi++; renderQuiz(); $("#quiz").scrollIntoView({block:"nearest"}); }
+  if(e.target.closest("#q-restart")){ qi=0; answers=[]; renderQuiz(); }
+});
+
+/* ---------- ROUTING ---------- */
+const TABS = ["explore","architecture","concepts","compare","quiz"];
+function showTab(t, keepScroll){
+  if(!TABS.includes(t)) t="explore";
+  document.querySelectorAll("[data-view]").forEach(v=>v.hidden = v.dataset.view!==t);
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current", a.dataset.tab===t?"page":"false"));
+  if(location.hash !== "#"+t) history.replaceState(null, "", "#"+t);
+  if(t!=="architecture") stopPlay();
+  if(!keepScroll) window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.tabs a").forEach(a=>a.addEventListener("click", e=>{ e.preventDefault(); showTab(a.dataset.tab); }));
+window.addEventListener("hashchange", ()=>showTab(location.hash.slice(1)));
+
+renderCats(); renderList(); renderDetail(); updateProgress();
+renderScen(); drawArch();
+renderTrees(); renderTree(); renderCmp(); renderQuiz();
+showTab(location.hash.slice(1) || "explore", true);
+</script>

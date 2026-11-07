@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Styles Explained</title>
+<style>
+:root{
+  --bg:#f7f8fa;--panel:#fff;--ink:#1c2230;--muted:#667085;--line:#e3e7ee;
+  --accent:#3b6cf6;--accent-soft:#e8eefe;--good:#12805c;--bad:#b42318;--code:#0f1729;--codeink:#d6e2ff;
+  --req:#3b6cf6;--res:#12805c;--evt:#c2410c;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1118;--panel:#161b26;--ink:#e6e9f0;--muted:#98a2b3;--line:#262d3d;
+  --accent:#7c9cff;--accent-soft:#1d2744;--good:#4ade80;--bad:#f87171;--code:#0a0d14;--codeink:#cfdcff;
+  --req:#7c9cff;--res:#4ade80;--evt:#fb923c;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:20px 14px;border-right:1px solid var(--line);background:var(--panel)}
+nav h1{font-size:15px;margin:0 0 14px;letter-spacing:.02em}
+nav a{display:block;padding:7px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px}
+nav a:hover,nav a.on{background:var(--accent-soft);color:var(--accent)}
+main{padding:32px clamp(16px,4vw,48px);max-width:960px}
+.hero h2{font-size:30px;margin:0 0 8px}
+.hero p{color:var(--muted);max-width:640px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;margin:26px 0;scroll-margin-top:16px}
+section h3{margin:0;font-size:22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.tagline{color:var(--muted);margin:4px 0 14px}
+.analogy{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+h4{margin:20px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.seq{display:grid;gap:6px 0;font-size:14px;margin:6px 0}
+.actor{text-align:center;font-weight:600;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.step{align-self:center;position:relative;text-align:center;padding:4px 6px 8px;opacity:.25;transition:opacity .3s;font-size:13px}
+.step.show{opacity:1}
+.step::after{content:"";position:absolute;left:6px;right:6px;bottom:2px;border-bottom:2px solid currentColor}
+.step.r::before,.step.l::before{content:"";position:absolute;bottom:-2px;border:5px solid transparent}
+.step.r::before{right:3px;border-left:8px solid currentColor;border-right:0}
+.step.l::before{left:3px;border-right:8px solid currentColor;border-left:0}
+.step.cur{font-weight:700}
+.k-req{color:var(--req)}.k-res{color:var(--res)}.k-evt{color:var(--evt)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+button,select,input[type=text]{font:inherit;font-size:14px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+button{cursor:pointer}button.p{background:var(--accent);color:#fff;border-color:var(--accent)}
+button:hover{filter:brightness(1.08)}
+.tabs{display:flex;gap:4px;margin-top:6px}
+.tabs button{border-radius:8px 8px 0 0;border-bottom:0;font-size:13px}
+.tabs button.on{background:var(--code);color:var(--codeink)}
+pre{margin:0;background:var(--code);color:var(--codeink);padding:14px;border-radius:0 8px 8px 8px;overflow:auto;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
+pre.solo{border-radius:8px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ul{margin:0;padding-left:20px}li{margin:3px 0}
+.pro li::marker{color:var(--good);content:"✓  "}.con li::marker{color:var(--bad);content:"✕  "}
+.demo{border:1px dashed var(--accent);border-radius:12px;padding:14px;margin-top:18px}
+.demo>b{color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.chat{height:140px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:14px}
+.me{color:var(--req)}.srv{color:var(--res)}
+.badge{font-weight:700;padding:1px 8px;border-radius:6px;font-size:13px}
+.s2{background:#d1fadf;color:#05603a}.s4{background:#fee4e2;color:#b42318}.s3{background:#fef0c7;color:#93370d}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-size:12px;text-transform:uppercase}
+.tblwrap{overflow-x:auto}
+.choice{display:grid;gap:8px;margin-top:10px}
+.choice button{text-align:left;padding:10px 14px}
+.result{margin-top:12px;padding:12px 14px;background:var(--accent-soft);border-radius:10px;color:var(--ink)}
+@media(max-width:760px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;display:flex;flex-wrap:wrap;gap:4px;border-right:0;border-bottom:1px solid var(--line)}nav h1{width:100%}.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav id="nav"><h1>API STYLES</h1></nav>
+<main>
+  <div class="hero">
+    <h2>How do programs talk to each other?</h2>
+    <p>An <b>API</b> is an agreed way for one program to ask another for something. There are several styles, and each is good at a different job. Press <b>▶ Play</b> in each section to watch the conversation, then try the live mini-demos.</p>
+  </div>
+  <div id="sections"></div>
+
+  <section id="compare"><h3>Side-by-side comparison</h3>
+    <div class="tblwrap"><table id="cmp"></table></div>
+  </section>
+
+  <section id="choose"><h3>Which one should I pick?</h3>
+    <p class="tagline">Answer one question about your need:</p>
+    <div class="choice" id="choice"></div>
+    <div class="result" id="choiceRes" hidden></div>
+  </section>
+</main>
+</div>
+
+<script>
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const $ = (s, r=document) => r.querySelector(s);
+
+/* ---------- Content ---------- */
+const P = [
+{id:'rest', name:'REST', tag:'HTTP + JSON', tagline:'Resources with URLs, manipulated with standard HTTP verbs.',
+ analogy:'Like a restaurant menu: each dish (resource) has a name (URL). You say GET to look, POST to order, DELETE to cancel.',
+ actors:['Client','Server'],
+ steps:[[0,1,'GET /users/42','req'],[1,0,'200 OK {"name":"Ana"}','res'],[0,1,'PUT /users/42 {"name":"Anna"}','req'],[1,0,'200 OK (updated)','res']],
+ code:{'Request':'GET /users/42 HTTP/1.1\nHost: api.example.com\nAccept: application/json\nAuthorization: Bearer <token>','Response':'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{ "id": 42, "name": "Ana", "email": "ana@example.com" }','fetch()':"const r = await fetch('/users/42');\nconst user = await r.json();"},
+ pros:['Simple, universal, works in any browser','Easy to cache (HTTP caching)','Huge tooling and community'],
+ cons:['Over/under-fetching: fixed response shapes','Many round trips for related data','No built-in push from server'],
+ use:'Public APIs, CRUD apps, mobile backends, most web services.'},
+{id:'soap', name:'SOAP', tag:'XML envelope', tagline:'A strict, contract-first protocol with a formal XML message format.',
+ analogy:'Like sending a registered legal letter: a rigid envelope, a formal form (WSDL contract), and a receipt. Slow and formal, but everything is specified.',
+ actors:['Client','Service'],
+ steps:[[1,0,'WSDL contract (what I offer)','res'],[0,1,'POST <Envelope><GetPrice>','req'],[1,0,'<Envelope><Price>9.99','res']],
+ code:{'Request':'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">\n  <soap:Body>\n    <GetPrice xmlns="http://example.com/shop">\n      <Item>Apple</Item>\n    </GetPrice>\n  </soap:Body>\n</soap:Envelope>','Response':'<soap:Envelope ...>\n  <soap:Body>\n    <GetPriceResponse>\n      <Price>1.20</Price>\n    </GetPriceResponse>\n  </soap:Body>\n</soap:Envelope>'},
+ pros:['Strong contract (WSDL) and typed messages','Built-in standards: WS-Security, transactions','Transport-independent (HTTP, SMTP…)'],
+ cons:['Verbose XML, heavy to parse','Steeper learning curve','Mostly legacy outside enterprise'],
+ use:'Banking, insurance, government, and enterprise systems that need formal contracts.'},
+{id:'grpc', name:'gRPC', tag:'HTTP/2 + Protobuf', tagline:'Call remote functions as if they were local, using compact binary messages.',
+ analogy:'Like picking up an internal office phone and dialing a colleague: short, fast, and both sides already know the language (the .proto file).',
+ actors:['Client stub','Server'],
+ steps:[[0,1,'GetUser(id=42) binary','req'],[1,0,'User{name:"Ana"} binary','res'],[0,1,'ListOrders() opens stream','req'],[1,0,'Order #1 …','res'],[1,0,'Order #2 … (streaming)','res']],
+ code:{'.proto':'service UserService {\n  rpc GetUser (UserRequest) returns (User);\n  rpc ListOrders (UserRequest) returns (stream Order);\n}\nmessage UserRequest { int32 id = 1; }\nmessage User { int32 id = 1; string name = 2; }','Client (JS)':"const user = await client.getUser({ id: 42 });\nconsole.log(user.name);"},
+ pros:['Very fast, small binary payloads','Typed contract and generated client code','Streaming in both directions'],
+ cons:['Not human-readable','Limited browser support (needs gRPC-Web)','Harder to debug with plain tools'],
+ use:'Microservice-to-microservice calls, low-latency systems, polyglot backends.'},
+{id:'graphql', name:'GraphQL', tag:'One endpoint, ask for what you need', tagline:'The client writes a query that describes exactly the shape of data it wants.',
+ analogy:'Like a build-your-own sandwich counter: you list exactly which ingredients you want and get just that, nothing extra.',
+ actors:['Client','GraphQL server'],
+ steps:[[0,1,'query { user(id:42){ name posts{title} } }','req'],[1,0,'{ data: { user: {...} } }','res']],
+ code:{'Query':'query {\n  user(id: 42) {\n    name\n    posts { title }\n  }\n}','Response':'{\n  "data": {\n    "user": { "name": "Ana", "posts": [{ "title": "Hello" }] }\n  }\n}'},
+ pros:['No over/under-fetching','One request for related data','Self-documenting typed schema'],
+ cons:['Caching is harder than REST','Complex queries can overload the server','More setup than simple REST'],
+ use:'Apps with varied clients (web, mobile) that need different data shapes.'},
+{id:'webhook', name:'Webhook', tag:'Server calls you', tagline:'Instead of you asking repeatedly, the other system sends an HTTP request when something happens.',
+ analogy:'Like leaving your phone number at a shop: "call me when my order arrives" instead of calling every hour to ask.',
+ actors:['Your app','Payment service'],
+ steps:[[0,1,'Register URL: https://me.app/hook','req'],[1,0,'Customer paid → POST /hook','evt'],[0,1,'200 OK (received)','res']],
+ code:{'Incoming POST':'POST /hook HTTP/1.1\nX-Signature: sha256=9f2c…\nContent-Type: application/json\n\n{ "event": "payment.succeeded", "amount": 4900 }','Handler (Node)':"app.post('/hook', (req, res) => {\n  if (!validSignature(req)) return res.sendStatus(401);\n  handle(req.body);\n  res.sendStatus(200); // reply fast!\n});"},
+ pros:['Real-time-ish without polling','Saves requests and bandwidth','Simple to implement'],
+ cons:['You must expose a public endpoint','Need signature checks and retries/idempotency','Hard to debug locally'],
+ use:'Payments, GitHub/Slack events, order status, CI notifications.'},
+{id:'websocket', name:'WebSocket', tag:'Persistent two-way', tagline:'One long-lived connection where both sides can send messages at any time.',
+ analogy:'Like a phone call: once connected, either person can speak whenever they want, with no need to redial.',
+ actors:['Browser','Server'],
+ steps:[[0,1,'HTTP Upgrade: websocket','req'],[1,0,'101 Switching Protocols','res'],[0,1,'"hi" ↔ message','req'],[1,0,'"new message!" (push)','evt'],[1,0,'"typing…" (push)','evt']],
+ code:{'Browser':"const ws = new WebSocket('wss://example.com/chat');\nws.onopen    = () => ws.send('hello');\nws.onmessage = e => console.log(e.data);",'Handshake':'GET /chat HTTP/1.1\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=='},
+ pros:['Low latency, true bidirectional','Little overhead after handshake','Great for live data'],
+ cons:['Stateful: harder to scale and load-balance','Needs reconnect logic','Proxies/firewalls can interfere'],
+ use:'Chat, multiplayer games, live dashboards, collaborative editing.'},
+{id:'webrtc', name:'WebRTC', tag:'Peer-to-peer media', tagline:'Browsers connect directly to each other to share video, audio and data.',
+ analogy:'Like using a mutual friend to swap phone numbers (signaling), then calling each other directly without the friend in the middle.',
+ actors:['Peer A','Signaling server','Peer B'],
+ steps:[[0,1,'Offer (SDP)','req'],[1,2,'Offer forwarded','req'],[2,1,'Answer (SDP)','res'],[1,0,'Answer forwarded','res'],[0,2,'ICE candidates / STUN','req'],[0,2,'Direct video + audio P2P','evt']],
+ code:{'Peer A':"const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});\nconst stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});\nstream.getTracks().forEach(t => pc.addTrack(t, stream));\nconst offer = await pc.createOffer();\nawait pc.setLocalDescription(offer);\nsignaling.send(offer); // via your own server"},
+ pros:['Ultra-low-latency video/audio','Peer-to-peer saves server bandwidth','Encrypted by default'],
+ cons:['Needs a signaling server you build','NAT traversal (STUN/TURN) is complex','Scaling to many peers needs an SFU'],
+ use:'Video calls, screen sharing, P2P file transfer, live streaming.'},
+{id:'sse', name:'Server-Sent Events', tag:'One-way push over HTTP', tagline:'The server keeps a response open and streams updates to the browser.',
+ analogy:'Like a radio broadcast: you tune in and the station keeps talking; you cannot talk back on the same channel.',
+ actors:['Browser','Server'],
+ steps:[[0,1,'GET /stream (Accept: text/event-stream)','req'],[1,0,'data: price=101','evt'],[1,0,'data: price=102','evt'],[1,0,'data: price=99','evt']],
+ code:{'Browser':"const es = new EventSource('/stream');\nes.onmessage = e => console.log(e.data);",'Wire format':'HTTP/1.1 200 OK\nContent-Type: text/event-stream\n\ndata: price=101\n\ndata: price=102\n'},
+ pros:['Simpler than WebSocket','Auto-reconnect built in','Works over plain HTTP'],
+ cons:['Server → client only','Text only','Limited connections per browser on HTTP/1.1'],
+ use:'Live feeds, notifications, AI token streaming, progress bars.'},
+{id:'jsonrpc', name:'JSON-RPC', tag:'Function call in JSON', tagline:'A tiny spec: send a method name and params, get a result back.',
+ analogy:'Like a note to a clerk: "Please run add(2, 3)". The clerk replies with the number.',
+ actors:['Client','Server'],
+ steps:[[0,1,'{"method":"add","params":[2,3],"id":1}','req'],[1,0,'{"result":5,"id":1}','res']],
+ code:{'Request':'{ "jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 1 }','Response':'{ "jsonrpc": "2.0", "result": 5, "id": 1 }'},
+ pros:['Extremely simple','Transport-agnostic','Supports batch calls'],
+ cons:['No built-in discovery or typing','Not resource-oriented','Less tooling than REST'],
+ use:'Ethereum nodes, editor tooling (LSP), internal services.'},
+{id:'mqtt', name:'MQTT', tag:'Publish / Subscribe', tagline:'Devices publish messages to topics through a broker; subscribers get them.',
+ analogy:'Like a notice board with labeled sections: sensors pin notes under "kitchen/temp", and anyone watching that section sees them.',
+ actors:['Sensor','Broker','Dashboard'],
+ steps:[[2,1,'SUBSCRIBE home/temp','req'],[0,1,'PUBLISH home/temp = 21°C','req'],[1,2,'Deliver 21°C','evt'],[0,1,'PUBLISH home/temp = 23°C','req'],[1,2,'Deliver 23°C','evt']],
+ code:{'Publisher':"client.publish('home/temp', '21');",'Subscriber':"client.subscribe('home/temp');\nclient.on('message', (topic, msg) => console.log(topic, msg.toString()));"},
+ pros:['Tiny overhead, battery friendly','Decouples publishers and subscribers','QoS levels for reliability'],
+ cons:['Needs a broker','Not request/response by design','Less suited to large payloads'],
+ use:'IoT, smart homes, telemetry, mobile push.'}
+];
+
+/* ---------- Build nav + sections ---------- */
+const nav = $('#nav'), host = $('#sections');
+const demoSlot = {};
+P.forEach(p => {
+  nav.insertAdjacentHTML('beforeend', `<a href="#${p.id}">${p.name}</a>`);
+  const cols = p.actors.length;
+  const seqHTML = `<div class="seq" style="grid-template-columns:repeat(${cols},1fr)">` +
+    p.actors.map(a=>`<div class="actor">${a}</div>`).join('') +
+    p.steps.map(([f,t,l,k],i)=>{
+      const a=Math.min(f,t)+1,b=Math.max(f,t)+2, dir=f<t?'r':'l';
+      return `<div class="step ${dir} k-${k}" data-i="${i}" style="grid-column:${a}/${b}">${esc(l)}</div>`;
+    }).join('') + `</div>`;
+  const keys = Object.keys(p.code);
+  host.insertAdjacentHTML('beforeend', `
+  <section id="${p.id}">
+    <h3>${p.name} <span class="tag">${p.tag}</span></h3>
+    <div class="tagline">${p.tagline}</div>
+    <div class="analogy">💡 ${p.analogy}</div>
+    <h4>Watch the conversation</h4>
+    ${seqHTML}
+    <div class="btns"><button class="p" data-play>▶ Play</button><button data-next>Next step</button><button data-reset>Reset</button></div>
+    <h4>What it looks like</h4>
+    <div class="tabs">${keys.map((k,i)=>`<button class="${i?'':'on'}" data-tab="${i}">${esc(k)}</button>`).join('')}</div>
+    <pre data-code>${esc(p.code[keys[0]])}</pre>
+    <div class="cols">
+      <div><h4>Strengths</h4><ul class="pro">${p.pros.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      <div><h4>Trade-offs</h4><ul class="con">${p.cons.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    </div>
+    <h4>Use it when</h4><div>${p.use}</div>
+    <div class="slot" data-slot></div>
+  </section>`);
+  const s = document.getElementById(p.id);
+  const steps = [...s.querySelectorAll('.step')];
+  let cur = -1, timer = null;
+  const show = n => { cur=n; steps.forEach((el,i)=>{el.classList.toggle('show',i<=n);el.classList.toggle('cur',i===n)}); };
+  const stop = () => { clearInterval(timer); timer=null; };
+  s.querySelector('[data-play]').onclick = () => { stop(); show(-1); let n=-1;
+    timer=setInterval(()=>{ n++; if(n>=steps.length){stop();return;} show(n); },900); };
+  s.querySelector('[data-next]').onclick = () => { stop(); show(Math.min(cur+1, steps.length-1)); };
+  s.querySelector('[data-reset]').onclick = () => { stop(); show(-1); };
+  s.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+    s.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    s.querySelector('[data-code]').textContent = p.code[keys[+b.dataset.tab]];
+  });
+  show(-1);
+  demoSlot[p.id] = s.querySelector('[data-slot]');
+});
+
+/* ---------- Live demo: REST ---------- */
+demoSlot.rest.innerHTML = `<div class="demo"><b>🧪 Try it: a fake REST API</b>
+  <div class="row"><select id="rm"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+  <select id="rp"><option>/users</option><option>/users/42</option><option>/users/999</option></select>
+  <button class="p" id="rgo">Send</button></div>
+  <pre class="solo" id="rout">Pick a method and path, then press Send.</pre></div>`;
+$('#rgo').onclick = () => {
+  const m=$('#rm').value, p=$('#rp').value; let st=200, txt='OK', body;
+  if(p==='/users/999'){st=404;txt='Not Found';body={error:'User not found'}}
+  else if(p==='/users'&&m==='GET')body=[{id:42,name:'Ana'},{id:43,name:'Bao'}];
+  else if(p==='/users'&&m==='POST'){st=201;txt='Created';body={id:44,name:'New user'}}
+  else if(p==='/users'){st=405;txt='Method Not Allowed';body={error:m+' not allowed on a collection'}}
+  else if(m==='GET')body={id:42,name:'Ana'};
+  else if(m==='PUT')body={id:42,name:'Ana (updated)'};
+  else {st=204;txt='No Content';body=null}
+  const cls = st<300?'s2':st<400?'s3':'s4';
+  $('#rout').innerHTML = `${esc(m)} ${esc(p)}\n\n<span class="badge ${cls}">${st} ${txt}</span>\n` + (body?esc(JSON.stringify(body,null,2)):'(empty body)');
+};
+
+/* ---------- Live demo: GraphQL ---------- */
+demoSlot.graphql.innerHTML = `<div class="demo"><b>🧪 Try it: pick the fields you want</b>
+  <div class="row" id="gf"></div>
+  <div class="cols"><pre class="solo" id="gq"></pre><pre class="solo" id="gr"></pre></div></div>`;
+const gData={id:42,name:'Ana',email:'ana@example.com',city:'Hanoi',posts:[{title:'Hello'},{title:'APIs 101'}]};
+const gFields=['id','name','email','city','posts'];
+$('#gf').innerHTML = gFields.map(f=>`<label><input type="checkbox" value="${f}" ${['name'].includes(f)?'checked':''}> ${f}</label>`).join(' ');
+function gql(){
+  const sel=[...document.querySelectorAll('#gf input:checked')].map(i=>i.value);
+  $('#gq').textContent = 'query {\n  user(id: 42) {\n' + sel.map(f=>f==='posts'?'    posts { title }':'    '+f).join('\n') + '\n  }\n}';
+  const o={}; sel.forEach(f=>o[f]=gData[f]);
+  $('#gr').textContent = JSON.stringify({data:{user:o}},null,2);
+}
+$('#gf').onchange=gql; gql();
+
+/* ---------- Live demo: WebSocket (simulated) ---------- */
+demoSlot.websocket.innerHTML = `<div class="demo"><b>🧪 Try it: a simulated chat connection</b>
+  <div class="row"><button id="wc" class="p">Connect</button><span id="wst">● disconnected</span></div>
+  <div class="chat" id="wlog"></div>
+  <div class="row"><input type="text" id="wi" placeholder="Type a message" disabled><button id="ws" disabled>Send</button></div></div>`;
+let wsOn=false, pushT=null;
+const wlog=(c,t)=>{const l=$('#wlog');l.insertAdjacentHTML('beforeend',`<div class="${c}">${esc(t)}</div>`);l.scrollTop=l.scrollHeight};
+$('#wc').onclick=()=>{
+  wsOn=!wsOn;
+  $('#wc').textContent=wsOn?'Disconnect':'Connect';
+  $('#wst').textContent=wsOn?'● connected':'● disconnected';
+  $('#wi').disabled=$('#ws').disabled=!wsOn;
+  if(wsOn){wlog('srv','server: welcome! (connection stays open)');
+    pushT=setInterval(()=>wlog('srv','server (push, unasked): ping '+new Date().toLocaleTimeString()),5000)}
+  else{clearInterval(pushT);wlog('srv','connection closed')}
+};
+const wsend=()=>{const v=$('#wi').value.trim();if(!v||!wsOn)return;wlog('me','you: '+v);$('#wi').value='';
+  setTimeout(()=>wsOn&&wlog('srv','server: echo "'+v+'"'),400)};
+$('#ws').onclick=wsend; $('#wi').onkeydown=e=>{if(e.key==='Enter')wsend()};
+
+/* ---------- Live demo: Webhook ---------- */
+demoSlot.webhook.innerHTML = `<div class="demo"><b>🧪 Try it: simulate the other service firing an event</b>
+  <div class="row"><button class="p" id="wh">Customer pays $49</button><button id="whbad">Send with a bad signature</button></div>
+  <pre class="solo" id="whout">Nothing received yet — your app is just waiting. No polling needed.</pre></div>`;
+const hook=(ok)=>{
+  const body='{ "event": "payment.succeeded", "amount": 4900 }';
+  $('#whout').innerHTML = `⬇ Incoming POST /hook\nX-Signature: ${ok?'sha256=9f2c… (valid)':'sha256=0000… (forged)'}\n${esc(body)}\n\n` +
+   (ok?`<span class="badge s2">200</span> Signature verified → order marked as paid ✔`:`<span class="badge s4">401</span> Signature mismatch → request ignored ✘`);
+};
+$('#wh').onclick=()=>hook(true); $('#whbad').onclick=()=>hook(false);
+
+/* ---------- Comparison table ---------- */
+const cmp=[
+ ['Style','Transport','Format','Direction','Best for'],
+ ['REST','HTTP','JSON','Client → Server','General CRUD web APIs'],
+ ['SOAP','HTTP / SMTP','XML','Client → Server','Strict enterprise contracts'],
+ ['gRPC','HTTP/2','Protobuf (binary)','Both + streaming','Fast microservices'],
+ ['GraphQL','HTTP','JSON','Client → Server','Flexible data fetching'],
+ ['Webhook','HTTP','JSON','Server → Client','Event notifications'],
+ ['WebSocket','TCP (ws)','Text / binary','Both, persistent','Chat, live apps'],
+ ['WebRTC','UDP (P2P)','Media / data','Peer ↔ Peer','Video / audio calls'],
+ ['SSE','HTTP','Text','Server → Client','Live feeds, AI streaming'],
+ ['JSON-RPC','Any','JSON','Client → Server','Simple remote calls'],
+ ['MQTT','TCP','Binary','Pub / Sub','IoT devices']];
+$('#cmp').innerHTML = '<tr>'+cmp[0].map(h=>`<th>${h}</th>`).join('')+'</tr>' +
+  cmp.slice(1).map(r=>'<tr>'+r.map((c,i)=>i?`<td>${c}</td>`:`<td><b>${c}</b></td>`).join('')+'</tr>').join('');
+
+/* ---------- Chooser ---------- */
+const opts=[
+ ['I need a simple API for a website or mobile app','REST','Start with REST. It is the most widely understood and easiest to cache.'],
+ ['Different clients need different slices of data','GraphQL','GraphQL lets each client ask for exactly the fields it needs.'],
+ ['Internal services must talk fast and strongly typed','gRPC','gRPC gives compact binary messages and generated clients.'],
+ ['Another service should tell me when something happens','Webhook','Register a Webhook so they call you, instead of you polling.'],
+ ['Users need live two-way updates (chat, games)','WebSocket','A WebSocket keeps one connection open for both directions.'],
+ ['I only need to push live updates to the browser','Server-Sent Events','SSE is simpler than WebSocket when data flows one way.'],
+ ['I want video or audio calls between users','WebRTC','WebRTC connects peers directly for low-latency media.'],
+ ['Tiny devices reporting sensor data','MQTT','MQTT is built for lightweight, unreliable IoT networks.'],
+ ['I must integrate with an old bank or government system','SOAP','Those systems often only expose SOAP with a WSDL contract.']];
+$('#choice').innerHTML = opts.map((o,i)=>`<button data-i="${i}">${o[0]}</button>`).join('');
+$('#choice').onclick = e => { const b=e.target.closest('button'); if(!b)return;
+  const o=opts[+b.dataset.i]; const r=$('#choiceRes'); r.hidden=false;
+  r.innerHTML=`<b>→ ${o[1]}</b><br>${o[2]}`; };
+
+/* ---------- Active nav highlight ---------- */
+const links=[...nav.querySelectorAll('a')];
+const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){
+  links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)); }}),{rootMargin:'-30% 0px -60% 0px'});
+document.querySelectorAll('section').forEach(s=>io.observe(s));
+nav.insertAdjacentHTML('beforeend','<a href="#compare">Comparison</a><a href="#choose">Which to pick?</a>');
+</script>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Microservices Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav + one column of "labs"; each lab = explanation left, live demo right. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#14202e; --muted:#5a6b7f; --line:#d9e0e9;
+  --accent:#1f5eff; --accent-soft:#e3ebff;
+  --ok:#14804a; --ok-soft:#dff3e8; --warn:#a86300; --warn-soft:#fdf0d5; --bad:#c2271f; --bad-soft:#fde4e2;
+  --code:#eaeef4;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d141d; --surface:#151f2c; --ink:#e6edf6; --muted:#93a3b8; --line:#26354a;
+  --accent:#6b94ff; --accent-soft:#1b2c55;
+  --ok:#4cc88a; --ok-soft:#12372a; --warn:#f0b24a; --warn-soft:#3b2d10; --bad:#ff7d73; --bad-soft:#431a18; --code:#1b2838; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d141d; --surface:#151f2c; --ink:#e6edf6; --muted:#93a3b8; --line:#26354a;
+  --accent:#6b94ff; --accent-soft:#1b2c55;
+  --ok:#4cc88a; --ok-soft:#12372a; --warn:#f0b24a; --warn-soft:#3b2d10; --bad:#ff7d73; --bad-soft:#431a18; --code:#1b2838; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-block:0 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,5.5vw,3.8rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--code);padding:1px 6px;border-radius:4px}
+.eyebrow{font:500 .74rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav .in{max-width:1120px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+nav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;padding:6px 12px;border-radius:99px}
+nav a:hover{background:var(--accent-soft);color:var(--accent)}
+
+.hero{padding-block:56px 40px;display:grid;gap:20px;max-width:760px}
+.hero p{font-size:1.15rem;color:var(--muted)}
+
+.lab{padding-block:48px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;align-items:start}
+.lab .txt{display:grid;gap:14px;position:sticky;top:64px}
+.lab .txt p{color:var(--muted)}
+.lab .txt ul{margin:0;padding-left:1.1em;color:var(--muted);display:grid;gap:4px}
+.lab .txt li b{color:var(--ink);font-weight:600}
+.lab.full{grid-template-columns:minmax(0,1fr)}
+.lab.full .txt{position:static;max-width:720px}
+@media(max-width:860px){.lab{grid-template-columns:minmax(0,1fr)}.lab .txt{position:static}}
+
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lbl{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,select{font:500 .9rem var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+[data-theme="dark"] button.primary,:root:not([data-theme="light"]) button.primary{color:#0d141d}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.seg[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+label.chk{display:flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+
+.pill{display:inline-block;font:500 .72rem var(--f-mono);padding:2px 8px;border-radius:99px;background:var(--code);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.run{background:var(--accent-soft);color:var(--accent)}
+
+.log{font:400 .82rem/1.5 var(--f-mono);background:var(--code);border-radius:8px;padding:10px 12px;max-height:200px;overflow:auto;display:grid;gap:2px;min-height:60px}
+.log div{overflow-wrap:anywhere}
+.log .ok{color:var(--ok)}.log .bad{color:var(--bad)}.log .warn{color:var(--warn)}.log .info{color:var(--accent)}
+
+/* monolith vs micro */
+.arch{display:grid;gap:10px}
+.mono-box{border:2px dashed var(--line);border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.mod{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:8px;text-align:center;font-weight:600;font-size:.85rem}
+.svcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.svc{border:1.5px solid var(--accent);border-radius:10px;padding:8px;display:grid;gap:6px;text-align:center;font-weight:600;font-size:.85rem}
+.svc .db{font:400 .7rem var(--f-mono);color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.88rem}
+.cmp div{background:var(--code);border-radius:8px;padding:10px;display:grid;gap:4px;min-width:0}
+.cmp b{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+/* saga */
+.steps{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.step{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;transition:background .2s,border-color .2s}
+.step .svcname{font:500 .78rem var(--f-mono);color:var(--muted)}
+.step small{display:block;color:var(--muted);font:400 .75rem var(--f-mono)}
+.step.running{border-color:var(--accent);background:var(--accent-soft)}
+.step.done{border-color:var(--ok)}
+.step.failed{border-color:var(--bad);background:var(--bad-soft)}
+.step.comp{border-color:var(--warn);background:var(--warn-soft)}
+@media(max-width:520px){.step{grid-template-columns:minmax(0,1fr) auto}.step .svcname{grid-column:1/-1}}
+
+/* breaker */
+.bstates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bs{border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;font-weight:600;font-size:.88rem;color:var(--muted);transition:all .2s}
+.bs small{display:block;font:400 .7rem var(--f-mono);margin-top:2px}
+.bs.on.closed{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.bs.on.open{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.bs.on.half{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.bar{height:8px;border-radius:99px;background:var(--code);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--bad);width:0;transition:width .2s}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}
+.stats div{background:var(--code);border-radius:8px;padding:8px}
+.stats b{display:block;font:700 1.4rem var(--f-display);font-variant-numeric:tabular-nums}
+.stats span{font-size:.75rem;color:var(--muted)}
+
+/* event sourcing */
+.es{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media(max-width:560px){.es{grid-template-columns:minmax(0,1fr)}}
+.es h4{margin:0 0 6px;font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.evs{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:220px;overflow:auto;font:400 .82rem var(--f-mono)}
+.evs li{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border-radius:6px;background:var(--code)}
+.evs li.future{opacity:.35}
+.evs li.dep b{color:var(--ok)}.evs li.wd b{color:var(--bad)}
+.rm{background:var(--accent-soft);border-radius:10px;padding:14px;display:grid;gap:4px}
+.rm .big{font:700 2.2rem var(--f-display);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{font:500 .9rem var(--f-body);width:90px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:38px}
+
+/* gateway */
+.gw{display:grid;gap:10px}
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.inst{border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center;gap:6px;font:500 .8rem var(--f-mono);transition:background .3s,border-color .3s}
+.inst.hit{background:var(--accent-soft);border-color:var(--accent)}
+.inst.down{opacity:.55;border-style:dashed}
+.inst button{padding:2px 8px;min-height:28px;font-size:.75rem}
+
+/* catalogue */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:8px;align-content:start;min-width:0}
+.card p{font-size:.92rem}
+.card .k{font:500 .68rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block}
+.card .meta{display:grid;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.card .meta span.t{color:var(--muted)}
+footer{padding-block:40px 0;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<nav><div class="in">
+  <a href="#why">Why split</a><a href="#saga">Saga</a><a href="#breaker">Circuit breaker</a><a href="#cqrs">Events &amp; CQRS</a><a href="#gateway">Gateway &amp; discovery</a><a href="#catalog">All patterns</a>
+</div></nav>
+
+<div class="wrap">
+<header class="hero">
+  <span class="eyebrow">Based on the microservices.io pattern language</span>
+  <h1>Microservices, explained by running them</h1>
+  <p>A shop splits into small services that each own their data. That solves some problems and creates new ones: how do you keep data consistent, survive a dead service, find the right instance, or rebuild state? Each lab below is a working miniature of one pattern. Click, break things, and watch what the pattern does about it.</p>
+</header>
+
+<!-- WHY -->
+<section class="lab" id="why">
+  <div class="txt">
+    <span class="eyebrow">Foundation</span>
+    <h2>One big app, or many small ones?</h2>
+    <p>A <b>monolith</b> is one deployable unit with one database. A <b>microservice architecture</b> splits it by business capability (orders, payments, stock), and each service owns a private database.</p>
+    <ul>
+      <li><b>Decompose by business capability:</b> services follow what the business does, not technical layers.</li>
+      <li><b>Database per service:</b> nobody reads another service's tables. They ask through an API or events.</li>
+      <li><b>Strangler application:</b> migrate gradually by moving one capability at a time out of the monolith.</li>
+    </ul>
+  </div>
+  <div class="demo">
+    <div class="row" role="group" aria-label="Architecture style">
+      <button class="seg" id="b-mono" aria-pressed="true">Monolith</button>
+      <button class="seg" id="b-micro" aria-pressed="false">Microservices</button>
+    </div>
+    <div class="arch" id="arch"></div>
+    <div class="cmp" id="cmp"></div>
+  </div>
+</section>
+
+<!-- SAGA -->
+<section class="lab" id="saga">
+  <div class="txt">
+    <span class="eyebrow">Data management</span>
+    <h2>Saga: a transaction without a shared database</h2>
+    <p>Placing an order touches Order, Inventory and Payment, each with its own database. There is no single <code>COMMIT</code> across them. A saga runs a chain of local transactions. If one step fails, it runs <b>compensating</b> transactions to undo the earlier ones.</p>
+    <ul>
+      <li><b>Orchestration:</b> one coordinator tells each service what to do next.</li>
+      <li><b>Choreography:</b> services publish events and react to each other's events. There is no central brain.</li>
+      <li>The system is briefly inconsistent while the saga runs (eventual consistency).</li>
+    </ul>
+  </div>
+  <div class="demo">
+    <div class="row">
+      <span class="lbl">Style</span>
+      <button class="seg" id="s-orch" aria-pressed="true">Orchestration</button>
+      <button class="seg" id="s-chor" aria-pressed="false">Choreography</button>
+    </div>
+    <div class="row">
+      <label class="lbl" for="s-fail">Inject failure</label>
+      <select id="s-fail">
+        <option value="-1">None (happy path)</option>
+        <option value="1">Inventory: out of stock</option>
+        <option value="2">Payment: card declined</option>
+      </select>
+      <button class="primary" id="s-run">Place order</button>
+    </div>
+    <ol class="steps" id="s-steps"></ol>
+    <div class="log" id="s-log" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- BREAKER -->
+<section class="lab" id="breaker">
+  <div class="txt">
+    <span class="eyebrow">Reliability</span>
+    <h2>Circuit breaker: stop calling what is already broken</h2>
+    <p>If Payment is down and Order keeps calling it, every call hangs, threads pile up, and Order goes down too. A circuit breaker counts failures. After a threshold it <b>opens</b> and fails instantly without calling the service. After a cool-down it lets one trial call through (<b>half-open</b>) to test recovery.</p>
+    <ul>
+      <li>Threshold here: <b>3 consecutive failures</b>. Cool-down: <b>6 seconds</b>.</li>
+      <li>Pair it with a fallback (cached value, default, queue for later).</li>
+    </ul>
+  </div>
+  <div class="demo">
+    <div class="bstates">
+      <div class="bs closed" id="bs-closed">CLOSED<small>calls flow</small></div>
+      <div class="bs open" id="bs-open">OPEN<small>fail fast</small></div>
+      <div class="bs half" id="bs-half">HALF-OPEN<small>one trial call</small></div>
+    </div>
+    <div><div class="lbl" style="margin-bottom:4px">Consecutive failures</div><div class="bar"><i id="b-bar"></i></div></div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="b-down"> Payment service is down</label>
+      <button class="primary" id="b-call">Send request</button>
+      <button id="b-burst">Send 5 fast</button>
+      <span class="pill" id="b-timer"></span>
+    </div>
+    <div class="stats">
+      <div><b id="n-ok">0</b><span>succeeded</span></div>
+      <div><b id="n-fail">0</b><span>reached dead service</span></div>
+      <div><b id="n-fast">0</b><span>rejected instantly</span></div>
+    </div>
+    <div class="log" id="b-log" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- CQRS -->
+<section class="lab" id="cqrs">
+  <div class="txt">
+    <span class="eyebrow">Data management</span>
+    <h2>Event sourcing &amp; CQRS: store what happened</h2>
+    <p>Instead of overwriting a balance, <b>event sourcing</b> appends immutable facts: <code>Deposited 50</code>, <code>Withdrawn 20</code>. The current state is computed by replaying them. <b>CQRS</b> separates the write side (commands that validate and append events) from read models built from those events for fast queries.</p>
+    <ul>
+      <li>Perfect audit trail, and you can rebuild state at any point in time.</li>
+      <li>Drag the slider to time travel. Try withdrawing more than the balance.</li>
+      <li>Costs: eventual consistency of read models and a mental shift.</li>
+    </ul>
+  </div>
+  <div class="demo">
+    <div class="row">
+      <input type="number" id="e-amt" value="25" min="1" aria-label="Amount">
+      <button id="e-dep">Deposit</button>
+      <button id="e-wd">Withdraw</button>
+      <button id="e-reset">Reset</button>
+    </div>
+    <div class="es">
+      <div><h4>Write side · event log</h4><ol class="evs" id="e-list"></ol></div>
+      <div><h4>Read side · projection</h4>
+        <div class="rm"><span class="lbl">Balance</span><span class="big" id="e-bal">0</span><span id="e-meta" class="mono"></span></div>
+      </div>
+    </div>
+    <div>
+      <label class="lbl" for="e-time">Time travel: state after event <span id="e-t">0</span></label>
+      <input type="range" id="e-time" min="0" max="0" value="0">
+    </div>
+    <div class="log" id="e-log" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- GATEWAY -->
+<section class="lab" id="gateway">
+  <div class="txt">
+    <span class="eyebrow">Edge &amp; discovery</span>
+    <h2>API gateway, service registry, API composition</h2>
+    <p>Clients should not know where 12 services live. The <b>API gateway</b> is the single entry point: it routes requests, and for screens needing many services it uses <b>API composition</b> to call several and merge the answers.</p>
+    <p>Instances come and go, so the gateway asks a <b>service registry</b> who is healthy (<b>server-side discovery</b>) and load balances across them.</p>
+    <ul>
+      <li>Take instances down and call the same route again.</li>
+      <li>Take all instances of a service down to see a 503 and a partial dashboard.</li>
+    </ul>
+  </div>
+  <div class="demo gw">
+    <div><div class="lbl" style="margin-bottom:6px">Service registry (health = up)</div><div class="inst-grid" id="g-inst"></div></div>
+    <div class="row">
+      <button class="primary" data-route="/orders">GET /orders</button>
+      <button class="primary" data-route="/products">GET /products</button>
+      <button class="primary" data-route="/dashboard">GET /dashboard (composition)</button>
+    </div>
+    <div class="log" id="g-log" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- CATALOG -->
+<section class="lab full" id="catalog">
+  <div class="txt">
+    <span class="eyebrow">Reference</span>
+    <h2>The pattern catalogue in plain words</h2>
+    <p>Grouped like microservices.io. Each card says what the pattern does, when to reach for it, and what it costs.</p>
+  </div>
+  <div style="display:grid;gap:16px;min-width:0">
+    <div class="chips" id="chips" role="group" aria-label="Filter patterns"></div>
+    <div class="cards" id="cards"></div>
+  </div>
+</section>
+
+<footer>Built as a teaching aid. Pattern names and grouping follow <a href="https://microservices.io/patterns/index.html" target="_blank" rel="noopener">microservices.io/patterns</a> by Chris Richardson. All simulations run locally in your browser with fake data.</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function logTo(el,txt,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=txt;el.appendChild(d);el.scrollTop=el.scrollHeight}
+function seg(ids,cb){ids.forEach(id=>$(id).addEventListener('click',()=>{ids.forEach(o=>$(o).setAttribute('aria-pressed',o===id));cb(id)}))}
+
+/* ---------- WHY ---------- */
+const mods=['Orders','Payments','Stock','Customers','Shipping','Search'];
+function renderArch(micro){
+  $('#arch').innerHTML=micro
+   ?'<div class="svcs">'+mods.map(m=>`<div class="svc">${m}<div class="db">own DB</div></div>`).join('')+'</div><div class="lbl">Services talk through APIs and events</div>'
+   :'<div class="mono-box">'+mods.map(m=>`<div class="mod">${m}</div>`).join('')+'</div><div class="lbl">One process · one shared database</div><div class="mono-box" style="grid-template-columns:1fr"><div class="mod" style="background:var(--code);color:var(--muted)">Single database</div></div>';
+  $('#cmp').innerHTML=micro
+   ?'<div><b>Gains</b>Deploy and scale each part alone. A fault stays local. Teams work independently.</div><div><b>Costs</b>Network calls fail. Data lives in many places. Much more operations work.</div>'
+   :'<div><b>Gains</b>Simple to build, test and deploy. Transactions are one <code>COMMIT</code>.</div><div><b>Costs</b>Everything redeploys together. One bug can sink all. Hard to grow with big teams.</div>';
+}
+renderArch(false);
+seg(['#b-mono','#b-micro'],id=>renderArch(id==='#b-micro'));
+
+/* ---------- SAGA ---------- */
+let sagaMode='orch', sagaBusy=false;
+const SAGA=[
+ {svc:'Order',do:'Create order (PENDING)',undo:'Cancel order',cmd:'CreateOrder',evt:'OrderCreated'},
+ {svc:'Inventory',do:'Reserve 1 × keyboard',undo:'Release stock',cmd:'ReserveStock',evt:'StockReserved'},
+ {svc:'Payment',do:'Charge $89.00',undo:'Refund $89.00',cmd:'ChargeCard',evt:'PaymentCharged'},
+ {svc:'Order',do:'Mark order APPROVED',undo:'',cmd:'ApproveOrder',evt:'OrderApproved'}
+];
+function renderSteps(){
+  $('#s-steps').innerHTML=SAGA.map((s,i)=>`<li class="step" id="st${i}"><span class="svcname">${s.svc}</span><span>${s.do}<small>undo: ${s.undo||'n/a (last step)'}</small></span><span class="pill" id="sp${i}">waiting</span></li>`).join('');
+}
+function setStep(i,cls,txt,pc){const e=$('#st'+i);e.className='step '+cls;const p=$('#sp'+i);p.textContent=txt;p.className='pill '+(pc||'')}
+renderSteps();
+seg(['#s-orch','#s-chor'],id=>{sagaMode=id==='#s-orch'?'orch':'chor'});
+$('#s-run').addEventListener('click',async()=>{
+  if(sagaBusy)return; sagaBusy=true; $('#s-run').disabled=true;
+  const L=$('#s-log'); L.innerHTML=''; renderSteps();
+  const fail=+$('#s-fail').value, orch=sagaMode==='orch';
+  let done=-1;
+  for(let i=0;i<SAGA.length;i++){
+    const s=SAGA[i];
+    setStep(i,'running','running','run');
+    logTo(L, orch?`Orchestrator → ${s.svc}: command ${s.cmd}`:(i===0?`Client → Order: POST /orders`:`${s.svc} ← event ${SAGA[i-1].evt}`),'info');
+    await sleep(750);
+    if(i===fail){
+      setStep(i,'failed','failed','bad');
+      logTo(L, orch?`${s.svc} → Orchestrator: ${s.cmd} FAILED`:`${s.svc} publishes ${s.cmd}Failed event`,'bad');
+      for(let j=done;j>=0;j--){
+        if(!SAGA[j].undo)continue;
+        await sleep(650);
+        logTo(L, orch?`Orchestrator → ${SAGA[j].svc}: compensate "${SAGA[j].undo}"`:`${SAGA[j].svc} ← failure event, runs "${SAGA[j].undo}"`,'warn');
+        setStep(j,'comp','compensated','warn');
+      }
+      logTo(L,'Saga ended: order REJECTED, all earlier work undone. Data is consistent again.','bad');
+      sagaBusy=false;$('#s-run').disabled=false;return;
+    }
+    setStep(i,'done','done','ok'); done=i;
+    logTo(L, orch?`${s.svc} → Orchestrator: success`:`${s.svc} publishes ${s.evt}`,'ok');
+    await sleep(250);
+  }
+  logTo(L,'Saga complete: order APPROVED.','ok');
+  sagaBusy=false;$('#s-run').disabled=false;
+});
+
+/* ---------- BREAKER ---------- */
+const TH=3, COOL=6000;
+let bst='closed', bfail=0, openUntil=0, nOk=0,nFail=0,nFast=0;
+function bRender(){
+  ['closed','open','half'].forEach(s=>$('#bs-'+s).classList.toggle('on',bst===s));
+  $('#b-bar').style.width=(bfail/TH*100)+'%';
+  $('#n-ok').textContent=nOk;$('#n-fail').textContent=nFail;$('#n-fast').textContent=nFast;
+  const t=$('#b-timer');
+  if(bst==='open'){const left=Math.max(0,openUntil-Date.now());t.textContent=`trial call allowed in ${(left/1000).toFixed(1)}s`;t.className='pill bad'}
+  else {t.textContent=bst==='half'?'next call is a trial':'';t.className='pill warn'}
+}
+setInterval(()=>{if(bst==='open')bRender()},200);
+function bCall(){
+  const L=$('#b-log'), down=$('#b-down').checked;
+  if(bst==='open'){
+    if(Date.now()>=openUntil){bst='half';logTo(L,'Cool-down over → HALF-OPEN, letting one trial call through','warn')}
+    else{nFast++;logTo(L,'Rejected instantly. Payment was not called (fallback: "try again later").','warn');bRender();return}
+  }
+  if(down){
+    nFail++;
+    if(bst==='half'){bst='open';openUntil=Date.now()+COOL;logTo(L,'Trial failed → back to OPEN for 6s','bad')}
+    else{bfail++;logTo(L,`Call timed out after 2s (failure ${bfail}/${TH})`,'bad');
+      if(bfail>=TH){bst='open';openUntil=Date.now()+COOL;logTo(L,'Threshold reached → circuit OPEN','bad')}}
+  }else{
+    nOk++;
+    if(bst==='half'){logTo(L,'Trial succeeded → circuit CLOSED','ok')}
+    else logTo(L,'200 OK from Payment','ok');
+    bst='closed';bfail=0;
+  }
+  bRender();
+}
+$('#b-call').addEventListener('click',bCall);
+$('#b-burst').addEventListener('click',async()=>{for(let i=0;i<5;i++){bCall();await sleep(120)}});
+bRender();logTo($('#b-log'),'Tick "Payment service is down", then send requests.','info');
+
+/* ---------- EVENT SOURCING ---------- */
+let events=[{t:'Deposited',a:100},{t:'Withdrawn',a:30},{t:'Deposited',a:45}];
+let upTo=events.length;
+function project(n){let bal=0,c=0;events.slice(0,n).forEach(e=>{bal+=e.t==='Deposited'?e.a:-e.a;c++});return{bal,c}}
+function eRender(){
+  const sl=$('#e-time');sl.max=events.length;sl.value=upTo;$('#e-t').textContent=upTo;
+  $('#e-list').innerHTML=events.map((e,i)=>`<li class="${e.t==='Deposited'?'dep':'wd'} ${i>=upTo?'future':''}"><span>#${i+1} ${e.t}</span><b>${e.t==='Deposited'?'+':'−'}${e.a}</b></li>`).join('')||'<li>No events yet</li>';
+  const p=project(upTo);$('#e-bal').textContent=p.bal;
+  $('#e-meta').textContent=`replayed ${p.c} event${p.c===1?'':'s'}`+(upTo<events.length?' (past state)':'');
+}
+function eCmd(type){
+  const a=Math.floor(+$('#e-amt').value);const L=$('#e-log');
+  if(!(a>0)){logTo(L,'Command rejected: amount must be positive','bad');return}
+  if(upTo<events.length){upTo=events.length;eRender()}
+  const bal=project(events.length).bal;
+  logTo(L,`Command ${type==='Deposited'?'Deposit':'Withdraw'}(${a}) received`,'info');
+  if(type==='Withdrawn'&&a>bal){logTo(L,`Rejected: balance is ${bal}. No event is written.`,'bad');return}
+  events.push({t:type,a});upTo=events.length;
+  logTo(L,`Validated → event ${type} appended → read model updated`,'ok');eRender();
+}
+$('#e-dep').addEventListener('click',()=>eCmd('Deposited'));
+$('#e-wd').addEventListener('click',()=>eCmd('Withdrawn'));
+$('#e-reset').addEventListener('click',()=>{events=[];upTo=0;$('#e-log').innerHTML='';eRender()});
+$('#e-time').addEventListener('input',e=>{upTo=+e.target.value;eRender()});
+eRender();
+
+/* ---------- GATEWAY ---------- */
+const reg={ 'order-1':{svc:'order',up:true},'order-2':{svc:'order',up:true},'product-1':{svc:'product',up:true},'customer-1':{svc:'customer',up:true}};
+const rr={};
+function gRender(){
+  $('#g-inst').innerHTML=Object.entries(reg).map(([k,v])=>`<div class="inst ${v.up?'':'down'}" id="i-${k}"><span>${k}</span><button data-k="${k}">${v.up?'Stop':'Start'}</button></div>`).join('');
+  $$('#g-inst button').forEach(b=>b.addEventListener('click',()=>{reg[b.dataset.k].up=!reg[b.dataset.k].up;logTo($('#g-log'),`Registry: ${b.dataset.k} is now ${reg[b.dataset.k].up?'UP':'DOWN'}`,'warn');gRender()}));
+}
+function call(svc,path){
+  const L=$('#g-log');
+  const ups=Object.entries(reg).filter(([k,v])=>v.svc===svc&&v.up).map(([k])=>k);
+  if(!ups.length){logTo(L,`  gateway → ${svc}-service: no healthy instance in registry (503)`,'bad');return false}
+  rr[svc]=((rr[svc]||0)+1)%ups.length;const pick=ups[rr[svc]];
+  logTo(L,`  gateway → ${pick}: ${path}  (round-robin over ${ups.length} up)`,'ok');
+  const el=$('#i-'+pick);if(el){el.classList.add('hit');setTimeout(()=>el.classList.remove('hit'),500)}
+  return true;
+}
+$$('[data-route]').forEach(b=>b.addEventListener('click',()=>{
+  const r=b.dataset.route,L=$('#g-log');logTo(L,`Client → gateway: GET ${r}`,'info');
+  if(r==='/orders'){logTo(L,call('order','/orders')?'← 200 orders list':'← 503 Service Unavailable',call.last?'':'')}
+  else if(r==='/products'){logTo(L,call('product','/products')?'← 200 product list':'← 503 Service Unavailable')}
+  else{
+    const res=[call('order','/orders?user=7'),call('product','/products?ids=3,9'),call('customer','/customers/7')];
+    const n=res.filter(Boolean).length;
+    logTo(L,n===3?'← 200 dashboard (3 of 3 parts merged)':`← 200 PARTIAL dashboard (${n} of 3 parts). Missing parts use a fallback.`,n===3?'ok':'warn');
+  }
+}));
+gRender();logTo($('#g-log'),'Click a route. Stop an instance and click again.','info');
+
+/* ---------- CATALOG ---------- */
+const P=[
+['Style','Monolithic architecture','One deployable app, one database.','Small team, early product, unclear boundaries.','Grows hard to change and scale as a whole.'],
+['Style','Microservice architecture','Many small services, each owning one capability and its data.','Large system with several teams that must ship independently.','Distributed-system complexity: failures, consistency, operations.'],
+['Decomposition','Decompose by business capability','Cut services along what the business does: orders, billing, shipping.','Choosing service boundaries.','Capabilities need real domain knowledge to identify.'],
+['Decomposition','Decompose by subdomain','Use Domain-Driven Design subdomains and bounded contexts as boundaries.','Domain model is rich and terms mean different things in different areas.','Needs DDD skills; boundaries can be wrong at first.'],
+['Decomposition','Strangler application','Grow the new system around the old, moving one feature at a time.','Migrating a monolith without a big-bang rewrite.','Two systems to run for a long while.'],
+['Data','Database per service','Each service owns its private data store; others go through its API.','Always the default for true independence.','No joins or ACID across services.'],
+['Data','Shared database','Services read and write the same database.','Rarely. Only as a stepping stone.','Tight coupling: schema changes break everyone.'],
+['Data','Saga','A chain of local transactions with compensating actions on failure.','A business operation spans several services.','Eventual consistency and compensation logic to design.'],
+['Data','API composition','A composer calls several services and joins results in memory.','A query needs data owned by multiple services.','Slow and costly for big joins; weaker availability.'],
+['Data','CQRS','Separate models for writes (commands) and reads (queries).','Cross-service queries or very different read and write loads.','More moving parts; read models lag slightly.'],
+['Data','Event sourcing','Store state as an append-only sequence of events.','You need an audit trail, history, or time travel.','Event schemas must evolve carefully; queries need projections.'],
+['Messaging','Transactional outbox','Write the event into an outbox table in the same DB transaction, then relay it to the broker.','Update the database and publish a message reliably.','Needs a relay (polling or log tailing).'],
+['Messaging','Idempotent consumer','A consumer remembers processed message IDs and ignores duplicates.','Brokers deliver at least once.','Needs a dedupe store.'],
+['Messaging','Messaging','Services talk asynchronously through a broker (Kafka, RabbitMQ).','Loose coupling and buffering of spikes.','Broker becomes critical infrastructure; harder to debug.'],
+['Messaging','Remote procedure invocation','Synchronous request/response over REST or gRPC.','Simple queries needing an immediate answer.','Caller is coupled to callee availability.'],
+['Edge','API gateway','A single entry point that routes, authenticates and aggregates.','Many clients and many services.','Another component to run; can become a bottleneck.'],
+['Edge','Backend for frontend','One gateway per client type (web, mobile).','Clients need very different payloads.','More gateways to maintain.'],
+['Edge','Service registry','A database of live service instances and their addresses.','Instances change IP dynamically.','Registry must be highly available.'],
+['Edge','Client-side / server-side discovery','Client asks the registry itself, or a router (load balancer) does.','Finding an instance to call.','Client-side couples clients to the registry; server-side adds a hop.'],
+['Reliability','Circuit breaker','Stops calling a failing service and fails fast until it recovers.','Any remote call that may hang or fail.','Needs fallbacks and tuned thresholds.'],
+['Deployment','Service per container','Package each service as a container image.','Almost any modern deployment.','Needs an orchestrator like Kubernetes.'],
+['Deployment','Serverless deployment','Run code as functions; the platform scales it.','Spiky or event-driven workloads.','Cold starts, vendor limits.'],
+['Deployment','Service mesh / sidecar','A proxy beside each service handles retries, TLS and telemetry.','Many services needing uniform networking features.','Extra resources and operational complexity.'],
+['Deployment','Externalized configuration','Config comes from the environment, not baked into the image.','The same build runs in dev, test and prod.','Config sprawl needs management.'],
+['Observability','Distributed tracing','A trace ID follows a request across every service.','Finding where a slow request spent its time.','Every service must propagate headers.'],
+['Observability','Log aggregation','Ship all logs to a central searchable store.','Debugging across many instances.','Storage cost; needs structured logs.'],
+['Observability','Health check API','Each service exposes an endpoint that reports if it is healthy.','Registries and orchestrators need to know who to route to.','Shallow checks can lie.'],
+['Security','Access token','The gateway authenticates once; services receive a signed token (JWT) with the user identity.','Passing identity across services.','Token revocation and size need care.'],
+['Testing','Consumer-driven contract test','The consumer writes expectations; the provider verifies it meets them.','Testing integration without running everything.','Contracts need upkeep.']
+];
+const cats=['All',...new Set(P.map(p=>p[0]))];
+let cur='All';
+function cRender(){
+  $('#chips').innerHTML=cats.map(c=>`<button class="seg" aria-pressed="${c===cur}" data-c="${c}">${c}</button>`).join('');
+  $$('#chips button').forEach(b=>b.addEventListener('click',()=>{cur=b.dataset.c;cRender()}));
+  $('#cards').innerHTML=P.filter(p=>cur==='All'||p[0]===cur).map(p=>`<article class="card"><span class="k">${p[0]}</span><h3>${p[1]}</h3><p>${p[2]}</p><div class="meta"><p><span class="t">Use when:</span> ${p[3]}</p><p><span class="t">Trade-off:</span> ${p[4]}</p></div></article>`).join('');
+}
+cRender();
+})();
+</script>
+</body>
+</html>

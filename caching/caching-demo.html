@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caching Explained – Interactive Demo</title>
+<style>
+:root{
+  --bg:#f6f7fb;--card:#fff;--ink:#1d2433;--mute:#667085;--line:#e4e7ee;
+  --pri:#4f46e5;--hit:#16a34a;--miss:#dc2626;--warn:#d97706;--soft:#eef0ff;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f1320;--card:#181d2e;--ink:#e8ebf5;--mute:#9aa3b8;--line:#2a3148;--pri:#818cf8;--hit:#4ade80;--miss:#f87171;--warn:#fbbf24;--soft:#232a4a}
+}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:40px 16px 24px;text-align:center;background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff}
+header h1{margin:0 0 8px;font-size:clamp(26px,5vw,40px)}
+header p{margin:0 auto;max-width:640px;opacity:.9}
+nav{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding:8px 12px}
+nav a{white-space:nowrap;padding:6px 12px;border-radius:99px;color:var(--mute);text-decoration:none;font-size:14px;font-weight:600}
+nav a:hover{background:var(--soft);color:var(--pri)}
+main{max-width:920px;margin:0 auto;padding:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin:20px 0}
+h2{margin:0 0 4px;font-size:22px}
+h2 span{display:inline-block;background:var(--pri);color:#fff;border-radius:8px;padding:0 9px;margin-right:8px;font-size:16px}
+.sub{color:var(--mute);margin:0 0 16px}
+.analogy{background:var(--soft);border-left:4px solid var(--pri);padding:10px 14px;border-radius:8px;margin:12px 0;font-size:15px}
+button{font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--pri)}
+button.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.box h4{margin:0 0 6px;font-size:14px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.slots{display:flex;gap:8px;flex-wrap:wrap;min-height:48px}
+.slot{min-width:48px;padding:10px 12px;text-align:center;border-radius:10px;border:2px dashed var(--line);font-weight:700;transition:.25s}
+.slot.full{border:2px solid var(--pri);background:var(--soft)}
+.slot.flash-hit{background:var(--hit);color:#fff;border-color:var(--hit)}
+.slot.flash-miss{background:var(--miss);color:#fff;border-color:var(--miss)}
+.log{font:13px/1.5 ui-monospace,Menlo,monospace;max-height:170px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+.log div{padding:1px 0}.h{color:var(--hit)}.m{color:var(--miss)}.w{color:var(--warn)}
+.stat{display:flex;gap:16px;flex-wrap:wrap;font-weight:700}
+.stat b{font-size:22px}
+.meter{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--hit);width:0;transition:.3s}
+.pipe{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap;margin:12px 0}
+.node{flex:1;min-width:110px;text-align:center;padding:12px 6px;border-radius:12px;border:2px solid var(--line);background:var(--bg);transition:.3s;cursor:pointer;user-select:none}
+.node small{display:block;color:var(--mute);font-size:12px}
+.node.cache{border-color:var(--pri)}
+.node.off{opacity:.45;border-style:dashed}
+.node.hit{background:var(--hit);color:#fff;border-color:var(--hit)}
+.node.hit small{color:#fff}
+.node.pass{background:var(--soft)}
+.arrow{align-self:center;color:var(--mute)}
+.bar{height:22px;border-radius:6px;background:var(--pri);color:#fff;font-size:12px;line-height:22px;padding-left:8px;white-space:nowrap;margin:4px 0;min-width:2px;transition:width .4s}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-size:12px;text-transform:uppercase}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--pri);font-weight:700}
+.ttl{height:14px;border-radius:99px;background:var(--line);overflow:hidden}
+.ttl i{display:block;height:100%;background:var(--hit);width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--bg)}
+.card h4{margin:0 0 6px}
+code{background:var(--soft);padding:1px 6px;border-radius:6px;font-size:13px}
+footer{text-align:center;color:var(--mute);padding:24px 16px 40px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Caching, Explained</h1>
+  <p>A cache is a small, fast memory that keeps copies of things you used recently — so you don't have to fetch them from the slow place again. Click through the demos below.</p>
+</header>
+<nav>
+  <a href="#idea">1 · Big idea</a><a href="#hitmiss">2 · Hit / Miss</a><a href="#layers">3 · Layers</a>
+  <a href="#evict">4 · Eviction</a><a href="#write">5 · Write policies</a><a href="#ttl">6 · TTL &amp; stale</a>
+  <a href="#http">7 · HTTP</a><a href="#pitfalls">8 · Pitfalls</a><a href="#cheat">9 · Cheat sheet</a>
+</nav>
+<main>
+
+<!-- 1 -->
+<section id="idea">
+  <h2><span>1</span>The big idea</h2>
+  <p class="sub">Fast storage is small and expensive. Slow storage is huge and cheap. A cache puts a bit of the fast stuff in front of the slow stuff.</p>
+  <div class="analogy">📚 <b>Analogy:</b> You're studying. The <b>book on your desk</b> is instant. The <b>bookshelf</b> takes a minute. The <b>library</b> takes an hour. You keep the books you use most on your desk — that's caching.</div>
+  <div id="latency"></div>
+  <p class="sub" style="margin-top:12px">Relative time to get data (log-ish scale, illustrative). Each step down is ~10–1000× slower.</p>
+</section>
+
+<!-- 2 -->
+<section id="hitmiss">
+  <h2><span>2</span>Cache hit vs. miss (cache-aside)</h2>
+  <p class="sub">The app checks the cache first. <b class="h">Hit</b> = found, fast. <b class="m">Miss</b> = not found, go to the database, then store a copy.</p>
+  <div class="row" id="keys"></div>
+  <div class="grid">
+    <div class="box"><h4>⚡ Cache (capacity 3)</h4><div class="slots" id="hmCache"></div></div>
+    <div class="box"><h4>🗄️ Database (slow, 100ms)</h4><div class="slots" id="hmDb"></div></div>
+  </div>
+  <div class="stat" style="margin:12px 0 6px"><span>Hits <b class="h" id="sHit">0</b></span><span>Misses <b class="m" id="sMiss">0</b></span><span>Hit ratio <b id="sRatio">–</b></span><span>Avg time <b id="sAvg">–</b></span></div>
+  <div class="meter"><i id="mRatio"></i></div>
+  <div class="row"><button onclick="hmReset()">Reset</button><span class="sub" style="margin:0">Tip: click the same key twice. Then click 4 different keys and watch one get evicted.</span></div>
+  <div class="log" id="hmLog"></div>
+</section>
+
+<!-- 3 -->
+<section id="layers">
+  <h2><span>3</span>Every layer of caching in one request</h2>
+  <p class="sub">Click a cache layer to turn it on/off, then send a request. The request stops at the first layer that has the data.</p>
+  <div class="pipe" id="pipe"></div>
+  <div class="row"><button class="pri" onclick="sendReq()">Send request</button><button onclick="resetLayers()">Clear all caches</button><span id="layerMsg" class="sub" style="margin:0"></span></div>
+  <div id="layerBars"></div>
+  <table style="margin-top:12px">
+    <tr><th>Layer</th><th>What it stores</th><th>Typical tech</th></tr>
+    <tr><td>🌐 Browser</td><td>Images, JS, CSS, API responses on the user's device</td><td><code>Cache-Control</code>, Service Worker, localStorage</td></tr>
+    <tr><td>🛰️ CDN</td><td>Static files copied to servers near the user</td><td>Cloudflare, CloudFront, Akamai</td></tr>
+    <tr><td>🔀 Reverse proxy</td><td>Whole pages / API responses</td><td>Nginx, Varnish</td></tr>
+    <tr><td>🧠 App (in-process)</td><td>Hot objects inside server memory</td><td>Caffeine, Guava, <code>lru_cache</code></td></tr>
+    <tr><td>🔴 Distributed cache</td><td>Shared key-value data across servers</td><td>Redis, Memcached</td></tr>
+    <tr><td>🗄️ Database</td><td>Buffer pool, query cache, indexes in RAM</td><td>PostgreSQL shared_buffers, InnoDB</td></tr>
+    <tr><td>💻 CPU / OS</td><td>L1/L2/L3 caches, OS page cache, DNS cache</td><td>Hardware, kernel, <code>systemd-resolved</code></td></tr>
+  </table>
+</section>
+
+<!-- 4 -->
+<section id="evict">
+  <h2><span>4</span>Eviction: who gets kicked out when full?</h2>
+  <p class="sub">The cache is small. When it's full, a policy picks a victim. Pick a policy and request items.</p>
+  <div class="row" id="polBtns"></div>
+  <div class="analogy" id="polDesc"></div>
+  <div class="row" id="evKeys"></div>
+  <div class="box"><h4>Cache (capacity 4) — left = next to evict</h4><div class="slots" id="evCache"></div></div>
+  <div class="row"><button onclick="evSeq()">▶ Run sample sequence A B C D A E</button><button onclick="evReset()">Reset</button></div>
+  <div class="log" id="evLog"></div>
+</section>
+
+<!-- 5 -->
+<section id="write">
+  <h2><span>5</span>Write policies: how do writes reach the database?</h2>
+  <p class="sub">Reading is easy. Writing is where caches get tricky — the cache and DB can disagree.</p>
+  <div class="row" id="wBtns"></div>
+  <div class="grid">
+    <div class="box"><h4>⚡ Cache</h4><div class="slots"><div class="slot full" id="wCache">x = 1</div></div></div>
+    <div class="box"><h4>🗄️ Database</h4><div class="slots"><div class="slot full" id="wDb">x = 1</div></div></div>
+  </div>
+  <div class="row"><button class="pri" onclick="doWrite()">Write x = next value</button><button onclick="doFlush()" id="flushBtn">Flush cache → DB</button></div>
+  <div class="log" id="wLog"></div>
+  <table style="margin-top:12px">
+    <tr><th>Policy</th><th>Pro</th><th>Con</th></tr>
+    <tr><td><b>Write-through</b></td><td>Cache &amp; DB always consistent</td><td>Slower writes (wait for both)</td></tr>
+    <tr><td><b>Write-back</b></td><td>Very fast writes, batches DB load</td><td>Data lost if cache crashes before flush</td></tr>
+    <tr><td><b>Write-around</b></td><td>Doesn't pollute cache with rarely-read data</td><td>Next read is a miss</td></tr>
+  </table>
+</section>
+
+<!-- 6 -->
+<section id="ttl">
+  <h2><span>6</span>TTL &amp; stale data (invalidation)</h2>
+  <p class="sub">"There are only two hard things in computer science: cache invalidation and naming things." Cached copies can go <b>stale</b> when the source changes.</p>
+  <div class="grid">
+    <div class="box"><h4>🗄️ Source of truth</h4><div class="slots"><div class="slot full" id="tDb">Price: $10</div></div>
+      <div class="row"><button onclick="tChange()">Change price in DB</button></div></div>
+    <div class="box"><h4>⚡ Cache <span class="tag" id="tTag">empty</span></h4><div class="slots"><div class="slot" id="tCache">—</div></div>
+      <div class="ttl" style="margin-top:8px"><i id="tBar"></i></div>
+      <div class="row"><label>TTL <input type="range" id="tTtl" min="3" max="15" value="8"> <b id="tTtlV">8</b>s</label></div></div>
+  </div>
+  <div class="row"><button class="pri" onclick="tRead()">Read price</button><button onclick="tInval()">Invalidate (delete) cache</button></div>
+  <div class="log" id="tLog"></div>
+  <div class="analogy"><b>Three ways to keep it fresh:</b> ① <b>TTL</b> – let it expire automatically (simple, may be stale until then). ② <b>Explicit invalidation</b> – delete/update on write (fresh, but you must remember to). ③ <b>Versioned keys</b> – <code>app.v42.js</code> never goes stale; a new version is a new key.</div>
+</section>
+
+<!-- 7 -->
+<section id="http">
+  <h2><span>7</span>HTTP / browser caching</h2>
+  <p class="sub">The server tells the browser how to cache, using headers. Try each strategy:</p>
+  <div class="row" id="hBtns"></div>
+  <div class="box" id="hOut"></div>
+  <table style="margin-top:12px">
+    <tr><th>Header</th><th>Meaning</th></tr>
+    <tr><td><code>Cache-Control: max-age=3600</code></td><td>Fresh for 1 hour — no network at all</td></tr>
+    <tr><td><code>Cache-Control: no-cache</code></td><td>May store, but <b>must revalidate</b> every time</td></tr>
+    <tr><td><code>Cache-Control: no-store</code></td><td>Never store (banking pages, secrets)</td></tr>
+    <tr><td><code>Cache-Control: public / private</code></td><td>CDNs may store / only the user's browser may store</td></tr>
+    <tr><td><code>ETag</code> + <code>If-None-Match</code></td><td>"Has it changed?" → <code>304 Not Modified</code> (tiny, no body)</td></tr>
+    <tr><td><code>Last-Modified</code> + <code>If-Modified-Since</code></td><td>Same idea, using a timestamp</td></tr>
+    <tr><td><code>stale-while-revalidate</code></td><td>Serve old copy instantly, refresh in background</td></tr>
+  </table>
+</section>
+
+<!-- 8 -->
+<section id="pitfalls">
+  <h2><span>8</span>Classic cache problems</h2>
+  <p class="sub">Caches are great until they fail in these ways.</p>
+  <div class="cards">
+    <div class="card"><h4>🐘 Cache stampede</h4>A hot key expires; 1,000 requests miss at once and all hit the DB. <br><b>Fix:</b> lock / single-flight, refresh early, jittered TTLs.</div>
+    <div class="card"><h4>🏔️ Cache avalanche</h4>Many keys expire at the same moment (or the cache dies) → DB flood. <br><b>Fix:</b> randomize TTLs, replicas, circuit breakers.</div>
+    <div class="card"><h4>🕳️ Cache penetration</h4>Requests for keys that <i>don't exist</i> always miss, always hit the DB. <br><b>Fix:</b> cache "null" results, Bloom filter.</div>
+    <div class="card"><h4>🧟 Stale data</h4>Cache says $10, DB says $12. <br><b>Fix:</b> shorter TTL, invalidate on write, versioned keys.</div>
+    <div class="card"><h4>🔥 Hot key</h4>One key gets all traffic, overloading one cache node. <br><b>Fix:</b> local in-process copy, replicate the key.</div>
+    <div class="card"><h4>❄️ Cold start</h4>Empty cache after deploy/restart = all misses. <br><b>Fix:</b> pre-warm with popular keys.</div>
+  </div>
+  <h3 style="margin-top:20px">Try a stampede</h3>
+  <div class="row"><button class="pri" onclick="stamp(false)">1000 requests – no protection</button><button onclick="stamp(true)">1000 requests – with single-flight lock</button></div>
+  <div class="stat"><span>DB queries: <b class="m" id="stDb">–</b></span></div>
+</section>
+
+<!-- 9 -->
+<section id="cheat">
+  <h2><span>9</span>Cheat sheet: patterns at a glance</h2>
+  <table>
+    <tr><th>Pattern</th><th>How it works</th><th>Use when</th></tr>
+    <tr><td><b>Cache-aside</b> (lazy)</td><td>App checks cache → on miss loads DB → fills cache</td><td>Most common default; read-heavy</td></tr>
+    <tr><td><b>Read-through</b></td><td>Cache itself loads from DB on miss</td><td>You want simpler app code</td></tr>
+    <tr><td><b>Write-through</b></td><td>Write to cache and DB together</td><td>Consistency matters</td></tr>
+    <tr><td><b>Write-back</b></td><td>Write to cache, flush to DB later</td><td>Write-heavy, can tolerate small loss</td></tr>
+    <tr><td><b>Refresh-ahead</b></td><td>Reload popular keys before they expire</td><td>Avoid latency spikes</td></tr>
+    <tr><td><b>Memoization</b></td><td>Cache a function's result by its arguments</td><td>Pure, expensive computations</td></tr>
+  </table>
+  <div class="analogy"><b>Golden rules:</b> ① Cache only what is read often &amp; changes rarely. ② Always decide how it expires. ③ Measure your hit ratio — a cache with a low hit ratio is just extra latency.</div>
+</section>
+</main>
+<footer>Caching demo · single self-contained HTML file · no libraries</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function log(el,msg,cls=''){const d=document.createElement('div');d.className=cls;d.textContent=msg;el.prepend(d)}
+function slots(el,arr,flash,cls){el.innerHTML='';arr.forEach(k=>{const s=document.createElement('div');s.className='slot full'+(k===flash?' '+cls:'');s.textContent=k;el.appendChild(s)});if(!arr.length)el.innerHTML='<div class="slot">empty</div>'}
+
+/* 1 latency */
+(function(){
+  const d=[['L1 CPU cache',1,'~1 ns'],['RAM',100,'~100 ns'],['Redis (network)',5e5,'~0.5 ms'],['SSD read',1.5e5,'~150 µs'],['Database query',1e7,'~10 ms'],['Cross-continent network',1.5e8,'~150 ms']]
+    .sort((a,b)=>a[1]-b[1]);
+  const max=Math.log10(d[d.length-1][1]+1);
+  $('latency').innerHTML=d.map(x=>`<div class="bar" style="width:${Math.max(6,Math.log10(x[1]+1)/max*100)}%">${x[0]} · ${x[2]}</div>`).join('');
+})();
+
+/* 2 hit/miss */
+let hm,hmH=0,hmM=0,hmT=0;const HM_CAP=3,HM_KEYS=['user:1','user:2','user:3','user:4','user:5'];
+function hmReset(){hm=[];hmH=hmM=hmT=0;hmDraw();$('hmLog').innerHTML='';hmStats()}
+function hmDraw(f,c){slots($('hmCache'),hm,f,c)}
+function hmStats(){const n=hmH+hmM;$('sHit').textContent=hmH;$('sMiss').textContent=hmM;
+  $('sRatio').textContent=n?Math.round(hmH/n*100)+'%':'–';$('sAvg').textContent=n?Math.round(hmT/n)+'ms':'–';$('mRatio').style.width=n?hmH/n*100+'%':0}
+function hmGet(k){
+  const i=hm.indexOf(k);
+  if(i>-1){hm.splice(i,1);hm.push(k);hmH++;hmT+=1;log($('hmLog'),`HIT  ${k} → served from cache (1ms)`,'h');hmDraw(k,'flash-hit')}
+  else{hmM++;hmT+=100;log($('hmLog'),`MISS ${k} → read DB (100ms), store in cache`,'m');
+    if(hm.length>=HM_CAP){const v=hm.shift();log($('hmLog'),`     cache full → evicted ${v} (least recently used)`,'w')}
+    hm.push(k);hmDraw(k,'flash-miss')}
+  hmStats();
+}
+$('keys').innerHTML=HM_KEYS.map(k=>`<button onclick="hmGet('${k}')">GET ${k}</button>`).join('');
+$('hmDb').innerHTML=HM_KEYS.map(k=>`<div class="slot full">${k}</div>`).join('');
+hmReset();
+
+/* 3 layers */
+const L=[{n:'🌐 Browser',t:0,on:true},{n:'🛰️ CDN',t:20,on:true},{n:'🧠 App memory',t:25,on:true},{n:'🔴 Redis',t:30,on:true},{n:'🗄️ Database',t:120,on:true,origin:true}];
+let filled;
+function resetLayers(){filled=L.map(()=>false);drawPipe();$('layerBars').innerHTML='';$('layerMsg').textContent='All caches cleared (cold start).'}
+function drawPipe(hit,passed=[]){
+  $('pipe').innerHTML=L.map((l,i)=>{
+    const cls=['node',l.origin?'':'cache',!l.on&&!l.origin?'off':'',i===hit?'hit':'',passed.includes(i)?'pass':''].join(' ');
+    const sub=l.origin?'origin':(l.on?(filled[i]?'has copy ✔':'empty'):'disabled');
+    return `<div class="${cls}" ${l.origin?'':`onclick="toggleLayer(${i})"`}>${l.n}<small>${sub}</small></div>`+(i<L.length-1?'<div class="arrow">→</div>':'')}).join('');
+}
+function toggleLayer(i){L[i].on=!L[i].on;if(!L[i].on)filled[i]=false;drawPipe()}
+function sendReq(){
+  let total=0,hit=-1,passed=[];
+  for(let i=0;i<L.length;i++){
+    if(L[i].origin){hit=i;total+=L[i].t;break}
+    if(!L[i].on){continue}
+    total+=L[i].t;
+    if(filled[i]){hit=i;break}
+    passed.push(i);
+  }
+  const wasFilled=[...filled];
+  for(let i=0;i<hit;i++)if(L[i].on)filled[i]=true; // fill on the way back
+  drawPipe(hit,passed);
+  $('layerMsg').textContent=`Served by ${L[hit].n.replace(/^\S+ /,'')}${L[hit].origin?' (all misses)':' (HIT)'} in ~${total}ms`;
+  const w=Math.max(2,total/170*100);
+  const bar=document.createElement('div');bar.className='bar';bar.style.width=Math.max(6,w)+'%';
+  bar.style.background=L[hit].origin?'var(--miss)':'var(--hit)';bar.textContent=`${L[hit].n} → ${total}ms`;
+  $('layerBars').prepend(bar);
+}
+resetLayers();
+
+/* 4 eviction */
+const POL={
+  LRU:'Least Recently Used — evict the item untouched for the longest time. Like clearing the book you haven\'t opened in ages.',
+  LFU:'Least Frequently Used — evict the item used the fewest times. Keeps long-term favourites.',
+  FIFO:'First In, First Out — evict the oldest inserted item, ignoring how popular it is. Simple but naive.'
+};
+let pol='LRU',ev=[],EVC=4;
+$('polBtns').innerHTML=Object.keys(POL).map(p=>`<button id="p_${p}" onclick="setPol('${p}')">${p}</button>`).join('');
+$('evKeys').innerHTML='ABCDEF'.split('').map(k=>`<button onclick="evGet('${k}')">GET ${k}</button>`).join('');
+function setPol(p){pol=p;evReset()}
+function evReset(){ev=[];Object.keys(POL).forEach(p=>$('p_'+p).className=p===pol?'on':'');$('polDesc').textContent=POL[pol];$('evLog').innerHTML='';evDraw()}
+function evDraw(f,c){slots($('evCache'),ev.map(e=>e.k+(pol==='LFU'?'×'+e.f:'')),f,c)}
+function evGet(k){
+  const i=ev.findIndex(e=>e.k===k);
+  if(i>-1){const e=ev[i];e.f++;
+    if(pol==='LRU'){ev.splice(i,1);ev.push(e)}
+    log($('evLog'),`HIT  ${k}`,'h');evDraw(k+(pol==='LFU'?'×'+e.f:''),'flash-hit');return}
+  let msg=`MISS ${k}`;
+  if(ev.length>=EVC){
+    let vi=0;
+    if(pol==='LFU'){let mf=Infinity;ev.forEach((e,j)=>{if(e.f<mf){mf=e.f;vi=j}})}
+    const v=ev.splice(vi,1)[0];msg+` → evict ${v.k}`;log($('evLog'),`MISS ${k} → full, evict ${v.k}`,'m')}
+  else log($('evLog'),msg,'m');
+  ev.push({k,f:1});evDraw(k+(pol==='LFU'?'×1':''),'flash-miss');
+}
+async function evSeq(){evReset();for(const k of 'ABCDAE'){evGet(k);await sleep(600)}
+  log($('evLog'),pol==='FIFO'?'FIFO evicted A even though A was just used!':pol==='LRU'?'LRU kept A (recent) and evicted B.':'LFU kept A (used twice) and evicted B.','w')}
+evReset();
+
+/* 5 write policies */
+const WP={
+  'write-through':'Write goes to cache AND database before returning.',
+  'write-back':'Write goes to cache only. DB is updated later (flush). Fast, but risky.',
+  'write-around':'Write goes straight to DB, skipping cache (cache may become stale!).'
+};
+let wp='write-through',wv=1,wc=1,wd=1;
+$('wBtns').innerHTML=Object.keys(WP).map(p=>`<button id="w_${p}" onclick="setWp('${p}')">${p}</button>`).join('');
+function setWp(p){wp=p;wv=wc=wd=1;$('wLog').innerHTML='';wDraw();log($('wLog'),WP[p],'w')}
+function wDraw(){$('wCache').textContent='x = '+wc;$('wDb').textContent='x = '+wd;
+  $('wCache').className='slot full'+(wc!==wd?' flash-miss':'');$('wDb').className='slot full'+(wc!==wd?' flash-miss':'');
+  Object.keys(WP).forEach(p=>$('w_'+p).className=p===wp?'on':'');$('flushBtn').style.display=wp==='write-back'?'':'none'}
+function doWrite(){wv++;
+  if(wp==='write-through'){wc=wd=wv;log($('wLog'),`write x=${wv} → cache ✔ DB ✔ (consistent, slower)`,'h')}
+  else if(wp==='write-back'){wc=wv;log($('wLog'),`write x=${wv} → cache ✔ (DB still x=${wd}; crash now = lost write!)`,'w')}
+  else{wd=wv;log($('wLog'),`write x=${wv} → DB ✔ (cache still x=${wc} → stale until it expires)`,'m')}
+  wDraw()}
+function doFlush(){if(wc!==wd){wd=wc;log($('wLog'),`flush → DB now x=${wd}`,'h')}wDraw()}
+setWp('write-through');
+
+/* 6 TTL */
+let tDb=10,tVal=null,tLeft=0,tTotal=8,tTimer=null;
+$('tTtl').oninput=e=>$('tTtlV').textContent=e.target.value;
+function tDraw(){
+  $('tDb').textContent='Price: $'+tDb;
+  $('tCache').textContent=tVal==null?'—':'Price: $'+tVal;$('tCache').className='slot'+(tVal!=null?' full':'')+(tVal!=null&&tVal!==tDb?' flash-miss':'');
+  $('tTag').textContent=tVal==null?'empty':(tVal!==tDb?'STALE':'fresh');
+  $('tBar').style.width=tVal==null?'0':(tLeft/tTotal*100)+'%';
+}
+function tRead(){
+  if(tVal!=null){log($('tLog'),`HIT → $${tVal}${tVal!==tDb?'  ⚠ stale! DB has $'+tDb:''}`,tVal!==tDb?'m':'h')}
+  else{tVal=tDb;tTotal=tLeft=+$('tTtl').value;log($('tLog'),`MISS → loaded $${tVal} from DB, TTL ${tTotal}s`,'w');startT()}
+  tDraw()}
+function startT(){clearInterval(tTimer);tTimer=setInterval(()=>{tLeft-=0.25;if(tLeft<=0){clearInterval(tTimer);tVal=null;tLeft=0;log($('tLog'),'TTL expired → entry removed','w')}tDraw()},250)}
+function tChange(){tDb+=2;log($('tLog'),`DB price changed to $${tDb}`,'w');tDraw()}
+function tInval(){clearInterval(tTimer);tVal=null;tLeft=0;log($('tLog'),'Invalidated → next read will reload','w');tDraw()}
+tDraw();
+
+/* 7 HTTP */
+const HT={
+  'max-age (fresh)':{h:'Cache-Control: max-age=3600',steps:['1st visit: GET /logo.png → 200 OK (download 50 KB)','Revisit within 1 hour: <b class="h">served from browser cache — 0 network</b>','After 1 hour: copy is stale → must revalidate or re-download'],good:'Static assets with versioned file names'},
+  'ETag (revalidate)':{h:'Cache-Control: no-cache\nETag: "abc123"',steps:['1st visit: GET /api/profile → 200 OK + ETag "abc123" (5 KB)','Revisit: GET with <code>If-None-Match: "abc123"</code>','Unchanged: <b class="h">304 Not Modified (no body, ~200 bytes)</b>','Changed: 200 OK with new body + new ETag'],good:'Data that changes occasionally and must never be stale'},
+  'no-store (never)':{h:'Cache-Control: no-store',steps:['Every visit: GET /account → 200 OK full download','Nothing is saved on disk or in memory','<b class="m">Slowest, but safest</b>'],good:'Bank pages, personal data, tokens'},
+  'stale-while-revalidate':{h:'Cache-Control: max-age=60, stale-while-revalidate=600',steps:['Within 60s: served instantly from cache','60s–11min: <b class="h">old copy shown instantly</b> + background refresh','Next visit gets the fresh copy','Over 11 min: must wait for network'],good:'News feeds, dashboards — fast now, fresh soon'}
+};
+$('hBtns').innerHTML=Object.keys(HT).map((k,i)=>`<button id="h${i}" onclick="showHt(${i})">${k}</button>`).join('');
+function showHt(i){const k=Object.keys(HT)[i],v=HT[k];Object.keys(HT).forEach((_,j)=>$('h'+j).className=j===i?'on':'');
+  $('hOut').innerHTML=`<h4>Response header</h4><pre style="margin:0 0 10px"><code>${v.h}</code></pre><h4>What happens</h4><ol style="margin:0;padding-left:20px">${v.steps.map(s=>`<li>${s}</li>`).join('')}</ol><p style="margin:10px 0 0"><b>Good for:</b> ${v.good}</p>`}
+showHt(0);
+
+/* 8 stampede */
+function stamp(lock){$('stDb').textContent=lock?'1 (others waited for the first result)':'1000 💥 database overloaded'}
+</script>
+</body>
+</html>

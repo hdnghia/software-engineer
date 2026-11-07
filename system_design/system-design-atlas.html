@@ -1,0 +1,1097 @@
+<title>System Design Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky topic rail on the left, one topic per view on the right; every topic = explanation + live lab + trade-offs + self-check */
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --sunk:#E4E8ED; --ink:#141D26; --muted:#56636F; --line:#D3DAE1;
+  --accent:#2550C9; --accent-soft:#DFE7FA; --on-accent:#FFFFFF; --packet:#D9661F;
+  --ok:#1C7F53; --ok-soft:#DCF1E6; --warn:#A86C12; --warn-soft:#F6EBD5; --bad:#BC3A33; --bad-soft:#F8E0DE;
+  --c1:#2550C9; --c2:#D9661F; --c3:#1C7F53; --c4:#8A3FB8; --c5:#B8366E; --c6:#0E8A9A;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --hdr:56px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1318; --surface:#151C23; --sunk:#1B242D; --ink:#E3E9EF; --muted:#94A2AF; --line:#28323C;
+  --accent:#7A9CFF; --accent-soft:#1B2847; --on-accent:#0E1318; --packet:#F2914F;
+  --ok:#45C88E; --ok-soft:#14321F; --warn:#E3AE55; --warn-soft:#352914; --bad:#F2726A; --bad-soft:#3A1A19;
+  --c1:#7A9CFF; --c2:#F2914F; --c3:#45C88E; --c4:#C08CEB; --c5:#F07AAE; --c6:#4CC9D6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1318; --surface:#151C23; --sunk:#1B242D; --ink:#E3E9EF; --muted:#94A2AF; --line:#28323C;
+  --accent:#7A9CFF; --accent-soft:#1B2847; --on-accent:#0E1318; --packet:#F2914F;
+  --ok:#45C88E; --ok-soft:#14321F; --warn:#E3AE55; --warn-soft:#352914; --bad:#F2726A; --bad-soft:#3A1A19;
+  --c1:#7A9CFF; --c2:#F2914F; --c3:#45C88E; --c4:#C08CEB; --c5:#F07AAE; --c6:#4CC9D6; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--surface)}
+a{color:var(--accent);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;letter-spacing:-.01em;margin:0}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;height:var(--hdr);display:flex;align-items:center;gap:14px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 18px/1 var(--display);white-space:nowrap}
+.brand svg{flex:none}
+.prog{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.prog-bar{width:120px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.prog-bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.menu-btn{display:none}
+
+/* shell */
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;max-width:1260px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#nav{position:sticky;top:calc(var(--hdr) + env(safe-area-inset-top,0px));height:calc(100vh - var(--hdr) - env(safe-area-inset-top,0px));overflow:auto;padding-block:20px 40px}
+.search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:14px var(--body);margin-bottom:14px}
+.ngroup{margin-bottom:16px}
+.ngroup h3{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 6px 8px}
+#nav a{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.35}
+#nav a:hover{background:var(--sunk)}
+#nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+#nav .dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--line);flex:none}
+#nav a.done .dot{background:var(--ok);border-color:var(--ok)}
+main{min-width:0;padding-block:28px 80px;outline:none}
+.topic{max-width:860px}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);margin-bottom:8px}
+.topic h1{font-size:clamp(30px,4.6vw,44px);line-height:1.08;font-weight:700}
+.lede{font-size:17px;color:var(--muted);max-width:64ch;margin:12px 0 26px}
+.sec{margin-block:30px}
+.sec h2,.lab h2{font-size:21px;font-weight:700;margin-bottom:10px}
+.sec p{max-width:68ch}
+.keys{padding:0;margin:0;list-style:none;display:grid;gap:8px;max-width:72ch}
+.keys li{position:relative;padding-left:20px}
+.keys li::before{content:"";position:absolute;left:3px;top:.62em;width:7px;height:7px;border:1.5px solid var(--accent);transform:rotate(45deg)}
+.keys b{font-weight:600}
+code,.k{font-family:var(--mono);font-size:.88em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+
+/* lab */
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin-block:26px}
+.lab-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.lab-h h2{margin:0}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--on-accent);background:var(--accent);padding:3px 7px;border-radius:4px}
+.lab-note{color:var(--muted);margin:0 0 14px;font-size:14px;max-width:70ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 22px;margin-bottom:14px}
+.ctl{min-width:0}
+.sl{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-bottom:2px}
+.sl output{color:var(--ink);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number],input[type=text],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:14px var(--mono)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;font:500 13px/1.2 var(--body);cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn.done{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--bg)}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;font:500 13px var(--body);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-block:14px}
+.stat{background:var(--surface);padding:10px 12px;min-width:0}
+.stat-l{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.stat-v{display:block;font-size:19px;font-weight:500;overflow-wrap:anywhere}
+.stat-v.ok{color:var(--ok)}.stat-v.bad{color:var(--bad)}.stat-v.warn{color:var(--warn)}
+.formula{font:13px/1.5 var(--mono);color:var(--muted);background:var(--sunk);padding:8px 10px;border-radius:6px;overflow-x:auto;white-space:nowrap}
+.log{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font:13px/1.45 var(--mono)}
+.log li{padding:5px 9px;border-radius:5px;background:var(--sunk)}
+.log li.ok{background:var(--ok-soft);color:var(--ok)}.log li.bad{background:var(--bad-soft);color:var(--bad)}.log li.warn{background:var(--warn-soft);color:var(--warn)}
+.pill{display:inline-block;font:500 12px/1 var(--mono);padding:4px 8px;border-radius:99px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.tiles{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.tiles i{width:11px;height:11px;border-radius:2px;background:var(--sunk)}
+.tiles i.ok{background:var(--ok)}.tiles i.bad{background:var(--bad)}.tiles i.skip{background:var(--muted);opacity:.5}
+
+.tip{background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin-block:22px;max-width:72ch}
+.tip>span{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);font-weight:500}
+.tip p{margin:4px 0 0}
+.check{border-top:1px dashed var(--line);padding-block:12px;max-width:72ch}
+.check summary{cursor:pointer;font-weight:500}
+.check summary .mono{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--warn);margin-right:6px}
+.check p{margin:8px 0 0;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin-block:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--surface)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 11px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--surface);min-width:0}
+.card h3{font-size:16px;margin-bottom:4px}
+.card p{margin:0;font-size:14px;color:var(--muted)}
+.card .ex{font:12px var(--mono);color:var(--muted);margin-top:6px}
+
+/* diagrams */
+.dg-scroll{overflow-x:auto;margin-inline:-4px;padding:4px}
+svg.dg,svg.seq{width:100%;height:auto;display:block}
+.dg .edge{stroke:var(--line);stroke-width:1.6;transition:stroke .25s}
+.dg .edge.hot{stroke:var(--accent);stroke-width:2.4}
+.dg .node rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
+.dg .node .nl{fill:var(--ink);font:600 13px var(--body)}
+.dg .node .ns{fill:var(--muted);font:11px var(--mono)}
+.dg .node.hot rect{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.dg .node.leader rect{fill:var(--ok-soft);stroke:var(--ok);stroke-width:2}
+.dg .node.cand rect{fill:var(--warn-soft);stroke:var(--warn);stroke-width:2}
+.dg .node.bad rect{fill:var(--bad-soft);stroke:var(--bad);stroke-width:2}
+.dg .node.down{opacity:.35}
+.dg .node.link{cursor:pointer}
+.dg .node.link:hover rect{stroke:var(--accent)}
+.dg .elab,.seq .elab{fill:var(--muted);font:11px var(--mono)}
+.dg .packet{fill:var(--packet)}
+.dg .packet.bad{fill:var(--bad)}
+.seq .lane{stroke:var(--line);stroke-width:2;stroke-dasharray:4 4}
+.seq .msg{stroke:var(--ink);stroke-width:1.5}
+.seq .msg.dim{stroke:var(--muted);stroke-dasharray:5 4}
+.seq .nl{fill:var(--ink);font:600 13px var(--body)}
+.arrowhead{fill:var(--ink)}
+.step-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.step-n{font-size:12px;color:var(--muted);min-width:84px;text-align:center}
+.step-text{margin:10px 0 0;min-height:3.2em;max-width:72ch}
+
+/* lab-specific */
+.srvs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.srv{all:unset;box-sizing:border-box;cursor:pointer;border:1.5px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);display:block;min-width:0}
+.srv:hover{border-color:var(--accent)}
+.srv:focus-visible{outline:2px solid var(--accent)}
+.srv.down{opacity:.5;border-style:dashed}
+.srv.flash{border-color:var(--packet)}
+.srv-h{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.conns{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin:8px 0;min-height:36px;align-content:start}
+.conns i{aspect-ratio:1;border-radius:2px;background:var(--accent);max-width:100%}
+.conns i.long{background:var(--packet)}
+.srv-f{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.bucket{width:90px;height:150px;border:2px solid var(--ink);border-top:0;border-radius:0 0 10px 10px;position:relative;overflow:hidden;flex:none;background:var(--bg)}
+.bucket i{position:absolute;left:0;right:0;bottom:0;background:var(--accent);transition:height .1s linear}
+.bucket span{position:absolute;inset:auto 0 6px;text-align:center;font:500 13px var(--mono);color:var(--ink);mix-blend-mode:normal}
+.nodes3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.nbox{border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);min-width:0}
+.nbox b{display:block;font-size:13px}
+.nbox .v{font:500 26px var(--mono)}
+.nbox.lead{border-color:var(--ok)}
+.nbox.busy{border-color:var(--warn)}
+.nbox.part{border-color:var(--bad);border-style:dashed}
+.ring-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:center}
+.ring-wrap svg{width:100%;height:auto}
+.dist{display:grid;gap:6px}
+.dist div{display:grid;grid-template-columns:28px 1fr 36px;gap:8px;align-items:center;font:13px var(--mono)}
+.dist .bar{height:10px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.dist .bar i{display:block;height:100%}
+.slots{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;min-height:52px;align-items:center}
+.slot{width:48px;height:48px;border:1.5px solid var(--line);border-radius:7px;display:grid;place-items:center;font:600 18px var(--mono);background:var(--bg);position:relative}
+.slot small{position:absolute;bottom:1px;right:4px;font:10px var(--mono);color:var(--muted)}
+.slot.hit{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.slot.new{border-color:var(--accent);background:var(--accent-soft)}
+.slot.empty{border-style:dashed;color:var(--muted)}
+.keypad{display:flex;flex-wrap:wrap;gap:6px}
+.keypad .btn{font-family:var(--mono);width:42px;justify-content:center}
+canvas.chart{width:100%;height:180px;display:block;background:var(--bg);border-radius:6px}
+.cons{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cons span{font:12px var(--mono);padding:4px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent)}
+.cons span.idle{background:var(--sunk);color:var(--muted);text-decoration:line-through}
+.bits{display:flex;flex-wrap:wrap;gap:1px;font:12px var(--mono);margin:10px 0}
+.bits span{padding:3px 0;width:calc(100% / 32 - 1px);text-align:center;min-width:14px}
+.b-s{background:var(--sunk);color:var(--muted)}.b-t{background:var(--accent-soft);color:var(--accent)}.b-m{background:var(--warn-soft);color:var(--warn)}.b-q{background:var(--ok-soft);color:var(--ok)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.lat{display:grid;gap:6px}
+.lat-r{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr) 108px;gap:10px;align-items:center;font-size:13px}
+.lat-r .bar{height:14px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.lat-r .bar i{display:block;height:100%;border-radius:3px}
+.lat-r .v{text-align:right}
+.hbar{display:grid;grid-template-columns:120px minmax(0,1fr) 110px;gap:10px;align-items:center;font-size:13px;margin-block:6px}
+.hbar .bar{height:16px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.hbar .bar i{display:block;height:100%;border-radius:3px;background:var(--accent);transition:width .25s}
+.hbar .v{text-align:right}
+.grid-icons{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.grid-icons i{width:16px;height:22px;border-radius:3px;background:var(--accent)}
+.grid-icons i.spare{background:var(--ok)}
+.reps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.rep{width:64px;padding:8px 0;text-align:center;border:1.5px solid var(--line);border-radius:7px;font:500 13px var(--mono);background:var(--bg)}
+.rep.w{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.rep.r{outline:2px dashed var(--packet);outline-offset:3px}
+.rep small{display:block;font-size:10px;color:var(--muted)}
+.dbc{position:relative}
+.dbc .score{height:5px;background:var(--sunk);border-radius:3px;margin-top:8px;overflow:hidden}
+.dbc .score i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.dbc.top{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:6px 18px;margin-bottom:14px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.checks input{margin-top:4px;accent-color:var(--accent)}
+.phase{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface);margin-bottom:12px}
+.phase-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;margin-bottom:6px}
+.phase-h h3{font-size:18px}
+.q{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface);margin-bottom:12px}
+.q p.qq{margin:0 0 10px;font-weight:600}
+.q .opts{display:grid;gap:6px}
+.q .opts button{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:8px 10px;font:14px var(--body);cursor:pointer}
+.q .opts button:hover:not(:disabled){border-color:var(--accent)}
+.q .opts button.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opts button.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .why{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.groupcards h3.gh{font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:26px 0 10px}
+a.card{text-decoration:none;color:var(--ink);display:block}
+a.card:hover{border-color:var(--accent)}
+a.card.done h3::after{content:" ✓";color:var(--ok)}
+.tfoot{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);display:grid;gap:16px}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pn a{border:1px solid var(--line);border-radius:8px;padding:10px 14px;text-decoration:none;color:var(--ink);background:var(--surface);font-weight:600;min-width:0}
+.pn a span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:400}
+.pn a:hover{border-color:var(--accent)}
+.pn-r{text-align:right;grid-column:2}
+.scrim{display:none}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .menu-btn{display:inline-flex}
+  #nav{position:fixed;z-index:35;left:0;top:calc(var(--hdr) + env(safe-area-inset-top,0px));bottom:0;height:auto;width:min(310px,86vw);
+    background:var(--surface);border-right:1px solid var(--line);padding:16px;padding-left:max(16px,env(safe-area-inset-left,0px));
+    transform:translateX(-102%);transition:transform .22s}
+  #nav.open{transform:none}
+  .scrim.on{display:block;position:fixed;inset:0;z-index:34;background:rgba(0,0,0,.35)}
+  .prog-bar{display:none}
+  .ring-wrap{grid-template-columns:minmax(0,1fr)}
+  .lat-r{grid-template-columns:minmax(0,1fr) 92px}
+  .lat-r .bar{grid-column:1 / -1;order:3}
+  .hbar{grid-template-columns:90px minmax(0,1fr) 90px}
+}
+@media (max-width:520px){ .brand span{display:none} .pn{grid-template-columns:1fr} .pn-r{grid-column:1} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+
+<header class="top">
+  <button class="btn menu-btn" id="menu" aria-expanded="false" aria-controls="nav">☰ Topics</button>
+  <a class="brand" href="#map" aria-label="System Design Atlas home">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="5" cy="13" r="3.2" style="fill:var(--accent)"/><circle cx="20" cy="5" r="3.2" style="fill:var(--packet)"/><circle cx="20" cy="21" r="3.2" style="fill:var(--ok)"/><path d="M8 12 L17 6 M8 14 L17 20 M20 8 V18" style="stroke:var(--muted);stroke-width:1.6;fill:none"/></svg>
+    <span>System Design Atlas</span>
+  </a>
+  <div class="prog"><span id="prog-t" class="mono">0 / 0 understood</span><div class="prog-bar"><i id="prog-b"></i></div></div>
+</header>
+<div class="scrim" id="scrim"></div>
+<div class="shell">
+  <nav id="nav" aria-label="Topics">
+    <input class="search" id="q" type="search" placeholder="Filter topics…" aria-label="Filter topics">
+    <div id="nav-list"></div>
+  </nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+/* ---------- utilities ---------- */
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NS = 'http://www.w3.org/2000/svg';
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d }catch(e){ return d } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch(e){} }
+};
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function fmt(n, d=1){
+  const a = Math.abs(n);
+  const t = (v, s) => (+v.toFixed(d)).toLocaleString('en-US') + s;
+  if (a >= 1e12) return t(n/1e12,'T'); if (a >= 1e9) return t(n/1e9,'B');
+  if (a >= 1e6) return t(n/1e6,'M'); if (a >= 1e4) return t(n/1e3,'K');
+  return (+n.toFixed(a < 10 ? 2 : 0)).toLocaleString('en-US');
+}
+function fmtBytes(b){ const u=['B','KB','MB','GB','TB','PB','EB']; let i=0; while(b>=1000 && i<u.length-1){b/=1000;i++} return (+b.toFixed(b<10?2:b<100?1:0))+' '+u[i] }
+function fmtDur(s){
+  const r = (v,u) => (+v.toFixed(v<10?1:0)).toLocaleString('en-US')+' '+u;
+  if (s < 1e-6) return r(s*1e9,'ns'); if (s < 1e-3) return r(s*1e6,'µs'); if (s < 1) return r(s*1e3,'ms');
+  if (s < 60) return r(s,'s'); if (s < 3600) return r(s/60,'min'); if (s < 86400) return r(s/3600,'h');
+  if (s < 86400*365) return r(s/86400,'days'); return r(s/86400/365,'years');
+}
+function hash32(str){ let h=0x811c9dc5; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0 }
+  h^=h>>>16; h=Math.imul(h,0x85ebca6b)>>>0; h^=h>>>13; h=Math.imul(h,0xc2b2ae35)>>>0; h^=h>>>16; return h>>>0 }
+const B62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function base62(n){ n = BigInt(n); if (n === 0n) return '0'; let s=''; while(n>0n){ s = B62[Number(n%62n)] + s; n/=62n } return s }
+
+/* ---------- content helpers ---------- */
+const lab = (title, inner, note='') => `<section class="lab"><div class="lab-h"><span class="tag mono">Try it</span><h2>${title}</h2></div>${note?`<p class="lab-note">${note}</p>`:''}${inner}</section>`;
+const sec = (title, inner) => `<section class="sec"><h2>${title}</h2>${inner}</section>`;
+const keys = a => `<ul class="keys">${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+const tip = x => `<aside class="tip"><span class="mono">Interview angle</span><p>${x}</p></aside>`;
+const table = (h, rows) => `<div class="tbl"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const check = (q, a) => `<details class="check"><summary><span class="mono">Check yourself</span>${q}</summary><p>${a}</p></details>`;
+const slider = (id, label, min, max, step, val) => `<div class="ctl"><label class="sl" for="${id}"><span>${label}</span><output id="${id}-o"></output></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
+const num = (id, label, val, step='any') => `<div class="ctl"><label class="sl" for="${id}"><span>${label}</span></label><input type="number" id="${id}" value="${val}" step="${step}" min="0"></div>`;
+const seg = (id, opts, val, label) => `<div class="seg" id="${id}" role="group" aria-label="${label||id}">${opts.map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${v===val}">${l}</button>`).join('')}</div>`;
+const stat = (id, label) => `<div class="stat"><span class="stat-l">${label}</span><span class="stat-v mono" id="${id}">–</span></div>`;
+const stats = (...s) => `<div class="stats">${s.join('')}</div>`;
+const cards = a => `<div class="cards">${a.map(([t,p,ex])=>`<div class="card"><h3>${t}</h3><p>${p}</p>${ex?`<div class="ex">${ex}</div>`:''}</div>`).join('')}</div>`;
+function bindSeg(r, id, fn){ const g = r.querySelector('#'+id); g.addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); fn(b.dataset.v) }) }
+function bindRange(r, id, fn, f=v=>v){ const el = r.querySelector('#'+id), o = r.querySelector('#'+id+'-o'); const u = () => { const v = +el.value; o.textContent = f(v); fn(v) }; el.addEventListener('input', u); u(); return el }
+const $ = (r, s) => r.querySelector(s);
+const setT = (r, id, v, cls) => { const el = r.querySelector('#'+id); if(!el) return; el.textContent = v; if (cls !== undefined) el.className = 'stat-v mono ' + cls };
+
+/* ---------- diagram + stepper ---------- */
+function diagram(host, spec){
+  const BW = spec.bw || 120, BH = spec.bh || 50, N = {};
+  spec.nodes.forEach(n => N[n.id] = n);
+  const box = n => ({ w: n.w || BW, h: n.h || BH });
+  const clip = (a, b) => { const dx=b.x-a.x, dy=b.y-a.y, {w,h}=box(a); const s=Math.min((w/2+5)/Math.abs(dx||1e-9),(h/2+5)/Math.abs(dy||1e-9)); return {x:a.x+dx*s, y:a.y+dy*s} };
+  const ends = (a, b) => [clip(N[a],N[b]), clip(N[b],N[a])];
+  let s = `<svg viewBox="0 0 ${spec.w} ${spec.h}" class="dg" style="min-width:${spec.minw||520}px" role="img" aria-label="${spec.label||'Diagram'}"><g>`;
+  (spec.edges||[]).forEach(([a,b,lab]) => { const [p,q] = ends(a,b);
+    s += `<line class="edge" data-e="${a}|${b}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
+    if (lab) s += `<text class="elab" x="${(p.x+q.x)/2}" y="${(p.y+q.y)/2-6}" text-anchor="middle">${lab}</text>` });
+  s += '</g><g>';
+  spec.nodes.forEach(n => { const {w,h} = box(n);
+    s += `<g class="node ${n.kind||''}" data-id="${n.id}" transform="translate(${n.x-w/2},${n.y-h/2})"><rect width="${w}" height="${h}" rx="8"/><text class="nl" x="${w/2}" y="${h/2-3}" text-anchor="middle">${n.label}</text><text class="ns" x="${w/2}" y="${h/2+14}" text-anchor="middle"></text></g>` });
+  s += '</g><g class="pk"></g></svg>';
+  host.innerHTML = s;
+  const svg = host.querySelector('svg');
+  const nodeEl = id => svg.querySelector(`.node[data-id="${id}"]`);
+  function setSub(id, t){ const g = nodeEl(id); if(!g) return; const {h} = box(N[id]); g.querySelector('.ns').textContent = t || ''; g.querySelector('.nl').setAttribute('y', t ? h/2-3 : h/2+5) }
+  spec.nodes.forEach(n => setSub(n.id, n.sub));
+  function packet(a, b, delay, cls){
+    if (RM) return;
+    const [p,q] = ends(a,b);
+    setTimeout(() => {
+      const c = document.createElementNS(NS,'circle'); c.setAttribute('r',6); c.setAttribute('class','packet '+(cls||''));
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); svg.querySelector('.pk').appendChild(c);
+      const t0 = performance.now(), D = 620;
+      (function f(t){ let k = Math.min(1,(t-t0)/D); const e = k<.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+        c.setAttribute('cx', p.x+(q.x-p.x)*e); c.setAttribute('cy', p.y+(q.y-p.y)*e);
+        if (k < 1) requestAnimationFrame(f); else setTimeout(()=>c.remove(),160) })(t0);
+    }, delay);
+  }
+  function set(st){
+    svg.querySelectorAll('.node').forEach(g => g.classList.remove('hot','leader','cand','bad','down'));
+    svg.querySelectorAll('.edge').forEach(e => e.classList.remove('hot'));
+    spec.nodes.forEach(n => setSub(n.id, n.sub));
+    (st.hot||[]).forEach(id => nodeEl(id)?.classList.add('hot'));
+    Object.entries(st.cls||{}).forEach(([id,c]) => nodeEl(id)?.classList.add(c));
+    Object.entries(st.sub||{}).forEach(([id,t]) => setSub(id,t));
+    (st.flow||[]).forEach((f, i) => {
+      const [path, cls] = f.split(':'); const [a,b] = path.split('>');
+      const e = svg.querySelector(`.edge[data-e="${a}|${b}"]`) || svg.querySelector(`.edge[data-e="${b}|${a}"]`);
+      e?.classList.add('hot');
+      if (!st.hot) { nodeEl(a)?.classList.add('hot'); nodeEl(b)?.classList.add('hot') }
+      packet(a, b, i*430, cls);
+    });
+  }
+  return { svg, set, nodeEl };
+}
+function stepper(host, spec, steps, life){
+  if (host._stop) host._stop();
+  host.innerHTML = `<div class="dg-scroll"></div><div class="step-bar"><button class="btn" data-a="prev" aria-label="Previous step">←</button><span class="step-n mono"></span><button class="btn primary" data-a="next">Next step →</button><button class="btn" data-a="play">▶ Auto-play</button></div><p class="step-text" aria-live="polite"></p>`;
+  const d = diagram(host.querySelector('.dg-scroll'), spec);
+  let i = 0, timer = null;
+  const [prev, next, play] = ['prev','next','play'].map(a => host.querySelector(`[data-a="${a}"]`));
+  function show(){ const st = steps[i]; d.set(st); host.querySelector('.step-n').textContent = `Step ${i+1} / ${steps.length}`; host.querySelector('.step-text').innerHTML = st.text; prev.disabled = i===0; next.disabled = i===steps.length-1 }
+  function stop(){ clearInterval(timer); timer = null; play.textContent = '▶ Auto-play' }
+  prev.onclick = () => { stop(); if(i>0){i--; show()} };
+  next.onclick = () => { stop(); if(i<steps.length-1){i++; show()} };
+  play.onclick = () => { if (timer) return stop(); if (i===steps.length-1){ i=0; show() } play.textContent = '❚❚ Pause';
+    timer = setInterval(() => { if (i<steps.length-1){ i++; show() } else stop() }, 2800) };
+  host._stop = stop;
+  life.add(() => clearInterval(timer));
+  show();
+  return d;
+}
+function seqSVG(evts, title){
+  const W=480, cx=90, sx=390, y0=56, k=2.3, H=y0+100*k+24;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="seq" style="min-width:420px" role="img" aria-label="${title}"><defs><marker id="ar-seq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" class="arrowhead"/></marker></defs>
+  <text x="${cx}" y="24" class="nl" text-anchor="middle">Client</text><text x="${sx}" y="24" class="nl" text-anchor="middle">Server</text>
+  <line x1="${cx}" y1="34" x2="${cx}" y2="${H-8}" class="lane"/><line x1="${sx}" y1="34" x2="${sx}" y2="${H-8}" class="lane"/>`;
+  evts.forEach(e => { const y1 = y0+e.t*k, y2 = y0+(e.t2 ?? e.t+5)*k; const [x1,x2] = e.d==='cs' ? [cx,sx] : [sx,cx];
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="msg ${e.kind||''}" marker-end="url(#ar-seq)"/><text x="${(cx+sx)/2}" y="${(y1+y2)/2-6}" class="elab" text-anchor="middle">${e.label}</text>` });
+  return s + '</svg>';
+}
+function canvasCtx(cv){ const dpr = window.devicePixelRatio||1, w = cv.clientWidth||600, h = cv.clientHeight||180; cv.width = w*dpr; cv.height = h*dpr; const c = cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); return {c,w,h} }
+
+/* ---------- topics ---------- */
+const T = [];
+const topic = o => T.push(o);
+
+topic({ id:'map', group:'Start here', title:'Follow one request', nav:'Overview: one request',
+  card:'Watch a single request travel through a typical web system.',
+  lede:'Almost every system design question is a variation of one picture. Step through a single request to see each building block and why it exists, then open any topic below to go deeper.',
+  body:()=> lab('The life of a request', `<div id="journey"></div>`, 'Press Next step, or click any box to open its topic.') +
+    `<div class="groupcards" id="gc"></div>`,
+  mount(r, life){
+    const spec = { w:900, h:380, minw:660, label:'Request flow through client, DNS, CDN, load balancer, app servers, cache, database, queue and workers',
+      nodes:[
+        {id:'client',x:80,y:190,label:'Client',sub:'browser / app',kind:'link'},
+        {id:'dns',x:240,y:60,label:'DNS',sub:'name → IP',kind:'link'},
+        {id:'cdn',x:240,y:320,label:'CDN edge',sub:'static files',kind:'link'},
+        {id:'lb',x:410,y:190,label:'Load balancer',sub:'L4 / L7',kind:'link'},
+        {id:'app',x:580,y:190,label:'App servers',sub:'stateless',kind:'link'},
+        {id:'cache',x:790,y:70,label:'Cache',sub:'Redis',kind:'link'},
+        {id:'db',x:790,y:190,label:'Database',sub:'primary + replicas',w:140,kind:'link'},
+        {id:'queue',x:580,y:320,label:'Queue',sub:'Kafka / SQS',kind:'link'},
+        {id:'worker',x:790,y:320,label:'Workers',sub:'async jobs',kind:'link'}],
+      edges:[['client','dns'],['client','cdn'],['client','lb'],['lb','app'],['app','cache'],['app','db'],['app','queue'],['queue','worker'],['worker','db']] };
+    const steps = [
+      {flow:['client>dns','dns>client'], text:'The browser asks <a href="#dns-cdn">DNS</a> for the IP address of <code>api.example.com</code>. Answers are cached by the browser, OS and resolver, so this is usually instant.'},
+      {flow:['client>cdn','cdn>client'], text:'Images, scripts and CSS come from the nearest <a href="#dns-cdn">CDN</a> edge. Most bytes never touch your own servers.'},
+      {flow:['client>lb'], text:'The API call reaches a <a href="#lb">load balancer</a>. It terminates TLS, checks which servers are healthy and picks one.'},
+      {flow:['lb>app'], text:'Any app server can handle it because none of them keep session state locally. That is what makes <a href="#scaling">horizontal scaling</a> work.'},
+      {flow:['app>cache','cache>app'], text:'The server checks the <a href="#caching">cache</a> first. A hit returns in well under a millisecond.'},
+      {flow:['app>db','db>app'], text:'On a miss it queries the <a href="#databases">database</a> and fills the cache. Reads can go to <a href="#replication">replicas</a>; large data sets are <a href="#sharding">sharded</a>.'},
+      {flow:['app>queue'], text:'Slow work (emails, thumbnails, feed fan-out) goes onto a <a href="#queues">queue</a> so the user does not wait for it.'},
+      {flow:['queue>worker','worker>db'], text:'Workers pull from the queue at their own pace and <a href="#resilience">retry</a> failures without the user noticing.'},
+      {flow:['app>lb','lb>client'], text:'The response goes back. Every hop is measured with <a href="#observability">metrics, logs and traces</a> so you know where time is spent.'}];
+    const d = stepper($(r,'#journey'), spec, steps, life);
+    const go = {client:'framework',dns:'dns-cdn',cdn:'dns-cdn',lb:'lb',app:'scaling',cache:'caching',db:'databases',queue:'queues',worker:'queues'};
+    d.svg.addEventListener('click', e => { const g = e.target.closest('.node'); if (g) location.hash = go[g.dataset.id] });
+    const groups = [...new Set(T.map(t=>t.group))].filter(g=>g!=='Start here' || true);
+    $(r,'#gc').innerHTML = groups.map(g => `<h3 class="gh">${g}</h3><div class="cards">${T.filter(t=>t.group===g && t.id!=='map').map(t=>`<a class="card ${learned.has(t.id)?'done':''}" href="#${t.id}"><h3>${t.title}</h3><p>${t.card}</p></a>`).join('')}</div>`).join('');
+  }});
+
+topic({ id:'framework', group:'Start here', title:'The interview framework', nav:'Interview framework',
+  card:'A 45-minute plan: requirements, estimates, design, deep dive.',
+  lede:'A good design answer is a conversation with a structure. Spend the first minutes narrowing the problem, then build outward from a simple working design. Tick items off as you practise.',
+  body:()=> `<div id="fw"></div>` + tip('Say your assumptions out loud and write them down. Interviewers grade the reasoning behind a choice more than the choice itself.') +
+    sec('Common mistakes', keys(['<b>Jumping to components.</b> Naming Kafka before knowing the read/write ratio.','<b>Designing for Google scale by default.</b> 1,000 users do not need sharding.','<b>No numbers.</b> Without QPS and storage you cannot justify any choice.','<b>Silence during the deep dive.</b> Narrate trade-offs; it is the main signal.','<b>Ignoring failure.</b> Always ask what happens when a box in your diagram dies.'])) +
+    check('Why start with non-functional requirements like latency and consistency?', 'They decide the architecture. "Feed may be 5 seconds stale" allows caching and async fan-out; "balance must never be wrong" forces strong consistency and transactions.'),
+  mount(r){
+    const P = [
+      ['Clarify requirements','~5 min',['List 3–5 core features (functional requirements)','Ask scale: daily active users, reads vs writes','Agree on latency, availability and consistency targets','State what is out of scope']],
+      ['Estimate','~5 min',['Requests per second, average and peak','Storage per year','Bandwidth and cache memory if relevant','Decide read-heavy or write-heavy']],
+      ['High-level design','~10–15 min',['Define the API (endpoints, key params)','Sketch the data model and pick a database','Draw client → LB → services → storage','Walk one request end to end']],
+      ['Deep dive','~15–20 min',['Find the bottleneck and scale it (cache, shard, replicate)','Handle failures: retries, timeouts, redundancy','Discuss consistency and edge cases','Name trade-offs you made and alternatives']],
+      ['Wrap up','~5 min',['Summarize the design in 30 seconds','Mention monitoring and alerts','Mention what you would build next']]];
+    const st = store.get('sda-fw', {});
+    $(r,'#fw').innerHTML = P.map(([t,m,items],pi) => `<div class="phase"><div class="phase-h"><h3>${pi+1}. ${t}</h3><span class="pill mono">${m}</span></div><div class="checks">${items.map((x,ii)=>`<label><input type="checkbox" id="fw-${pi}-${ii}" ${st[pi+'-'+ii]?'checked':''}> ${x}</label>`).join('')}</div></div>`).join('');
+    $(r,'#fw').addEventListener('change', e => { const id = e.target.id.slice(3); st[id] = e.target.checked; store.set('sda-fw', st) });
+  }});
+
+topic({ id:'estimation', group:'Start here', title:'Back-of-envelope estimation', nav:'Estimation',
+  card:'Turn users into QPS, storage and bandwidth in a minute.',
+  lede:'Rough numbers tell you which problems are real. A system doing 50 writes per second and one doing 500,000 need very different designs.',
+  body:()=> lab('Capacity calculator', `<div class="ctls">${num('e-dau','Daily active users (millions)',10)}${num('e-rpu','Requests per user per day',20)}${slider('e-rw','Reads per write',1,200,1,10)}${num('e-kb','Size of one write (KB)',1)}${slider('e-peak','Peak / average traffic',1,10,0.5,3)}${num('e-yr','Keep data for (years)',5)}</div>
+    ${stats(stat('e-qps','Average QPS'),stat('e-pk','Peak QPS'),stat('e-r','Read QPS'),stat('e-w','Write QPS'),stat('e-sd','New storage / day'),stat('e-st','Total storage'),stat('e-bw','Write bandwidth'))}<div class="formula" id="e-f"></div>`) +
+    sec('Numbers to remember', table(['Shortcut','Value'],[['Seconds in a day','86,400 ≈ 10<sup>5</sup>'],['1 million requests/day','≈ 12 per second'],['1 billion requests/day','≈ 12,000 per second'],['2<sup>10</sup> / 2<sup>20</sup> / 2<sup>30</sup> / 2<sup>40</sup>','1 KB / 1 MB / 1 GB / 1 TB (approx.)'],['One server (simple web app)','1K–10K requests/s'],['One Redis node','~100K ops/s'],['One Postgres primary','~5K–20K writes/s (varies widely)'],['A tweet-sized row','~300 bytes – 1 KB']])) +
+    tip('Round aggressively. Say “about 1,000 QPS” instead of 1,157. The goal is the order of magnitude.') +
+    check('100M DAU each posting 2 photos/day at 500 KB. Storage per year?', '100M × 2 × 500 KB = 100 TB per day, about 36 PB per year. That points to object storage (S3-like) plus a CDN, not a database.'),
+  mount(r){
+    const v = id => +$(r,'#'+id).value || 0; let rw = 10, peak = 3;
+    function calc(){ const dau=v('e-dau')*1e6, rpu=v('e-rpu'), kb=v('e-kb'), yr=v('e-yr');
+      const perDay = dau*rpu, qps = perDay/86400, w = qps/(rw+1), rd = qps-w, sd = w*86400*kb*1000;
+      setT(r,'e-qps',fmt(qps)); setT(r,'e-pk',fmt(qps*peak)); setT(r,'e-r',fmt(rd)); setT(r,'e-w',fmt(w));
+      setT(r,'e-sd',fmtBytes(sd)); setT(r,'e-st',fmtBytes(sd*365*yr)); setT(r,'e-bw',fmtBytes(w*kb*1000)+'/s');
+      $(r,'#e-f').textContent = `${fmt(dau)} users × ${rpu} req ÷ 86,400 s ≈ ${fmt(qps)} req/s · writes = QPS ÷ (${rw}+1) ≈ ${fmt(w)}/s`; }
+    ['e-dau','e-rpu','e-kb','e-yr'].forEach(id => $(r,'#'+id).addEventListener('input', calc));
+    bindRange(r,'e-rw',x=>{rw=x;calc()},x=>x+' : 1'); bindRange(r,'e-peak',x=>{peak=x;calc()},x=>'×'+x);
+  }});
+
+const LAT = [['L1 cache reference',0.5],['Branch mispredict',5],['L2 cache reference',7],['Mutex lock/unlock',25],['Main memory reference',100],['Compress 1 KB (Snappy)',3000],['Send 1 KB over 1 Gbps',10000],['Read 4 KB randomly from SSD',150000],['Read 1 MB from memory',250000],['Round trip within a datacenter',500000],['Read 1 MB from SSD',1e6],['Disk seek (HDD)',1e7],['Read 1 MB from HDD',2e7],['Packet California → Europe → California',1.5e8]];
+topic({ id:'latency', group:'Start here', title:'Latency numbers', nav:'Latency numbers',
+  card:'Memory vs SSD vs network, on one scale.',
+  lede:'These classic numbers explain why caches exist, why data locality matters, and why cross-region calls are expensive. The bars are on a log scale; each grid step is 10× slower.',
+  body:()=> lab('Every engineer should know', `<div class="row" style="margin-bottom:12px">${seg('l-mode',[['real','Real time'],['human','If 1 ns were 1 second']],'real','Time scale')}</div><div class="lat" id="lat"></div>`) +
+    sec('What follows from these numbers', keys(['Memory is ~1,000× faster than SSD for random reads. That is why Redis and in-process caches pay off.','A same-datacenter round trip (0.5 ms) is cheap; a cross-continent one (150 ms) is not. Keep chatty calls inside one region.','Sequential reads are far cheaper than random ones. Log-structured storage (Kafka, LSM trees) exploits this.','Compress before sending over slow links: CPU is cheap compared to the network.'])) +
+    check('A page makes 20 sequential calls to a service in another region. Rough minimum latency?', '20 × ~150 ms round trip ≈ 3 seconds. Batch the calls, run them in parallel, or move the data closer.'),
+  mount(r){
+    const cols = ['--c1','--c1','--c1','--c1','--c1','--c3','--c6','--c4','--c3','--c6','--c4','--c2','--c2','--c5'];
+    function draw(mode){ const lo = Math.log10(0.3), hi = Math.log10(2e8);
+      $(r,'#lat').innerHTML = LAT.map(([n,ns],i) => { const w = (Math.log10(ns)-lo)/(hi-lo)*100;
+        const val = mode==='human' ? fmtDur(ns) : fmtDur(ns/1e9);
+        return `<div class="lat-r"><span>${n}</span><div class="bar"><i style="width:${w}%;background:var(${cols[i]})"></i></div><span class="v mono">${val}</span></div>` }).join('') }
+    bindSeg(r,'l-mode',draw); draw('real');
+  }});
+
+topic({ id:'scaling', group:'Foundations', title:'Vertical vs horizontal scaling', nav:'Scaling',
+  card:'Bigger machine, or more machines?',
+  lede:'Vertical scaling buys a bigger machine. Horizontal scaling adds more machines behind a load balancer. The first is simple and hits a ceiling; the second is unlimited but needs stateless services.',
+  body:()=> lab('Grow the traffic', `<div class="ctls">${slider('s-rps','Incoming traffic',500,120000,500,6000)}</div>
+    <div class="nodes3"><div class="nbox"><b>Vertical: one big server</b><div id="s-v" style="margin-top:6px"></div></div><div class="nbox"><b>Horizontal: many 2K req/s servers (N+1)</b><div id="s-h" style="margin-top:6px"></div><div class="grid-icons" id="s-ic"></div></div></div>`, 'Each small server handles 2,000 req/s at $150/month. Prices are illustrative.') +
+    table(['','Vertical (scale up)','Horizontal (scale out)'],[['How','Bigger CPU, RAM, disk','More servers + load balancer'],['Limit','Largest machine you can buy','Practically none'],['Failure','Single point of failure','One server dying loses 1/N capacity'],['Complexity','Very low','Needs stateless app, shared session store'],['Good for','Databases early on, quick wins','Web/API tiers, workers']]) +
+    sec('Making a service horizontally scalable', keys(['<b>Stateless servers.</b> Move sessions to Redis or signed tokens (JWT) so any server can serve any user.','<b>Shared storage.</b> Files go to object storage, not local disk.','<b>Health checks + autoscaling.</b> Add servers when CPU or queue depth rises; remove when idle.','<b>Databases are the hard part.</b> Scale reads with <a href="#replication">replicas</a> and writes with <a href="#sharding">sharding</a>.'])) +
+    tip('Start with “one server and a database”, then scale only the part that the numbers say is the bottleneck.') +
+    check('Why is "N+1" used when sizing a horizontal pool?', 'So that losing any single server (crash or deploy) still leaves enough capacity for full traffic.'),
+  mount(r){
+    const tiers = [['4 vCPU / 16 GB',2000,150],['16 vCPU / 64 GB',8000,700],['64 vCPU / 256 GB',30000,3200],['192 vCPU / 768 GB (largest)',70000,12000]];
+    bindRange(r,'s-rps', rps => {
+      const t = tiers.find(x=>x[1]>=rps);
+      $(r,'#s-v').innerHTML = t ? `<span class="pill ok">fits</span> <span class="mono">${t[0]}</span><div class="mono" style="font-size:13px;color:var(--muted)">$${t[2].toLocaleString()}/mo · ${Math.round(rps/t[1]*100)}% busy · no redundancy</div>` : `<span class="pill bad">no machine is big enough</span><div style="font-size:13px;color:var(--muted)">Traffic exceeds the largest server (70K req/s). You must scale out.</div>`;
+      const n = Math.ceil(rps/2000)+1;
+      $(r,'#s-h').innerHTML = `<span class="pill ok">${n} servers</span> <span class="mono" style="font-size:13px;color:var(--muted)">$${(n*150).toLocaleString()}/mo · survives 1 failure</span>`;
+      $(r,'#s-ic').innerHTML = Array.from({length:Math.min(n,70)},(_,i)=>`<i class="${i===n-1?'spare':''}" title="${i===n-1?'spare':'server'}"></i>`).join('') + (n>70?` <span class="mono">+${n-70}</span>`:'');
+    }, v => fmt(v)+' req/s');
+  }});
+
+topic({ id:'availability', group:'Foundations', title:'Availability and the nines', nav:'Availability',
+  card:'What 99.9% means, and how redundancy multiplies it.',
+  lede:'Availability is the fraction of time a system works. Components in a chain multiply their availability down; redundant copies in parallel push it up.',
+  body:()=> table(['Availability','Downtime / year','Downtime / month','Downtime / day'],[['99% (two nines)','3.65 days','7.3 hours','14.4 min'],['99.9%','8.77 hours','43.8 min','1.44 min'],['99.95%','4.38 hours','21.9 min','43 s'],['99.99%','52.6 min','4.38 min','8.6 s'],['99.999%','5.26 min','26.3 s','0.86 s']]) +
+    lab('Build a chain', `<div id="av-rows" style="display:grid;gap:8px"></div>${stats(stat('av-t','Whole system'),stat('av-y','Downtime / year'),stat('av-m','Downtime / month'))}<div class="formula">series: A = A₁ × A₂ × … · parallel copies: A = 1 − (1 − a)ⁿ</div>`, 'A request needs every layer to work (series). Add copies of a layer (parallel) and watch the total change.') +
+    sec('How to raise availability', keys(['<b>Remove single points of failure.</b> Two load balancers, multiple app servers, a standby database.','<b>Fail over automatically.</b> Health checks plus promotion of a replica.','<b>Spread across zones and regions.</b> A zone outage should not take you down.','<b>Degrade gracefully.</b> Serve cached or partial results when a dependency is down.','<b>Ship safely.</b> Most outages come from deploys; use canaries and fast rollback.'])) +
+    check('Three services in series, each 99.9%. Overall?', '0.999³ ≈ 99.7%, about 26 hours of downtime a year. Each dependency you add lowers the ceiling.'),
+  mount(r){
+    const rows = [{n:'Load balancer',a:99.99,k:1},{n:'App server',a:99.5,k:1},{n:'Cache',a:99.9,k:1},{n:'Database',a:99.9,k:1}];
+    const host = $(r,'#av-rows');
+    function draw(){
+      host.innerHTML = rows.map((x,i)=>{ const eff = 1-Math.pow(1-x.a/100,x.k);
+        return `<div class="row" style="justify-content:space-between;border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:var(--bg)"><b style="min-width:120px">${x.n}</b><label class="row" style="gap:6px;font-size:13px">each <input type="number" id="av-a-${i}" value="${x.a}" step="0.01" max="100" style="width:90px"> %</label><span class="row" style="gap:6px;font-size:13px">copies <button class="btn" data-i="${i}" data-d="-1" aria-label="Fewer copies">−</button><b class="mono">${x.k}</b><button class="btn" data-i="${i}" data-d="1" aria-label="More copies">+</button></span><span class="mono" style="min-width:90px;text-align:right">${(eff*100).toFixed(5).replace(/0+$/,'')}%</span></div>` }).join('');
+      const tot = rows.reduce((p,x)=>p*(1-Math.pow(1-x.a/100,x.k)),1);
+      setT(r,'av-t',(tot*100).toFixed(4)+'%', tot>=0.9999?'ok':tot>=0.999?'warn':'bad');
+      setT(r,'av-y',fmtDur((1-tot)*365*86400)); setT(r,'av-m',fmtDur((1-tot)*30*86400));
+    }
+    host.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if(!b) return; const x = rows[b.dataset.i]; x.k = Math.max(1,Math.min(5,x.k+ +b.dataset.d)); draw() });
+    host.addEventListener('change', e => { const m = e.target.id.match(/av-a-(\d)/); if(!m) return; rows[m[1]].a = Math.min(100,Math.max(0,+e.target.value||0)); draw() });
+    draw();
+  }});
+
+topic({ id:'cap', group:'Foundations', title:'CAP theorem and PACELC', nav:'CAP & PACELC',
+  card:'During a network split, pick consistency or availability.',
+  lede:'Networks fail, so partitions will happen (P). When they do, a distributed store must choose: refuse requests to stay correct (CP), or answer with possibly stale data (AP).',
+  body:()=> lab('Split the network', `<div class="row" style="margin-bottom:12px">${seg('c-mode',[['CP','CP: consistent'],['AP','AP: available']],'CP','Mode')}<button class="btn" id="c-part">Cut the network</button></div>
+    <div class="nodes3"><div class="nbox" id="c-A"><b>Node A</b><span class="v" id="c-av">x = 1</span></div><div class="nbox" id="c-B"><b>Node B</b><span class="v" id="c-bv">x = 1</span></div></div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="c-w">Write new x to A</button><button class="btn" id="c-r">Read x from B</button></div><ul class="log" id="c-log"></ul>`, 'Write to A, then read from B. Repeat after cutting the network, in both modes.') +
+    table(['Choice','During a partition','Examples'],[['CP','Rejects or blocks some requests so nobody reads stale data','Zookeeper, etcd, HBase, Spanner, MongoDB (default)'],['AP','Every node keeps answering; replicas reconcile later','Cassandra, DynamoDB, Riak, CouchDB, DNS']]) +
+    sec('PACELC: the everyday trade-off', `<p>CAP only covers failures. PACELC adds the normal case: <b>if Partition</b> choose <b>A</b> or <b>C</b>, <b>Else</b> choose <b>L</b>atency or <b>C</b>onsistency. Waiting for replicas to confirm a write makes it consistent but slower, even when nothing is broken.</p>` + keys(['<b>PA/EL</b> (Cassandra, DynamoDB): available and fast, eventually consistent.','<b>PC/EC</b> (Spanner, etcd): always consistent, pays latency.','<b>PA/EC</b> (MongoDB-like setups): consistent normally, available under partition.'])) +
+    tip('Pick per feature, not per company. A bank balance needs CP; a like counter or a feed is fine as AP.') +
+    check('Why can\'t you choose "CA"?', 'In a distributed system you cannot prevent partitions, so P is not optional. "CA" only describes a single-node system.'),
+  mount(r){
+    let mode='CP', part=false, a=1, b=1; const log = $(r,'#c-log');
+    const add = (t,c) => { log.insertAdjacentHTML('afterbegin',`<li class="${c||''}">${t}</li>`); while(log.children.length>6) log.lastChild.remove() };
+    const draw = () => { $(r,'#c-av').textContent='x = '+a; $(r,'#c-bv').textContent='x = '+b; $(r,'#c-A').className='nbox'+(part?' part':''); $(r,'#c-B').className='nbox'+(part?' part':''); $(r,'#c-part').textContent = part ? 'Heal the network' : 'Cut the network' };
+    bindSeg(r,'c-mode',m=>{mode=m; add(`Switched to ${m}`)});
+    $(r,'#c-part').onclick = () => { part=!part;
+      if(!part){ if(b!==a){ add(`Network healed. B syncs to x = ${a} (last write wins).`,'warn'); b=a } else add('Network healed.') }
+      else add('Network cut. A and B cannot talk.','bad'); draw() };
+    $(r,'#c-w').onclick = () => { const nv = Math.max(a,b)+1;
+      if(!part){ a=b=nv; add(`Write x = ${nv} to A, replicated to B. ✓`,'ok') }
+      else if(mode==='CP') add(`Write rejected: A cannot reach B to confirm. Consistency kept, availability lost.`,'bad')
+      else { a=nv; add(`Write x = ${nv} accepted by A only. B does not know yet.`,'warn') }
+      draw() };
+    $(r,'#c-r').onclick = () => {
+      if(part && mode==='CP') add('Read refused: B cannot confirm it has the latest value.','bad');
+      else if(b<a) add(`B answers x = ${b}. Stale: the latest value is ${a}.`,'warn');
+      else add(`B answers x = ${b}. ✓ up to date`,'ok') };
+    draw();
+  }});
+
+topic({ id:'consistency', group:'Foundations', title:'Consistency models and quorums', nav:'Consistency & quorums',
+  card:'Strong vs eventual, and the R + W > N rule.',
+  lede:'With data on N replicas, a write waits for W of them and a read asks R of them. If the read and write sets must overlap, every read sees the latest write.',
+  body:()=> lab('Tune N, W and R', `<div class="ctls">${slider('q-n','Replicas (N)',1,7,1,3)}${slider('q-w','Write waits for (W)',1,7,1,2)}${slider('q-r','Read asks (R)',1,7,1,2)}</div><div class="reps" id="q-reps"></div><div class="legend"><span><i style="background:var(--accent)"></i>has the new write</span><span><i style="background:var(--packet)"></i>read from (worst case)</span></div>${stats(stat('q-v','Read sees latest?'),stat('q-ov','Overlap'),stat('q-fw','Writes survive'),stat('q-fr','Reads survive'))}`) +
+    sec('The consistency ladder (strongest first)', table(['Model','Guarantee','Typical cost'],[['Linearizable (strong)','Behaves like one copy; reads see the latest completed write','Highest latency, consensus or leader reads'],['Sequential','All nodes see operations in the same order','Coordination on order'],['Causal','If A caused B, everyone sees A before B','Track dependencies'],['Read-your-writes','You always see your own updates','Sticky routing or version checks'],['Monotonic reads','You never see time go backwards','Sticky replica per user'],['Eventual','Replicas converge if writes stop','Cheapest, fastest']])) +
+    tip('Name the weakest model the feature can live with. "Users must see their own post immediately, others can see it a few seconds later" = read-your-writes + eventual.') +
+    check('N = 5. Which W and R give strong reads and tolerate 2 failed nodes for both reads and writes?', 'W = 3, R = 3. 3 + 3 > 5 so sets overlap, and 5 − 3 = 2 nodes can be down.'),
+  mount(r){
+    let n=3,w=2,rd=2; const wEl=$(r,'#q-w'), rEl=$(r,'#q-r');
+    function draw(){ wEl.max=n; rEl.max=n; if(w>n){w=n;wEl.value=n;$(r,'#q-w-o').textContent=n} if(rd>n){rd=n;rEl.value=n;$(r,'#q-r-o').textContent=n}
+      $(r,'#q-reps').innerHTML = Array.from({length:n},(_,i)=>{ const isW=i<w, isR=i>=n-rd; return `<div class="rep ${isW?'w':''} ${isR?'r':''}">R${i+1}<small>${isW?'v2 new':'v1 old'}</small></div>` }).join('');
+      const ov = rd+w-n; setT(r,'q-v', ov>0?'Yes':'Not guaranteed', ov>0?'ok':'bad'); setT(r,'q-ov', Math.max(0,ov)+' replica'+(ov===1?'':'s'));
+      setT(r,'q-fw', (n-w)+' down'); setT(r,'q-fr', (n-rd)+' down'); }
+    bindRange(r,'q-n',v=>{n=v;draw()}); bindRange(r,'q-w',v=>{w=v;draw()}); bindRange(r,'q-r',v=>{rd=v;draw()});
+  }});
+
+topic({ id:'dns-cdn', group:'Traffic', title:'DNS and CDNs', nav:'DNS & CDN',
+  card:'How names resolve, and how edges cut latency.',
+  lede:'DNS turns a hostname into an IP address through a chain of cached lookups. A CDN keeps copies of content in edge locations near users, so most requests never reach your origin.',
+  body:()=> lab('Resolve api.example.com', `<div id="dns"></div>`) +
+    lab('What a CDN buys you', `<div class="ctls">${slider('cd-h','Cache hit ratio',0,99,1,90)}${slider('cd-o','Edge → origin round trip',40,300,10,180)}</div>${stats(stat('cd-l','Avg latency'),stat('cd-ol','Origin requests/s'),stat('cd-s','Origin load saved'))}<div class="formula" id="cd-f"></div>`, 'Assume 10,000 requests/s and a 20 ms user → edge round trip.') +
+    table(['','Pull CDN','Push CDN'],[['How content arrives','Edge fetches from origin on first miss','You upload content ahead of time'],['Good for','Most sites, unpredictable access','Large, rarely-changing files (video)'],['Downside','First user per edge is slow','You manage uploads and expiry']]) +
+    sec('Key ideas', keys(['<b>TTL</b> controls caching everywhere. Low TTL = fast failover, more lookups.','<b>GeoDNS / anycast</b> send users to the nearest region or edge.','<b>Cache-Control headers</b> decide what the CDN may store and for how long.','<b>Versioned file names</b> (<code>app.3f9a.js</code>) let you cache forever and still deploy instantly.','CDNs also absorb DDoS traffic and terminate TLS close to users.'])) +
+    check('You deploy a fix but users still get the old JavaScript for hours. Why, and how to avoid it?', 'The CDN and browsers cached the old file under the same URL. Use content-hashed file names so each deploy has new URLs, or purge the CDN.'),
+  mount(r, life){
+    stepper($(r,'#dns'), { w:620, h:330, minw:540, label:'DNS resolution chain', nodes:[
+      {id:'br',x:80,y:165,label:'Browser',sub:'+ OS cache'},{id:'res',x:270,y:165,label:'Resolver',sub:'ISP / 1.1.1.1'},
+      {id:'root',x:500,y:55,label:'Root server',sub:'.'},{id:'tld',x:500,y:165,label:'TLD server',sub:'.com'},{id:'auth',x:500,y:275,label:'Authoritative',sub:'example.com',w:130}],
+      edges:[['br','res'],['res','root'],['res','tld'],['res','auth']] }, [
+      {flow:['br>res'], text:'The browser and OS caches have no entry, so the query goes to a recursive resolver.'},
+      {flow:['res>root','root>res'], text:'A root server does not know the answer. It replies with the addresses of the <code>.com</code> TLD servers.'},
+      {flow:['res>tld','tld>res'], text:'The TLD server points to the name servers that are authoritative for <code>example.com</code>.'},
+      {flow:['res>auth','auth>res'], sub:{auth:'A 93.184.216.34'}, text:'The authoritative server returns the A record with a TTL, e.g. 300 seconds.'},
+      {flow:['res>br'], sub:{res:'cached 300 s',br:'93.184.216.34'}, text:'The resolver and browser cache the answer for the TTL. The next lookup is instant.'}], life);
+    let h=90,o=180; function calc(){ const hr=h/100, lat = 20 + (1-hr)*o, ol = 10000*(1-hr);
+      setT(r,'cd-l',Math.round(lat)+' ms', lat<60?'ok':lat<120?'warn':'bad'); setT(r,'cd-ol',fmt(ol)); setT(r,'cd-s',h+'%');
+      $(r,'#cd-f').textContent = `20 ms + (1 − ${hr.toFixed(2)}) × ${o} ms = ${Math.round(lat)} ms`; }
+    bindRange(r,'cd-h',v=>{h=v;calc()},v=>v+'%'); bindRange(r,'cd-o',v=>{o=v;calc()},v=>v+' ms');
+  }});
+
+topic({ id:'lb', group:'Traffic', title:'Load balancing', nav:'Load balancers',
+  card:'Spread requests across servers; route around failures.',
+  lede:'A load balancer sits in front of a pool of servers, sends each request to one of them, and stops sending to servers that fail health checks. The algorithm matters when requests vary in cost.',
+  body:()=> lab('Run a load balancer', `<div class="ctls"><div class="ctl"><span class="sl">Algorithm</span>${seg('lb-a',[['rr','Round robin'],['lc','Least connections'],['rand','Random'],['hash','IP hash']],'rr','Algorithm')}</div>${slider('lb-rate','Incoming requests',1,40,1,10)}</div>
+    <div class="srvs" id="lb-s"></div><div class="legend" style="margin-top:8px"><span><i style="background:var(--accent)"></i>fast request (0.4 s)</span><span><i style="background:var(--packet)"></i>slow request (4 s)</span><span>Click a server to crash or revive it</span></div>${stats(stat('lb-max','Busiest server'),stat('lb-sp','Spread (max − min)'),stat('lb-d','Failed requests'))}`, '20% of requests are slow. Compare how round robin and least connections cope.') +
+    table(['Algorithm','How it picks','Best when'],[['Round robin','Next server in turn','Requests cost about the same'],['Weighted round robin','Bigger servers get more turns','Mixed server sizes'],['Least connections','Server with fewest open requests','Request durations vary a lot'],['IP / consistent hash','hash(client) → server','You need stickiness (caches, sessions)'],['Least response time','Fastest recent server','Latency-sensitive pools']]) +
+    sec('L4 vs L7', keys(['<b>Layer 4</b> (TCP/UDP) routes by IP and port. Very fast, cannot see URLs or headers.','<b>Layer 7</b> (HTTP) reads paths, headers and cookies. Can route <code>/api</code> and <code>/images</code> differently, terminate TLS, and retry.','The load balancer itself must be redundant: an active/passive pair or DNS across several.'])) +
+    check('Why might IP hash leave one server overloaded?', 'Many users can share one IP (corporate NAT, mobile carriers). Hashing sends all of them to the same server.'),
+  mount(r, life){
+    const S = [0,1,2,3].map(i=>({name:'S'+(i+1),up:true,act:[],total:0,flash:0}));
+    let algo='rr', rate=10, rr=0, acc=0, failed=0; const host = $(r,'#lb-s');
+    host.innerHTML = S.map((s,i)=>`<button type="button" class="srv" data-i="${i}" aria-label="Server ${s.name}, click to crash or revive"><div class="srv-h"><b>${s.name}</b><span class="pill ok" id="lb-st${i}">up</span></div><div class="conns" id="lb-c${i}"></div><div class="srv-f mono"><span id="lb-a${i}"></span><span id="lb-t${i}"></span></div></button>`).join('');
+    host.onclick = e => { const b = e.target.closest('.srv'); if(!b) return; const s = S[b.dataset.i]; s.up = !s.up; if(!s.up){ failed += s.act.length; s.act = [] } };
+    bindSeg(r,'lb-a',v=>{algo=v}); bindRange(r,'lb-rate',v=>{rate=v},v=>v+' req/s');
+    function pick(c){ const up = S.filter(s=>s.up); if(!up.length) return null;
+      if(algo==='rr') return up[(rr++)%up.length]; if(algo==='rand') return up[Math.floor(Math.random()*up.length)];
+      if(algo==='lc') return up.reduce((a,b)=>b.act.length<a.act.length?b:a); return up[hash32('client'+c)%up.length] }
+    life.every(() => {
+      S.forEach(s => { s.act.forEach(x=>x.rem-=100); s.act = s.act.filter(x=>x.rem>0); if(s.flash>0) s.flash-- });
+      acc += rate*0.1; while(acc>=1){ acc--; const s = pick(Math.floor(Math.random()*12)); if(!s){ failed++; continue }
+        const long = Math.random()<0.2; s.act.push({rem:long?4000:400,long}); s.total++; s.flash=2 }
+      S.forEach((s,i) => { const b = host.children[i]; b.className = 'srv'+(s.up?'':' down')+(s.flash?' flash':'');
+        const st = $(r,'#lb-st'+i); st.textContent = s.up?'up':'down'; st.className = 'pill '+(s.up?'ok':'bad');
+        $(r,'#lb-c'+i).innerHTML = s.act.slice(0,40).map(x=>`<i class="${x.long?'long':''}"></i>`).join('');
+        $(r,'#lb-a'+i).textContent = s.act.length+' open'; $(r,'#lb-t'+i).textContent = s.total+' served' });
+      const up = S.filter(s=>s.up).map(s=>s.act.length);
+      if(up.length){ const mx = Math.max(...up), mn = Math.min(...up); setT(r,'lb-max',mx+' open'); setT(r,'lb-sp',String(mx-mn), mx-mn<=3?'ok':mx-mn<=7?'warn':'bad') }
+      setT(r,'lb-d',String(failed), failed?'bad':'ok');
+    }, 100);
+  }});
+
+topic({ id:'api', group:'Traffic', title:'APIs and real-time communication', nav:'APIs & real-time',
+  card:'REST, gRPC, GraphQL; polling vs WebSockets.',
+  lede:'The API style shapes how clients and services talk. For live updates, the question is who starts the conversation and how often.',
+  body:()=> table(['Style','Shape','Strengths','Watch out for'],[['REST','Resources over HTTP: GET /users/42','Simple, cacheable, universal','Over/under-fetching, many round trips'],['GraphQL','One endpoint, client picks fields','Flexible for many client types','Caching, expensive queries need limits'],['gRPC','Binary protobuf over HTTP/2','Fast, typed, streaming; great between services','Not browser-native, harder to debug'],['Webhooks','Server calls your URL on events','No polling for integrations','Retries, signing, idempotency']]) +
+    lab('Getting live updates', `<div class="row" style="margin-bottom:10px">${seg('a-m',[['poll','Short polling'],['long','Long polling'],['sse','Server-Sent Events'],['ws','WebSocket']],'poll','Mode')}</div><div class="dg-scroll" id="a-seq"></div><p class="step-text" id="a-t"></p>`) +
+    sec('API design checklist', keys(['<b>Pagination</b> with cursors (<code>?after=abc</code>) instead of offsets for large lists.','<b>Idempotency keys</b> on POSTs that create money movements or orders, so retries are safe.','<b>Versioning</b> (<code>/v2/</code> or headers) to change contracts safely.','<b>Rate limits</b> and clear error codes (429, 503 with Retry-After).','Use HTTP verbs correctly: GET is safe and cacheable; PUT and DELETE are idempotent.'])) +
+    check('A chat app needs messages in both directions with low latency. Which transport?', 'WebSockets: one long-lived, two-way connection. SSE only pushes server → client.'),
+  mount(r){
+    const M = {
+      poll:[[{d:'cs',t:0,label:'GET /messages?since=…'},{d:'sc',t:6,label:'200 [] (nothing new)',kind:'dim'},{d:'cs',t:32,label:'GET again (every 3 s)'},{d:'sc',t:38,label:'200 []',kind:'dim'},{d:'cs',t:64,label:'GET again'},{d:'sc',t:70,label:'200 [new message]'}],'Client asks on a timer. Simple and works everywhere, but most requests are wasted and updates arrive up to one interval late.'],
+      long:[[{d:'cs',t:0,label:'GET /messages (server holds it)'},{d:'sc',t:40,t2:46,label:'message arrives → 200'},{d:'cs',t:50,label:'GET again immediately'},{d:'sc',t:86,t2:92,label:'next message → 200'}],'Server keeps the request open until there is news or a timeout. Near real-time with plain HTTP, but each message costs a new request.'],
+      sse:[[{d:'cs',t:0,label:'GET /events (text/event-stream)'},{d:'sc',t:18,label:'event: price 101.2'},{d:'sc',t:40,label:'event: price 101.5'},{d:'sc',t:58,label:'event: price 100.9'},{d:'sc',t:84,label:'event: price 101.1'}],'One HTTP response that never ends; the server pushes events down it. Auto-reconnects. One direction only: great for feeds, prices, notifications.'],
+      ws:[[{d:'cs',t:0,label:'GET + Upgrade: websocket'},{d:'sc',t:8,label:'101 Switching Protocols'},{d:'cs',t:30,label:'frame: "typing…"'},{d:'sc',t:46,label:'frame: new message'},{d:'cs',t:62,label:'frame: send message'},{d:'sc',t:80,label:'frame: read receipt'}],'A full-duplex connection; either side sends frames any time. Best for chat, games and collaboration. Servers must hold many open connections, so scale gateways separately.']};
+    const show = m => { $(r,'#a-seq').innerHTML = seqSVG(M[m][0], m); $(r,'#a-t').textContent = M[m][1] };
+    bindSeg(r,'a-m',show); show('poll');
+  }});
+
+topic({ id:'ratelimit', group:'Traffic', title:'Rate limiting', nav:'Rate limiting',
+  card:'Token bucket and friends: protect services from overload.',
+  lede:'A rate limiter caps how many requests a client may make in a period. It protects capacity, controls cost, and stops abuse. The token bucket is the most common algorithm because it allows short bursts.',
+  body:()=> lab('Token bucket', `<div class="ctls">${slider('rl-c','Bucket size (burst)',1,30,1,10)}${slider('rl-f','Refill rate',0.5,10,0.5,2)}${slider('rl-in','Steady incoming traffic',0,20,1,0)}</div>
+    <div class="row" style="align-items:flex-end;gap:20px"><div class="bucket" aria-label="Token bucket"><i id="rl-fill"></i><span id="rl-n"></span></div><div style="flex:1;min-width:200px"><div class="row"><button class="btn primary" id="rl-1">Send 1 request</button><button class="btn" id="rl-b">Send burst of 20</button></div><div class="tiles" id="rl-t" aria-label="Recent requests"></div><div class="legend" style="margin-top:6px"><span><i style="background:var(--ok)"></i>allowed</span><span><i style="background:var(--bad)"></i>rejected (429)</span></div></div></div>
+    ${stats(stat('rl-ok','Allowed'),stat('rl-no','Rejected'))}`, 'Each request spends one token. Tokens refill at a fixed rate up to the bucket size.') +
+    table(['Algorithm','How it works','Trade-off'],[['Token bucket','Tokens refill steadily; each request spends one','Allows bursts up to bucket size; very common (AWS, Stripe)'],['Leaky bucket','Requests queue and drain at a fixed rate','Smooth output, but bursts wait or drop'],['Fixed window','Count per calendar minute','Simple; 2× burst at window edges'],['Sliding window log','Store each timestamp, count the last 60 s','Exact, but memory-heavy'],['Sliding window counter','Weighted mix of current and previous window','Close to exact, cheap. A good default']]) +
+    sec('Where and how', keys(['Usually at the API gateway, keyed by user ID, API key or IP.','For many servers, keep counters in Redis and update them atomically (a Lua script or <code>INCR</code> + <code>EXPIRE</code>).','Return <code>429 Too Many Requests</code> with <code>Retry-After</code> and <code>X-RateLimit-Remaining</code> headers.','Fail open or closed? If Redis is down, most systems let traffic through rather than block everyone.'])) +
+    check('Bucket of 10, refill 1/s, idle for a minute. A client then sends 15 requests at once. How many pass?', '10. The bucket is full (it caps at 10, not 60), so 10 pass and 5 are rejected.'),
+  mount(r, life){
+    let cap=10, ref=2, inr=0, tk=10, acc=0, ok=0, no=0; const hist=[];
+    const req = () => { const pass = tk>=1; if(pass){ tk-=1; ok++ } else no++; hist.push(pass); if(hist.length>90) hist.shift() };
+    const draw = () => { $(r,'#rl-fill').style.height = (tk/cap*100)+'%'; $(r,'#rl-n').textContent = tk.toFixed(1)+' / '+cap;
+      $(r,'#rl-t').innerHTML = hist.map(p=>`<i class="${p?'ok':'bad'}"></i>`).join(''); setT(r,'rl-ok',String(ok),'ok'); setT(r,'rl-no',String(no),no?'bad':'') };
+    bindRange(r,'rl-c',v=>{cap=v; tk=Math.min(tk,cap)},v=>v+' tokens'); bindRange(r,'rl-f',v=>{ref=v},v=>v+' /s'); bindRange(r,'rl-in',v=>{inr=v},v=>v+' req/s');
+    $(r,'#rl-1').onclick = () => { req(); draw() }; $(r,'#rl-b').onclick = () => { for(let i=0;i<20;i++) req(); draw() };
+    life.every(() => { tk = Math.min(cap, tk+ref*0.1); acc += inr*0.1; while(acc>=1){ acc--; req() } draw() }, 100);
+  }});
+
+topic({ id:'databases', group:'Data', title:'Choosing a database', nav:'Choosing a database',
+  card:'SQL, key-value, document, wide-column, graph, search.',
+  lede:'There is no best database, only a best fit for an access pattern. Start from how the data is read and written, then pick the store that makes those operations cheap.',
+  body:()=> lab('What does your feature need?', `<div class="checks" id="db-q"></div><div class="cards" id="db-c"></div>`, 'Tick the needs that apply. The best-matching store is outlined.') +
+    table(['','SQL (relational)','NoSQL (most kinds)'],[['Schema','Fixed, enforced','Flexible per record'],['Transactions','Multi-row ACID','Often single-item; some offer more'],['Queries','Joins, ad-hoc SQL','Designed around known access patterns'],['Scaling writes','Vertical first, then sharding (harder)','Horizontal by design'],['Default pick when','Unsure; relational data; money','Massive scale, simple lookups, flexible data']]) +
+    tip('“I would start with Postgres” is a strong default answer. Then explain the specific access pattern that would justify moving a part of the data elsewhere.') +
+    check('Storing user-uploaded videos: which store?', 'Object storage (S3-like) for the bytes, with metadata (owner, title, URL) in a database and delivery through a CDN.'),
+  mount(r){
+    const Q = [['acid','Transactions across several rows (payments, inventory)'],['joins','Complex queries and joins, ad-hoc reports'],['flex','Schema changes often or nested documents'],['write','Huge write volume across regions'],['kv','Lookups by key in under a millisecond'],['graph','Many-hop relationships (friends of friends)'],['ts','Metrics or events over time'],['text','Full-text or fuzzy search'],['blob','Large files: images, video, backups']];
+    const D = [['sql','Relational','Tables, constraints, ACID, SQL joins.','Postgres · MySQL',{acid:3,joins:3,flex:0}],['kv','Key-value','A giant hash map. Fastest simple reads.','Redis · DynamoDB',{kv:3,write:2,flex:1}],['doc','Document','JSON documents, flexible fields, indexes on any field.','MongoDB · Firestore',{flex:3,acid:1,kv:1}],['wide','Wide-column','Partitioned rows, built for write-heavy scale.','Cassandra · ScyllaDB · Bigtable',{write:3,ts:1,kv:1}],['graph','Graph','Nodes and edges; traversals are cheap.','Neo4j · Neptune',{graph:3}],['ts','Time-series','Compressed, time-ordered points with rollups.','Prometheus · InfluxDB · Timescale',{ts:3,write:1}],['search','Search index','Inverted index for text, ranking, facets.','Elasticsearch · OpenSearch',{text:3}],['obj','Object storage','Cheap, durable blobs addressed by key.','S3 · GCS · Azure Blob',{blob:3}]];
+    const sel = new Set(['acid']);
+    $(r,'#db-q').innerHTML = Q.map(([k,l])=>`<label><input type="checkbox" id="db-${k}" ${sel.has(k)?'checked':''}> ${l}</label>`).join('');
+    function draw(){ const sc = D.map(d=>[...sel].reduce((s,k)=>s+(d[4][k]||0),0)); const mx = Math.max(...sc);
+      $(r,'#db-c').innerHTML = D.map((d,i)=>`<div class="card dbc ${mx>0&&sc[i]===mx?'top':''}"><h3>${d[1]}</h3><p>${d[2]}</p><div class="ex">${d[3]}</div><div class="score"><i style="width:${mx?sc[i]/mx*100:0}%"></i></div></div>`).join('') }
+    $(r,'#db-q').addEventListener('change', e => { const k = e.target.id.slice(3); e.target.checked ? sel.add(k) : sel.delete(k); draw() });
+    draw();
+  }});
+
+topic({ id:'indexing', group:'Data', title:'Indexes and storage engines', nav:'Indexes',
+  card:'Why an index turns millions of reads into four.',
+  lede:'Without an index, finding one row means scanning the whole table. A B-tree index keeps keys sorted in wide, shallow pages, so a lookup touches only a handful of them, however big the table gets.',
+  body:()=> lab('Find one row', `<div class="ctls">${slider('ix-n','Rows in the table',3,10,0.5,6)}</div><div class="hbar"><span>Full scan</span><div class="bar"><i id="ix-b1" style="background:var(--bad)"></i></div><span class="v mono" id="ix-v1"></span></div><div class="hbar"><span>B-tree index</span><div class="bar"><i id="ix-b2" style="background:var(--ok)"></i></div><span class="v mono" id="ix-v2"></span></div>${stats(stat('ix-p1','Pages read: scan'),stat('ix-p2','Pages read: index'),stat('ix-d','Tree depth'))}`, 'Assumes 100 rows per page and 200 keys per index page. Bars use a log scale.') +
+    table(['','B-tree','LSM tree'],[['Used by','Postgres, MySQL InnoDB','Cassandra, RocksDB, LevelDB'],['Writes','Update pages in place (random I/O)','Append to memory, flush sorted files (sequential I/O)'],['Reads','Fast, predictable','May check several files; bloom filters help'],['Best for','Read-heavy, transactional','Write-heavy, high ingest']]) +
+    sec('Index rules of thumb', keys(['Index columns you filter, join or sort on.','<b>Composite index</b> <code>(user_id, created_at)</code> serves <code>WHERE user_id = ? ORDER BY created_at</code>. The leftmost column must be in the query.','<b>Covering index</b>: include all selected columns so the table itself is never read.','Every index slows writes and uses space. Do not index everything.','Low-cardinality columns (a boolean) rarely benefit from their own index.'])) +
+    check('A query filters on created_at only, but the index is (user_id, created_at). Does it help?', 'Mostly no. The index is sorted by user_id first, so rows for a date range are scattered across it. Add an index that starts with created_at.'),
+  mount(r){
+    bindRange(r,'ix-n', e => { const n = Math.pow(10,e), p1 = Math.max(1,n/100), d = Math.max(1,Math.ceil(Math.log(n)/Math.log(200))), p2 = d+1;
+      const t1 = p1*0.02, t2 = p2*0.1, lo = Math.log10(0.05), hi = Math.log10(3e6);
+      $(r,'#ix-b1').style.width = Math.max(2,(Math.log10(t1)-lo)/(hi-lo)*100)+'%'; $(r,'#ix-b2').style.width = Math.max(2,(Math.log10(t2)-lo)/(hi-lo)*100)+'%';
+      $(r,'#ix-v1').textContent = fmtDur(t1/1000); $(r,'#ix-v2').textContent = fmtDur(t2/1000);
+      setT(r,'ix-p1',fmt(p1),'bad'); setT(r,'ix-p2',String(p2),'ok'); setT(r,'ix-d',d+' levels');
+    }, e => fmt(Math.pow(10,e)));
+  }});
+
+topic({ id:'replication', group:'Data', title:'Replication', nav:'Replication',
+  card:'Copies for read scale and failover, and replica lag.',
+  lede:'Replication keeps copies of data on several machines. A leader takes writes and streams them to followers, which serve reads. Asynchronous replication is fast but followers can lag behind.',
+  body:()=> lab('Leader and followers', `<div class="ctls">${slider('rp-lag','Replication lag',0,3000,100,1200)}<div class="ctl"><span class="sl">Write acknowledgement</span>${seg('rp-m',[['async','Async'],['sync','Sync']],'async','Write mode')}</div><div class="ctl"><label class="checks" style="margin:0"><label><input type="checkbox" id="rp-ryw"> Read-your-writes routing</label></label></div></div>
+    <div class="nodes3"><div class="nbox lead" id="rp-L"><b>Leader (writes)</b><span class="v" id="rp-lv"></span></div><div class="nbox" id="rp-F0"><b>Follower 1</b><span class="v" id="rp-f0"></span></div><div class="nbox" id="rp-F1"><b>Follower 2</b><span class="v" id="rp-f1"></span></div></div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="rp-w">Write (update profile)</button><button class="btn" id="rp-r">Read from a follower</button><button class="btn" id="rp-rw">Write, then read at once</button></div><ul class="log" id="rp-log"></ul>`, 'Write, then read immediately. With lag, you may read your old data.') +
+    table(['Setup','How','Trade-off'],[['Single leader','One node takes writes, many read replicas','Simple; write throughput limited by one node'],['Multi-leader','Each region has a leader','Local writes everywhere; must resolve conflicts'],['Leaderless','Write to W of N nodes, read R (Dynamo-style)','Very available; uses quorums and repair']]) +
+    sec('Things to get right', keys(['<b>Failover</b>: promote a follower when the leader dies. Beware split-brain (two leaders); use fencing or consensus.','<b>Replica lag</b> causes stale reads. Fix with read-your-writes: route a user’s reads to the leader for a few seconds after they write.','<b>Sync replication</b> loses no data on failover but each write waits for the slowest replica. Many systems use semi-sync: wait for one follower.'])) +
+    check('Read replicas help which bottleneck, and which not?', 'They scale reads. They do not scale writes, since every replica still applies every write. For writes you need sharding.'),
+  mount(r, life){
+    let L=1, F=[{v:1,busy:0},{v:1,busy:0}], lag=1200, mode='async', last=-1e9; const log=$(r,'#rp-log');
+    const add = (t,c) => { log.insertAdjacentHTML('afterbegin',`<li class="${c||''}">${t}</li>`); while(log.children.length>6) log.lastChild.remove() };
+    const draw = () => { $(r,'#rp-lv').textContent='v'+L; F.forEach((f,i)=>{ $(r,'#rp-f'+i).textContent='v'+f.v+(f.busy?' …':''); $(r,'#rp-F'+i).className='nbox'+(f.busy?' busy':'') }) };
+    function write(){ L++; const v=L, t0=performance.now(); let done=0; last=t0;
+      F.forEach(f => { f.busy++; life.after(() => { f.v=Math.max(f.v,v); f.busy--; done++; if(mode==='sync' && done===F.length) add(`Write v${v} confirmed after ${Math.round(performance.now()-t0)} ms (waited for every follower)`,'warn'); draw() }, lag*(0.5+Math.random())) });
+      if(mode==='async') add(`Write v${v} confirmed at once by the leader`,'ok'); draw() }
+    function read(){ if($(r,'#rp-ryw').checked && performance.now()-last < lag*1.5+300){ add(`Routed to leader because you just wrote: v${L} ✓`,'ok'); return }
+      const i = Math.floor(Math.random()*2), f = F[i]; f.v<L ? add(`Follower ${i+1} returned v${f.v}. Stale: leader has v${L}`,'bad') : add(`Follower ${i+1} returned v${f.v} ✓`,'ok') }
+    bindRange(r,'rp-lag',v=>{lag=v},v=>v+' ms'); bindSeg(r,'rp-m',v=>{mode=v});
+    $(r,'#rp-w').onclick=write; $(r,'#rp-r').onclick=read; $(r,'#rp-rw').onclick=()=>{write(); read()};
+    draw();
+  }});
+
+topic({ id:'sharding', group:'Data', title:'Sharding and consistent hashing', nav:'Sharding',
+  card:'Split data across nodes without reshuffling everything.',
+  lede:'Sharding splits one data set across many databases so writes and storage scale out. The hard part is deciding which shard owns a key, and moving as little data as possible when shards are added.',
+  body:()=> lab('Hash ring', `<div class="row" style="margin-bottom:12px"><button class="btn primary" id="ch-add">Add a node</button><button class="btn" id="ch-rm">Remove a node</button><div style="flex:1;min-width:200px">${slider('ch-v','Virtual nodes per server',1,40,1,3)}</div></div>
+    <div class="ring-wrap"><div id="ch-ring"></div><div><div class="dist" id="ch-d"></div>${stats(stat('ch-m','Moved (consistent)'),stat('ch-mn','Moved (hash mod N)'))}<p class="lab-note" style="margin:0">Keys are dots; each belongs to the next server tick clockwise. Outlined dots just moved.</p></div></div>`, '80 keys on the ring. Add or remove a node and compare how many keys move against plain hash(key) mod N.') +
+    table(['Strategy','How keys map','Weak spot'],[['Range','A–F → shard 1, G–M → shard 2','Hot ranges (e.g. recent dates)'],['Hash mod N','hash(key) % N','Changing N moves almost every key'],['Consistent hashing','First node clockwise on a ring','Uneven without virtual nodes'],['Directory','Lookup table key → shard','Table is a dependency; flexible though']]) +
+    sec('Pitfalls', keys(['<b>Hot keys</b>: a celebrity’s row gets all the traffic. Split it, cache it, or add a random suffix.','<b>Cross-shard queries</b> and joins become scatter-gather. Choose a shard key that keeps related data together (e.g. <code>user_id</code>).','<b>Cross-shard transactions</b> need 2PC or sagas; see <a href="#transactions">distributed transactions</a>.','<b>Resharding</b> is painful. Start with many logical shards mapped to fewer machines.'])) +
+    check('Why do virtual nodes help?', 'Each server appears at many points on the ring, so its share of keys averages out. When a server leaves, its keys spread over many others instead of dumping on one neighbour.'),
+  mount(r){
+    const names='ABCDEF'; let nodes=['A','B','C'], vn=3;
+    const keysA = Array.from({length:80},(_,i)=>{const h=hash32('key-'+i); return {h, a:h/4294967296*360}});
+    let prev = null, prevN = null;
+    const ring = () => { const pts=[]; nodes.forEach(n=>{ for(let i=0;i<vn;i++){ const h=hash32(n+'#'+i); pts.push({h,n}) } }); return pts.sort((a,b)=>a.h-b.h) };
+    const owner = (pts,h) => (pts.find(p=>p.h>=h) || pts[0]).n;
+    const col = n => `var(--c${names.indexOf(n)+1})`;
+    function draw(){ const pts = ring(), own = keysA.map(k=>owner(pts,k.h)), modN = keysA.map(k=>nodes[k.h%nodes.length]);
+      const cx=170, cy=170, R=128, P = (a,rad) => [cx+rad*Math.sin(a*Math.PI/180), cy-rad*Math.cos(a*Math.PI/180)];
+      let s = `<svg viewBox="0 0 340 340" role="img" aria-label="Consistent hash ring"><circle cx="${cx}" cy="${cy}" r="${R}" style="fill:none;stroke:var(--line);stroke-width:2"/>`;
+      pts.forEach(p => { const a = p.h/4294967296*360, [x1,y1]=P(a,R-12), [x2,y2]=P(a,R+12), [tx,ty]=P(a,R+24); s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${col(p.n)};stroke-width:3"/>`; if(vn<=6) s += `<text x="${tx}" y="${ty+4}" text-anchor="middle" style="fill:${col(p.n)};font:600 11px var(--mono)">${p.n}</text>` });
+      keysA.forEach((k,i) => { const [x,y] = P(k.a, R-26 - (i%3)*9), moved = prev && prev[i]!==own[i]; s += `<circle cx="${x}" cy="${y}" r="${moved?5:3.6}" style="fill:${col(own[i])};${moved?'stroke:var(--ink);stroke-width:2':''}"/>` });
+      $(r,'#ch-ring').innerHTML = s + `<text x="${cx}" y="${cy+5}" text-anchor="middle" style="fill:var(--muted);font:12px var(--mono)">${nodes.length} nodes · ${pts.length} points</text></svg>`;
+      const cnt = nodes.map(n=>own.filter(o=>o===n).length), mx = Math.max(...cnt);
+      $(r,'#ch-d').innerHTML = nodes.map((n,i)=>`<div><b style="color:${col(n)}">${n}</b><div class="bar"><i style="width:${cnt[i]/mx*100}%;background:${col(n)}"></i></div><span>${cnt[i]}</span></div>`).join('');
+      if(prev){ const m1 = own.filter((o,i)=>o!==prev[i]).length, m2 = modN.filter((o,i)=>o!==prevN[i]).length;
+        setT(r,'ch-m',`${m1} / 80 (${Math.round(m1/80*100)}%)`,'ok'); setT(r,'ch-mn',`${m2} / 80 (${Math.round(m2/80*100)}%)`,'bad') }
+      return [own, modN] }
+    const change = fn => { const [o,m] = draw(); prev = o; prevN = m; fn(); draw() };
+    $(r,'#ch-add').onclick = () => { if(nodes.length<6) change(()=>nodes.push(names[nodes.length])) };
+    $(r,'#ch-rm').onclick = () => { if(nodes.length>1) change(()=>nodes.pop()) };
+    bindRange(r,'ch-v', v => { vn=v; prev=null; setT(r,'ch-m','–'); setT(r,'ch-mn','–'); draw() });
+  }});
+
+topic({ id:'caching', group:'Data', title:'Caching', nav:'Caching',
+  card:'Strategies, eviction policies, and failure modes.',
+  lede:'A cache keeps hot data in memory so most reads skip the database. Two decisions matter: how the cache stays in sync with the source of truth, and what to throw away when it is full.',
+  body:()=> lab('Write and read strategies', `<div class="row" style="margin-bottom:10px">${seg('cs-m',[['aside','Cache-aside'],['wt','Write-through'],['wb','Write-back']],'aside','Strategy')}</div><div id="cs-st"></div>`) +
+    lab('Eviction: what to forget', `<div class="ctls"><div class="ctl"><span class="sl">Policy</span>${seg('lru-p',[['lru','LRU'],['lfu','LFU'],['fifo','FIFO']],'lru','Policy')}</div>${slider('lru-c','Cache size',2,6,1,3)}</div>
+    <div class="keypad" id="lru-k"></div><div class="slots" id="lru-s" aria-live="polite"></div><div class="row"><button class="btn" id="lru-play">Play sample pattern</button><button class="btn" id="lru-reset">Reset</button><span class="mono" id="lru-msg" style="font-size:13px;color:var(--muted)"></span></div>
+    ${stats(stat('lru-h','Hits'),stat('lru-m','Misses'),stat('lru-r','Hit ratio'))}`, 'Request keys. Slots are ordered from the next to be kept (left) to the next to be evicted (right).') +
+    sec('Things that go wrong', cards([['Stampede','A hot key expires; thousands of requests hit the DB at once.','Fix: lock per key, serve stale while refreshing'],['Penetration','Requests for keys that do not exist always miss.','Fix: cache “not found”, bloom filter'],['Avalanche','Many keys expire at the same moment.','Fix: add random jitter to TTLs'],['Stale data','DB changed but cache still holds the old value.','Fix: delete on write, short TTLs'],['Hot key','One key gets more traffic than a node can serve.','Fix: replicate the key, local in-process cache']])) +
+    sec('Where caches live', keys(['Browser → CDN → API gateway → application (in-process) → distributed cache (Redis, Memcached) → database buffer pool.','The closer to the user, the faster, and the harder to invalidate.'])) +
+    check('With cache-aside, why delete the cache entry on update instead of writing the new value?', 'Two concurrent writers can race and leave an older value in the cache. Deleting is simpler: the next read reloads the current value from the database.'),
+  mount(r, life){
+    const spec = {w:520,h:280,minw:440,label:'Application, cache and database',nodes:[{id:'app',x:100,y:140,label:'App'},{id:'cache',x:380,y:55,label:'Cache',sub:'memory'},{id:'db',x:380,y:225,label:'Database',sub:'source of truth'}],edges:[['app','cache'],['app','db'],['cache','db']]};
+    const S = {
+      aside:[{flow:['app>cache'],cls:{cache:'bad'},sub:{cache:'MISS'},text:'<b>Read:</b> the app asks the cache for <code>user:42</code>. It is not there.'},{flow:['app>db','db>app'],text:'The app reads the row from the database.'},{flow:['app>cache'],sub:{cache:'user:42 · TTL 10m'},text:'The app stores it in the cache with a TTL.'},{flow:['app>cache','cache>app'],cls:{cache:'leader'},sub:{cache:'HIT'},text:'Next read: cache hit, no database work. <b>On write:</b> update the DB, then delete the cache key.'}],
+      wt:[{flow:['app>cache'],text:'<b>Write:</b> the app writes to the cache…'},{flow:['cache>db','db>cache'],text:'…which writes to the database before confirming. Both always match.'},{flow:['cache>app'],text:'Confirmed. Reads are always fresh, but every write pays two writes of latency, and rarely-read data fills the cache.'}],
+      wb:[{flow:['app>cache','cache>app'],sub:{cache:'dirty: 3 writes'},text:'<b>Write:</b> the cache accepts the write and confirms at once. Very fast.'},{flow:['cache>db'],sub:{cache:'flushing…'},text:'Later, the cache flushes changes to the database in batches.'},{flow:['cache>db:bad'],cls:{cache:'bad'},sub:{cache:'crashed'},text:'Risk: if the cache dies before flushing, those writes are lost. Used for counters, metrics, and where some loss is acceptable.'}]};
+    const show = m => stepper($(r,'#cs-st'), spec, S[m], life); bindSeg(r,'cs-m',show); show('aside');
+    let pol='lru', cap=3, c=[], t=0, hits=0, miss=0, playT=null;
+    $(r,'#lru-k').innerHTML = 'ABCDEFG'.split('').map(k=>`<button class="btn" data-k="${k}">${k}</button>`).join('');
+    const order = () => pol==='lru' ? [...c].sort((a,b)=>b.used-a.used) : pol==='fifo' ? [...c].sort((a,b)=>b.ins-a.ins) : [...c].sort((a,b)=>b.n-a.n || b.used-a.used);
+    function access(k){ t++; let e = c.find(x=>x.k===k), msg='';
+      if(e){ hits++; e.used=t; e.n++; msg=`${k}: hit` }
+      else { miss++; if(c.length>=cap){ const v = order().pop(); c = c.filter(x=>x!==v); msg=`${k}: miss, evicted ${v.k}` } else msg=`${k}: miss`; e = {k,used:t,ins:t,n:1}; c.push(e) }
+      draw(k, !!msg.includes('hit'), msg) }
+    function draw(k, hit, msg){ const o = order();
+      $(r,'#lru-s').innerHTML = o.map(x=>`<div class="slot ${x.k===k?(hit?'hit':'new'):''}">${x.k}${pol==='lfu'?`<small>${x.n}</small>`:''}</div>`).join('') + Array.from({length:cap-o.length},()=>'<div class="slot empty">·</div>').join('');
+      $(r,'#lru-msg').textContent = msg||''; setT(r,'lru-h',String(hits),'ok'); setT(r,'lru-m',String(miss)); setT(r,'lru-r', hits+miss ? Math.round(hits/(hits+miss)*100)+'%' : '–') }
+    const reset = () => { clearInterval(playT); c=[]; t=hits=miss=0; draw() };
+    $(r,'#lru-k').onclick = e => { const b = e.target.closest('[data-k]'); if(b) access(b.dataset.k) };
+    $(r,'#lru-reset').onclick = reset;
+    $(r,'#lru-play').onclick = () => { reset(); const seq = 'ABACADAEABFAGAB'.split(''); let i=0; playT = setInterval(()=>{ if(i>=seq.length) return clearInterval(playT); access(seq[i++]) }, 550) };
+    life.add(()=>clearInterval(playT));
+    bindSeg(r,'lru-p',v=>{pol=v; reset()}); bindRange(r,'lru-c',v=>{cap=v; reset()},v=>v+' slots');
+  }});
+
+topic({ id:'queues', group:'Async & distributed', title:'Message queues and streams', nav:'Queues & streams',
+  card:'Decouple services, absorb spikes, process later.',
+  lede:'A queue lets a producer hand off work without waiting for it. Consumers process messages at their own pace. When producers outrun consumers, the backlog grows, and that is the number to watch.',
+  body:()=> lab('Producer vs consumers', `<div class="ctls">${slider('mq-p','Messages produced',1,60,1,20)}${slider('mq-c','Consumers',1,10,1,3)}${slider('mq-pt','Partitions',1,10,1,4)}${slider('mq-ms','Time to process one message',50,1000,50,200)}</div>
+    <canvas class="chart" id="mq-cv" aria-label="Backlog over the last 30 seconds"></canvas><div class="cons" id="mq-cons"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="mq-spike">Traffic spike ×5 for 5 s</button></div>
+    ${stats(stat('mq-cap','Throughput limit'),stat('mq-b','Backlog'),stat('mq-l','Lag (time to drain)'))}`, 'In Kafka-style streams, each partition is read by at most one consumer in a group. Extra consumers sit idle.') +
+    table(['','Queue (SQS, RabbitMQ)','Log / stream (Kafka, Kinesis)'],[['Message after read','Deleted once acknowledged','Kept for a retention period'],['Consumers','Compete for messages','Each group reads everything, tracks its offset'],['Ordering','Usually none (FIFO variants exist)','Ordered within a partition'],['Replay','No','Yes, rewind the offset'],['Typical use','Background jobs, task distribution','Event streams, analytics, many subscribers']]) +
+    sec('Delivery guarantees', cards([['At most once','Send and forget. May lose messages, never duplicates.','Metrics, logs where loss is fine'],['At least once','Retry until acknowledged. No loss, but duplicates happen.','The common default'],['Exactly once (effectively)','At-least-once plus idempotent consumers or transactions.','Payments, counters']])) +
+    tip('Assume at-least-once and make consumers idempotent: store a processed-message ID, or use upserts, so a duplicate does no harm. Send repeatedly failing messages to a dead-letter queue.') +
+    check('8 consumers on a topic with 4 partitions. What happens?', '4 consumers get one partition each and 4 sit idle. To scale consumption further, add partitions.'),
+  mount(r, life){
+    let p=20, cn=3, pt=4, ms=200, backlog=0, spike=0; const hist = Array(300).fill(0); const cv = $(r,'#mq-cv');
+    const capf = () => Math.min(cn,pt)*1000/ms;
+    function cons(){ $(r,'#mq-cons').innerHTML = Array.from({length:cn},(_,i)=>`<span class="${i>=pt?'idle':''}">consumer ${i+1}${i<pt?' · p'+(i+1):' · idle'}</span>`).join('') }
+    bindRange(r,'mq-p',v=>{p=v},v=>v+'/s'); bindRange(r,'mq-c',v=>{cn=v;cons()}); bindRange(r,'mq-pt',v=>{pt=v;cons()}); bindRange(r,'mq-ms',v=>{ms=v},v=>v+' ms');
+    $(r,'#mq-spike').onclick = () => { spike = 50 };
+    function chart(){ const {c,w,h} = canvasCtx(cv); const mx = Math.max(20, ...hist)*1.15;
+      c.clearRect(0,0,w,h); c.strokeStyle = tok('--line'); c.lineWidth = 1; c.font = '11px '+tok('--mono'); c.fillStyle = tok('--muted');
+      for(let i=0;i<=3;i++){ const y = 10+(h-30)*i/3; c.beginPath(); c.moveTo(40,y); c.lineTo(w-8,y); c.stroke(); c.fillText(fmt(mx*(1-i/3),0),4,y+4) }
+      c.fillText('30 s ago',40,h-6); c.fillText('now',w-34,h-6);
+      const X = i => 40+(w-48)*i/(hist.length-1), Y = v => 10+(h-30)*(1-v/mx);
+      c.beginPath(); c.moveTo(X(0),Y(0)); hist.forEach((v,i)=>c.lineTo(X(i),Y(v))); c.lineTo(X(hist.length-1),Y(0)); c.closePath();
+      c.globalAlpha = .18; c.fillStyle = tok('--accent'); c.fill(); c.globalAlpha = 1;
+      c.beginPath(); hist.forEach((v,i)=>i?c.lineTo(X(i),Y(v)):c.moveTo(X(i),Y(v))); c.strokeStyle = tok('--accent'); c.lineWidth = 2; c.stroke();
+      const lv = hist[hist.length-1]; c.beginPath(); c.arc(X(hist.length-1),Y(lv),4,0,7); c.fillStyle = tok('--packet'); c.fill() }
+    life.every(() => { const inr = p*(spike>0?5:1); if(spike>0) spike--; backlog += inr*0.1; backlog = Math.max(0, backlog - capf()*0.1);
+      hist.push(backlog); hist.shift(); chart(); const cp = capf();
+      setT(r,'mq-cap',fmt(cp)+'/s', cp>=p?'ok':'bad'); setT(r,'mq-b',fmt(Math.round(backlog)), backlog<cp?'ok':backlog<cp*10?'warn':'bad'); setT(r,'mq-l', backlog<1?'0 s':fmtDur(backlog/cp)) }, 100);
+  }});
+
+topic({ id:'consensus', group:'Async & distributed', title:'Consensus and leader election (Raft)', nav:'Consensus (Raft)',
+  card:'How a cluster agrees on one leader and one log.',
+  lede:'Consensus lets a group of machines agree on a value even when some fail. Raft does it with an elected leader and majority votes. Systems like etcd, Consul and many databases are built on it.',
+  body:()=> lab('Elect a leader, commit a write', `<div id="raft"></div>`) +
+    sec('Core rules', keys(['<b>Majority (quorum)</b>: a cluster of 2f+1 nodes tolerates f failures. 3 nodes survive 1; 5 survive 2.','<b>Terms</b> number each election. A node with an old term steps down when it sees a newer one, which prevents two active leaders.','<b>Committed</b> means stored on a majority. Committed entries survive any minority failure.','<b>Randomized timeouts</b> make split votes rare.','Odd cluster sizes: 4 nodes tolerate only 1 failure, same as 3.'])) +
+    sec('Where you meet it', keys(['Coordination services: etcd (Kubernetes), ZooKeeper, Consul.','Distributed SQL: CockroachDB, TiDB, Spanner (Paxos).','Kafka’s KRaft mode for cluster metadata.','In interviews: leader election for a scheduler, locks, or config. Usually say “use etcd/ZooKeeper” rather than implementing it.'])) +
+    check('A 5-node cluster splits 3 | 2. What happens on each side?', 'The side with 3 can elect a leader and commit writes. The side with 2 cannot reach a majority, so it stops accepting writes. That is Raft choosing CP.'),
+  mount(r, life){
+    const cx=380, cy=170, R=120, P = k => [cx+R*Math.cos((-90+k*72)*Math.PI/180), cy+R*Math.sin((-90+k*72)*Math.PI/180)];
+    const nodes = [1,2,3,4,5].map((n,k)=>{ const [x,y]=P(k); return {id:'S'+n,x,y,label:'S'+n,sub:'follower · t1'} });
+    nodes.push({id:'cl',x:80,y:170,label:'Client'});
+    const ids = ['S1','S2','S3','S4','S5'], edges = []; ids.forEach((a,i)=>ids.slice(i+1).forEach(b=>edges.push([a,b]))); edges.push(['cl','S3']);
+    const f = (t,s) => Object.fromEntries(ids.map(i=>[i,s+' · t'+t]));
+    stepper($(r,'#raft'), {w:540+160,h:330,minw:600,bw:100,bh:50,label:'Five-node Raft cluster',nodes,edges}, [
+      {flow:['S1>S2','S1>S3','S1>S4','S1>S5'], hot:['S1'], cls:{S1:'leader'}, sub:{...f(1,'follower'),S1:'LEADER · t1'}, text:'S1 is leader for term 1. It sends heartbeats so followers know it is alive.'},
+      {cls:{S1:'down'}, sub:{...f(1,'waiting…'),S1:'crashed'}, text:'S1 crashes. Heartbeats stop. Each follower waits for its own random election timeout (150–300 ms).'},
+      {flow:['S3>S2','S3>S4','S3>S5'], cls:{S1:'down',S3:'cand'}, sub:{...f(1,'follower'),S1:'crashed',S3:'CANDIDATE · t2'}, text:'S3 times out first. It moves to term 2, votes for itself and asks the others for votes.'},
+      {flow:['S2>S3','S4>S3'], cls:{S1:'down',S3:'cand'}, sub:{...f(2,'follower'),S1:'crashed',S3:'3 / 5 votes',S2:'voted S3',S4:'voted S3'}, text:'S2 and S4 grant their votes. With its own, S3 has 3 of 5: a majority.'},
+      {flow:['S3>S2','S3>S4','S3>S5'], cls:{S1:'down',S3:'leader'}, sub:{...f(2,'follower'),S1:'crashed',S3:'LEADER · t2'}, text:'S3 is the new leader and starts sending heartbeats. Failover took about one timeout.'},
+      {flow:['cl>S3'], cls:{S1:'down',S3:'leader'}, sub:{...f(2,'follower'),S1:'crashed',S3:'log: x=5 (pending)'}, text:'A client sends <code>SET x=5</code>. The leader appends it to its log, not yet committed.'},
+      {flow:['S3>S2','S3>S4','S3>S5'], cls:{S1:'down',S3:'leader'}, sub:{...f(2,'follower'),S1:'crashed',S3:'replicating…'}, text:'The leader sends the entry to followers (AppendEntries).'},
+      {flow:['S2>S3','S4>S3'], cls:{S1:'down',S3:'leader'}, sub:{...f(2,'follower'),S1:'crashed',S2:'x=5 ✓',S4:'x=5 ✓',S3:'committed 3/5'}, text:'S2 and S4 acknowledge. Stored on 3 of 5 nodes, the entry is committed. S5 is slow and will catch up.'},
+      {flow:['S3>cl'], cls:{S3:'leader'}, sub:{...f(2,'follower'),S3:'LEADER · t2',S1:'follower · t2'}, text:'The client gets OK. S1 restarts, sees term 2, and rejoins as a follower; the leader brings its log up to date.'}], life);
+  }});
+
+topic({ id:'transactions', group:'Async & distributed', title:'Distributed transactions: 2PC and sagas', nav:'2PC & sagas',
+  card:'Keep several services consistent without one database.',
+  lede:'When one business action touches several databases or services, you need all-or-nothing behaviour across them. Two-phase commit locks everything and decides together; a saga runs local steps and undoes them if something fails.',
+  body:()=> lab('Place an order', `<div class="row" style="margin-bottom:10px">${seg('tx-m',[['2pc','Two-phase commit'],['saga','Saga (with failure)']],'2pc','Pattern')}</div><div id="tx-st"></div>`) +
+    table(['','Two-phase commit','Saga'],[['Consistency','Atomic, strong','Eventual; temporary partial states are visible'],['Locks','Held across services during the protocol','Only local, short'],['Failure handling','Abort everywhere','Run compensating actions (refund, release)'],['Weak spot','Coordinator failure blocks participants','Compensations must be designed for every step'],['Fits','Few databases you control, short transactions','Microservices, long-running business flows']]) +
+    sec('Making sagas reliable', keys(['<b>Choreography</b>: services react to each other’s events. <b>Orchestration</b>: a central workflow tells each service what to do (easier to follow).','<b>Outbox pattern</b>: write the event to an outbox table in the same local transaction as the data change, then publish it. No lost or phantom events.','<b>Idempotent steps</b>: every step and compensation may run twice.','Workflow engines (Temporal, Step Functions) handle retries and state for you.'])) +
+    check('Why not just call Payment then Inventory in a row from the Order service?', 'If the process crashes between the calls, you have charged the customer with no reserved stock and no record of what to undo. Sagas persist progress and compensate.'),
+  mount(r, life){
+    const S2 = {w:600,h:300,minw:500,label:'Two-phase commit',nodes:[{id:'co',x:300,y:55,label:'Coordinator',w:130},{id:'o',x:100,y:240,label:'Orders DB'},{id:'p',x:300,y:240,label:'Payments DB'},{id:'i',x:500,y:240,label:'Inventory DB'}],edges:[['co','o'],['co','p'],['co','i']]};
+    const SS = {w:640,h:300,minw:540,label:'Saga',nodes:[{id:'o',x:100,y:60,label:'Order service'},{id:'p',x:320,y:60,label:'Payment service'},{id:'i',x:540,y:60,label:'Inventory service'},{id:'bus',x:320,y:240,label:'Event bus',sub:'Kafka'}],edges:[['o','bus'],['p','bus'],['i','bus']]};
+    const steps = {
+      '2pc':[{flow:['co>o','co>p','co>i'],sub:{o:'PREPARE?',p:'PREPARE?',i:'PREPARE?'},text:'<b>Phase 1, prepare.</b> The coordinator asks each database whether it can commit. Each writes the change to disk and locks the rows.'},
+        {flow:['o>co','p>co','i>co'],sub:{o:'YES (locked)',p:'YES (locked)',i:'YES (locked)'},text:'All three vote yes. One “no” would abort everyone.'},
+        {flow:['co>o','co>p','co>i'],cls:{co:'leader'},sub:{co:'decision: COMMIT',o:'commit',p:'commit',i:'commit'},text:'<b>Phase 2, commit.</b> The coordinator logs its decision, then tells everyone to commit.'},
+        {flow:['o>co','p>co','i>co'],cls:{o:'leader',p:'leader',i:'leader'},sub:{o:'done',p:'done',i:'done'},text:'Locks are released. Weakness: if the coordinator dies after phase 1, participants wait with locks held.'}],
+      saga:[{flow:['o>bus'],sub:{o:'order PENDING'},text:'The Order service saves the order as PENDING and publishes <code>OrderCreated</code>.'},
+        {flow:['bus>p','p>bus'],cls:{p:'leader'},sub:{p:'charged $40'},text:'Payment charges the card in its own database and publishes <code>PaymentCharged</code>.'},
+        {flow:['bus>i','i>bus:bad'],cls:{p:'leader',i:'bad'},sub:{p:'charged $40',i:'out of stock'},text:'Inventory cannot reserve the item and publishes <code>ReservationFailed</code>.'},
+        {flow:['bus>p'],cls:{p:'cand',i:'bad'},sub:{p:'REFUND $40',i:'out of stock'},text:'<b>Compensation:</b> Payment refunds the charge. There is no rollback, only a new action that undoes the effect.'},
+        {flow:['bus>o'],cls:{o:'bad'},sub:{o:'order CANCELLED',p:'refunded'},text:'Order marks the order CANCELLED and tells the user. The system is consistent again.'}]};
+    const show = m => stepper($(r,'#tx-st'), m==='2pc'?S2:SS, steps[m], life); bindSeg(r,'tx-m',show); show('2pc');
+  }});
+
+topic({ id:'ids', group:'Async & distributed', title:'Unique ID generation', nav:'Unique IDs',
+  card:'Snowflake IDs: unique, sortable, no coordination.',
+  lede:'At scale, a single auto-increment counter becomes a bottleneck. Snowflake-style IDs pack a timestamp, a machine number and a sequence into 64 bits, so every server can mint IDs independently and they still sort by time.',
+  body:()=> lab('Snowflake generator', `<div class="ctls">${slider('sf-m','Machine ID',0,1023,1,42)}</div><div class="row"><button class="btn primary" id="sf-g">Generate ID</button><button class="btn" id="sf-b">Generate 4 in the same millisecond</button></div>
+    <div class="mono" id="sf-id" style="font-size:22px;margin-top:12px;overflow-wrap:anywhere"></div><div class="bits" id="sf-bits"></div>
+    <div class="legend"><span><i style="background:var(--muted)"></i>1 sign bit</span><span><i style="background:var(--accent)"></i>41 bits ms timestamp (~69 years)</span><span><i style="background:var(--warn)"></i>10 bits machine (1,024)</span><span><i style="background:var(--ok)"></i>12 bits sequence (4,096/ms)</span></div>
+    <ul class="log" id="sf-log"></ul>`, 'Uses the Twitter epoch (Nov 2010).') +
+    table(['Approach','Sortable','Coordination','Notes'],[['DB auto-increment','Yes','Single DB','Simple; bottleneck and SPOF'],['UUID v4','No','None','128 bits, random; poor index locality'],['UUID v7','Yes (ms)','None','128 bits, time-ordered; a modern default'],['Snowflake','Yes','Assign machine IDs once','64 bits, fits a BIGINT'],['Ticket server / ranges','Roughly','Hand out blocks of 1,000','Flickr-style; few calls']]) +
+    check('Why do random UUIDs make B-tree inserts slower?', 'New keys land on random pages across the index, causing page splits and cache misses. Time-ordered IDs append at the end, which is cache-friendly.'),
+  mount(r){
+    const EP = 1288834974657n; let m = 42, lastMs = -1n, seq = 0n; const log = $(r,'#sf-log');
+    bindRange(r,'sf-m',v=>{m=v});
+    function gen(ms){ ms = ms ?? BigInt(Date.now()); if(ms===lastMs) seq = (seq+1n)&4095n; else { seq=0n; lastMs=ms }
+      const ts = ms-EP, id = (ts<<22n)|(BigInt(m)<<12n)|seq, bits = id.toString(2).padStart(64,'0');
+      $(r,'#sf-id').textContent = id.toString();
+      $(r,'#sf-bits').innerHTML = bits.split('').map((b,i)=>`<span class="${i===0?'b-s':i<42?'b-t':i<52?'b-m':'b-q'}">${b}</span>`).join('');
+      log.insertAdjacentHTML('afterbegin',`<li>${id} → ${new Date(Number(ms)).toISOString()} · machine ${m} · seq ${seq}</li>`); while(log.children.length>6) log.lastChild.remove() }
+    $(r,'#sf-g').onclick = () => gen(); $(r,'#sf-b').onclick = () => { const ms = BigInt(Date.now()); for(let i=0;i<4;i++) gen(ms) };
+    gen();
+  }});
+
+topic({ id:'resilience', group:'Reliability', title:'Timeouts, retries and circuit breakers', nav:'Resilience patterns',
+  card:'Stop one slow dependency from taking everything down.',
+  lede:'In a distributed system, something is always failing. Timeouts bound the wait, retries hide brief glitches, and circuit breakers stop hammering a dependency that is clearly down.',
+  body:()=> lab('Circuit breaker', `<div class="ctls">${slider('cb-f','Dependency failure rate',0,100,5,10)}</div><div class="dg-scroll" id="cb-svg"></div><div class="tiles" id="cb-t"></div><div class="legend" style="margin-top:6px"><span><i style="background:var(--ok)"></i>success</span><span><i style="background:var(--bad)"></i>failure (waited for timeout)</span><span><i style="background:var(--muted)"></i>failed fast (breaker open)</span></div><p class="step-text" id="cb-msg"></p>`, 'Five calls per second. Push the failure rate above 50% and watch the breaker trip, wait, then test the water.') +
+    lab('Retry storms and jitter', `<div class="row" style="margin-bottom:10px">${seg('rt-m',[['fixed','Fixed 200 ms'],['exp','Exponential'],['jit','Exponential + jitter']],'fixed','Retry strategy')}<button class="btn" id="rt-re">Re-run</button></div><canvas class="chart" id="rt-cv" aria-label="Retry attempts over time"></canvas>${stats(stat('rt-pk','Peak load (per 50 ms)'),stat('rt-tot','Total retries'))}`, '200 clients fail at the same moment and retry up to 4 times. Bars show retries arriving at the server.') +
+    sec('Rules that prevent outages', keys(['<b>Always set timeouts</b>, shorter than the caller’s own timeout.','<b>Retry only idempotent operations</b>, or use idempotency keys.','<b>Exponential backoff with jitter</b>: <code>sleep = random(0, base × 2^attempt)</code>.','<b>Retry budgets</b>: cap retries at ~10% of traffic so retries cannot multiply load.','<b>Bulkheads</b>: separate thread or connection pools per dependency so one slow service cannot use them all.','<b>Fallbacks</b>: cached data, defaults, or a degraded feature instead of an error page.'])) +
+    check('Service A retries 3 times, calls B which retries 3 times, calls C. C is down. How many calls reach C per user request?', 'Up to 4 × 4 = 16. Retries multiply across layers. Retry at one layer only, or use retry budgets.'),
+  mount(r, life){
+    $(r,'#cb-svg').innerHTML = `<svg viewBox="0 0 560 220" class="dg" style="min-width:460px" role="img" aria-label="Circuit breaker states"><defs><marker id="cb-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      <path d="M150 50 Q280 0 410 50" style="fill:none;stroke:var(--muted);stroke-width:1.5" marker-end="url(#cb-ar)"/><text x="280" y="22" class="elab" text-anchor="middle">5 of last 10 calls failed</text>
+      <path d="M430 85 Q420 150 340 170" style="fill:none;stroke:var(--muted);stroke-width:1.5" marker-end="url(#cb-ar)"/><text x="470" y="150" class="elab" text-anchor="middle">after 4 s</text>
+      <path d="M220 170 Q140 150 130 85" style="fill:none;stroke:var(--muted);stroke-width:1.5" marker-end="url(#cb-ar)"/><text x="100" y="150" class="elab" text-anchor="middle">trial succeeds</text>
+      <path d="M320 155 Q380 120 405 85" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3" marker-end="url(#cb-ar)"/><text x="345" y="112" class="elab" text-anchor="middle">trial fails</text>
+      <g class="node" id="cb-closed" transform="translate(70,40)"><rect width="120" height="46" rx="23"/><text class="nl" x="60" y="28" text-anchor="middle">Closed</text></g>
+      <g class="node" id="cb-open" transform="translate(370,40)"><rect width="120" height="46" rx="23"/><text class="nl" x="60" y="28" text-anchor="middle">Open</text></g>
+      <g class="node" id="cb-half" transform="translate(220,150)"><rect width="120" height="46" rx="23"/><text class="nl" x="60" y="28" text-anchor="middle">Half-open</text></g></svg>`;
+    let fr=0.1, st='closed', win=[], opened=0; const hist=[];
+    const MSG = {closed:'<b>Closed:</b> calls pass through normally. Failures are counted.',open:'<b>Open:</b> calls fail immediately without touching the dependency. It gets time to recover and users get a fast error or fallback.',half:'<b>Half-open:</b> one trial call is let through to test whether the dependency has recovered.'};
+    bindRange(r,'cb-f',v=>{fr=v/100},v=>v+'%');
+    life.every(() => { const now = performance.now(); let res;
+      if(st==='open' && now-opened>=4000) st='half';
+      if(st==='open') res='skip';
+      else { const ok = Math.random()>=fr; res = ok?'ok':'bad';
+        if(st==='half'){ if(ok){ st='closed'; win=[] } else { st='open'; opened=now } }
+        else { win.push(ok); if(win.length>10) win.shift(); if(win.filter(x=>!x).length>=5){ st='open'; opened=now } } }
+      hist.push(res); if(hist.length>100) hist.shift();
+      ['closed','open','half'].forEach(s => { const g = $(r,'#cb-'+s); g.classList.remove('leader','bad','cand'); if(s===st) g.classList.add(s==='closed'?'leader':s==='open'?'bad':'cand') });
+      $(r,'#cb-t').innerHTML = hist.map(x=>`<i class="${x}"></i>`).join('');
+      $(r,'#cb-msg').innerHTML = MSG[st] + (st==='open' ? ` Trying again in ${Math.max(0,(4000-(now-opened))/1000).toFixed(1)} s.` : '');
+    }, 200);
+    let mode='fixed'; const cv=$(r,'#rt-cv');
+    function run(){ const B = 80, bk = new Array(B).fill(0); let tot=0;
+      for(let c=0;c<200;c++){ let t=0; for(let k=0;k<4;k++){ const base=100*Math.pow(2,k); t += mode==='fixed'?200 : mode==='exp'?base : Math.random()*base*2; const b = Math.floor(t/50); if(b<B){ bk[b]++; tot++ } } }
+      const {c,w,h} = canvasCtx(cv), mx = Math.max(...bk, 10); c.clearRect(0,0,w,h);
+      c.font = '11px '+tok('--mono'); c.fillStyle = tok('--muted'); c.strokeStyle = tok('--line');
+      [0,.5,1].forEach(f => { const y = 10+(h-30)*(1-f); c.beginPath(); c.moveTo(36,y); c.lineTo(w-6,y); c.stroke(); c.fillText(Math.round(mx*f),4,y+4) });
+      c.fillText('0 s',36,h-6); c.fillText('2 s',36+(w-42)*0.5-8,h-6); c.fillText('4 s',w-26,h-6);
+      const bw = (w-42)/B; c.fillStyle = tok(mode==='jit'?'--ok':'--bad');
+      bk.forEach((v,i) => { const bh = (h-30)*v/mx; c.fillRect(36+i*bw+1, 10+(h-30)-bh, Math.max(1,bw-2), bh) });
+      setT(r,'rt-pk',String(Math.max(...bk)), Math.max(...bk)>60?'bad':'ok'); setT(r,'rt-tot',String(tot)) }
+    bindSeg(r,'rt-m',v=>{mode=v; run()}); $(r,'#rt-re').onclick=run; run();
+  }});
+
+topic({ id:'observability', group:'Reliability', title:'Observability and SLOs', nav:'Observability & SLOs',
+  card:'Metrics, logs, traces; error budgets.',
+  lede:'You cannot fix what you cannot see. Metrics tell you something is wrong, traces tell you where, and logs tell you why. SLOs turn “reliable enough” into a number the team can manage against.',
+  body:()=> cards([['Metrics','Numbers over time: request rate, error rate, p99 latency, CPU. Cheap to store, great for alerts and dashboards.','Prometheus · Grafana · Datadog'],['Logs','Timestamped events with detail. Use structured JSON with a request ID.','Loki · Elasticsearch · CloudWatch'],['Traces','One request’s path across services, with timing per hop (spans).','OpenTelemetry · Jaeger · Tempo']]) +
+    sec('What to measure', table(['Framework','Signals','Use for'],[['Golden signals (Google SRE)','Latency, traffic, errors, saturation','User-facing services'],['RED','Rate, errors, duration','Request-driven microservices'],['USE','Utilization, saturation, errors','Resources: CPU, disks, queues']]) + `<p>Measure latency as percentiles. An average of 50 ms can hide a p99 of 2 seconds that 1 in 100 users feel on every page.</p>`) +
+    lab('Error budget calculator', `<div class="ctls"><div class="ctl"><span class="sl">SLO (successful requests)</span>${seg('slo-s',[['99','99%'],['99.5','99.5%'],['99.9','99.9%'],['99.95','99.95%'],['99.99','99.99%']],'99.9','SLO')}</div>${num('slo-r','Requests per 30 days (millions)',500)}${slider('slo-e','Current error rate',0,5,0.05,0.5)}</div>${stats(stat('slo-bm','Budget as downtime'),stat('slo-br','Budget as failed requests'),stat('slo-burn','Burn rate'),stat('slo-ex','Budget runs out in'))}`, 'SLI = what you measure. SLO = the target. SLA = the contract with penalties, set looser than the SLO.') +
+    tip('When the error budget is spent, the team slows feature releases and works on reliability. Alert on fast burn rates (e.g. budget gone in 2 days), not on every error.') +
+    check('What does a burn rate of 10 mean for a 30-day SLO?', 'You are using error budget 10× faster than allowed. The whole monthly budget will be gone in 3 days.'),
+  mount(r){
+    let s=99.9, e=0.5;
+    function calc(){ const b = 1-s/100, req = (+$(r,'#slo-r').value||0)*1e6, burn = (e/100)/b;
+      setT(r,'slo-bm',fmtDur(b*30*86400)); setT(r,'slo-br',fmt(b*req)); setT(r,'slo-burn',burn.toFixed(1)+'×', burn<=1?'ok':burn<5?'warn':'bad');
+      setT(r,'slo-ex', e===0 ? 'never' : burn<=1 ? 'not this month' : fmtDur(30*86400/burn), burn<=1?'ok':'bad') }
+    bindSeg(r,'slo-s',v=>{s=+v; calc()}); $(r,'#slo-r').addEventListener('input',calc); bindRange(r,'slo-e',v=>{e=v; calc()},v=>v.toFixed(2)+'%');
+  }});
+
+topic({ id:'architecture', group:'Reliability', title:'Monoliths, microservices and patterns', nav:'Architecture styles',
+  card:'When to split services, and the patterns that come with it.',
+  lede:'Microservices let many teams ship independently, at the cost of network calls, distributed data and more operations work. Most products should start as a well-structured monolith.',
+  body:()=> lab('Which style fits?', `<div class="ctls"><div class="ctl"><span class="sl">Engineers</span>${seg('ar-t',[['s','< 15'],['m','15–80'],['l','80+']],'s','Team size')}</div><div class="ctl"><span class="sl">Domain</span>${seg('ar-d',[['new','Still changing'],['known','Well understood']],'new','Domain')}</div></div><div class="nbox" id="ar-o"></div>`) +
+    table(['','Monolith','Modular monolith','Microservices'],[['Deploy','One unit','One unit, strict module boundaries','Each service on its own'],['Data','One database','One DB, schema per module','Database per service'],['Calls between parts','Function calls','Function calls via interfaces','Network (HTTP, gRPC, events)'],['Ops cost','Low','Low','High: discovery, tracing, CI per service'],['Scales teams','Poorly past ~20 engineers','Reasonably','Well']]) +
+    sec('Patterns you will mention', cards([['API gateway','One entry point: auth, rate limits, routing, aggregation.'],['Service discovery','Services find each other by name (DNS, Consul, Kubernetes).'],['Service mesh','Sidecars handle mTLS, retries and metrics without app code.'],['Backend for frontend','A small API per client type (web, mobile).'],['Event-driven','Services publish events; others react. Loose coupling.'],['CQRS','Separate models for writes and reads; read side is denormalized.'],['Event sourcing','Store every change as an event; current state is a replay.'],['Strangler fig','Replace a legacy system route by route behind a proxy.']])) +
+    check('What is a "distributed monolith"?', 'Services that must be deployed together and call each other synchronously for every request. You pay all the costs of microservices with none of the independence.'),
+  mount(r){
+    let t='s', d='new';
+    const draw = () => { let txt;
+      if(t==='s') txt = '<b>Monolith (modular).</b> One deployable, clear module boundaries. You move fastest, and can extract services later along proven seams.';
+      else if(t==='m') txt = d==='new' ? '<b>Modular monolith.</b> Enforce module boundaries and separate schemas first. Extract a service only where a team or scaling need is clear.' : '<b>A few services.</b> Split along stable domain boundaries (billing, search, notifications), each owned by one team.';
+      else txt = d==='new' ? '<b>Careful microservices.</b> Many teams need independence, but unclear boundaries cause chatty services. Invest in domain modelling first.' : '<b>Microservices.</b> Database per service, async events between them, platform team for gateway, mesh and observability.';
+      $(r,'#ar-o').innerHTML = txt };
+    bindSeg(r,'ar-t',v=>{t=v;draw()}); bindSeg(r,'ar-d',v=>{d=v;draw()}); draw();
+  }});
+
+topic({ id:'url-shortener', group:'Case studies', title:'Design a URL shortener', nav:'URL shortener',
+  card:'IDs, base62, read-heavy caching, redirects.',
+  lede:'Turn a long URL into a short code like <code>sho.rt/2TX</code> and redirect anyone who opens it. It is a small problem that exercises IDs, storage, caching and heavy read traffic.',
+  body:()=> sec('Requirements and estimates', keys(['Create a short link; redirect on open; optional custom alias and expiry.','100M new links/day → ~1,200 writes/s. Reads 100× more → ~120K redirects/s at peak.','Each row ~500 bytes → 50 GB/day, ~90 TB over 5 years.','Redirects must be fast (p99 < 20 ms) and highly available.'])) +
+    lab('Short codes with base62', `<div class="ctls">${num('u-id','Numeric ID from the ID generator',11157,1)}${slider('u-len','Code length',4,9,1,7)}</div>${stats(stat('u-code','Short code'),stat('u-cap','Possible codes'),stat('u-yr','Lasts at 100M/day'))}<div class="formula" id="u-f"></div>`, 'Characters 0–9, a–z, A–Z: 62 options per position.') +
+    lab('Create and open a link', `<div class="row" style="margin-bottom:10px">${seg('u-m',[['w','Create'],['r','Redirect']],'w','Path')}</div><div id="u-st"></div>`) +
+    sec('Design decisions', keys(['<b>Code generation</b>: a counter or Snowflake ID encoded in base62 never collides. Hashing the URL (MD5 → first 7 chars) needs collision checks.','<b>Storage</b>: a key-value store (DynamoDB, Cassandra) fits perfectly: one lookup by key.','<b>Cache</b> the hottest links in Redis; a small share of links gets most clicks.','<b>301 vs 302</b>: 301 is cached by browsers (less load, no click analytics); 302 hits you every time (analytics works).','Sequential codes are guessable. Shuffle the ID bits or add a random component if that matters.'])) +
+    check('Why not generate a random 7-character code and check if it exists?', 'It works at small scale, but each create needs a read before write, and collisions grow as the space fills. A unique ID encoded in base62 needs no check.'),
+  mount(r, life){
+    let len=7; function calc(){ let id; try{ id = BigInt(Math.max(0,Math.floor(+$(r,'#u-id').value||0))) }catch(e){ id=0n }
+      const code = base62(id), capN = Math.pow(62,len), yrs = capN/(1e8*365);
+      setT(r,'u-code',code); setT(r,'u-cap',fmt(capN)); setT(r,'u-yr', yrs>1000?'> 1,000 years':yrs<1?Math.round(yrs*365)+' days':Math.round(yrs).toLocaleString()+' years', yrs>=10?'ok':'bad');
+      const digits=[]; let n=id; if(n===0n) digits.push(0); while(n>0n){ digits.unshift(Number(n%62n)); n/=62n }
+      $(r,'#u-f').textContent = `${id} in base 62 = [${digits.join(', ')}] → "${code}"` }
+    $(r,'#u-id').addEventListener('input',calc); bindRange(r,'u-len',v=>{len=v;calc()},v=>v+' chars');
+    const spec = {w:620,h:300,minw:520,label:'URL shortener',nodes:[{id:'c',x:70,y:150,label:'Client'},{id:'api',x:250,y:150,label:'Shortener API',w:130},{id:'id',x:500,y:50,label:'ID generator',sub:'Snowflake'},{id:'db',x:500,y:150,label:'Link store',sub:'code → URL'},{id:'ca',x:500,y:250,label:'Cache',sub:'Redis'}],edges:[['c','api'],['api','id'],['api','db'],['api','ca']]};
+    const W = [{flow:['c>api'],text:'<code>POST /links {url: "https://example.com/very/long/path"}</code>'},{flow:['api>id','id>api'],sub:{id:'→ 11157'},text:'The API gets a unique number from the ID generator.'},{flow:['api>db'],sub:{db:'2TX → https://…'},text:'It encodes 11157 as <code>2TX</code> and stores the mapping.'},{flow:['api>c'],text:'Returns <code>https://sho.rt/2TX</code>.'}];
+    const R = [{flow:['c>api'],text:'Someone opens <code>sho.rt/2TX</code>.'},{flow:['api>ca','ca>api'],cls:{ca:'leader'},sub:{ca:'HIT 2TX'},text:'The API checks the cache. Popular links are almost always there.'},{flow:['api>db','db>api'],sub:{db:'lookup 2TX'},text:'On a miss, one key lookup in the store, then the cache is filled.'},{flow:['api>c'],text:'<code>302 Location: https://example.com/very/long/path</code>. Click events go to a queue for analytics.'}];
+    const show = m => stepper($(r,'#u-st'), spec, m==='w'?W:R, life); bindSeg(r,'u-m',show); show('w'); calc();
+  }});
+
+topic({ id:'chat', group:'Case studies', title:'Design a chat system', nav:'Chat system',
+  card:'WebSockets, presence, ordering, offline delivery.',
+  lede:'A chat system keeps millions of connections open, delivers each message once and in order, and still works when the recipient is offline.',
+  body:()=> lab('Send a message', `<div id="ch-st"></div>`) +
+    sec('Key decisions', keys(['<b>Connections</b>: WebSockets through stateless gateway servers. A presence service maps user → gateway.','<b>Ordering</b>: a sequence number per conversation, assigned by the chat service (or the partition leader). Clients sort by it.','<b>Storage</b>: write-heavy, read by conversation and time. Wide-column stores like Cassandra fit: partition key <code>conversation_id</code>, clustering by sequence.','<b>Delivery</b>: at-least-once with a client-generated message ID for deduplication.','<b>Offline users</b>: push notification; on reconnect the client syncs everything after its last seen sequence.','<b>Group chat</b>: fan out to members; for very large groups, members pull instead.'])) +
+    check('Bob has the app open on a phone and a laptop. How do both get the message?', 'Presence stores a list of connections per user. The chat service delivers to every gateway that holds one of Bob’s connections; each device tracks its own last-seen sequence.'),
+  mount(r, life){
+    stepper($(r,'#ch-st'), {w:700,h:330,minw:600,label:'Chat message flow',nodes:[{id:'a',x:70,y:80,label:'Alice'},{id:'g1',x:240,y:80,label:'Gateway 1',sub:'WebSocket'},{id:'cs',x:430,y:165,label:'Chat service'},{id:'st',x:620,y:80,label:'Message store',sub:'Cassandra',w:130},{id:'pr',x:620,y:250,label:'Presence',sub:'Redis'},{id:'g2',x:240,y:250,label:'Gateway 2',sub:'WebSocket'},{id:'b',x:70,y:250,label:'Bob'}],
+      edges:[['a','g1'],['g1','cs'],['cs','st'],['cs','pr'],['cs','g2'],['g2','b']]}, [
+      {flow:['a>g1'],text:'Alice sends “hi” over her open WebSocket, with a client message ID for deduplication.'},
+      {flow:['g1>cs'],text:'The gateway forwards it to the chat service.'},
+      {flow:['cs>st'],sub:{st:'conv 77 · seq 1042'},text:'The chat service assigns sequence 1042 in this conversation and stores the message durably.'},
+      {flow:['cs>g1','g1>a'],sub:{a:'✓ sent'},text:'Alice gets an ack and sees one tick.'},
+      {flow:['cs>pr','pr>cs'],sub:{pr:'Bob → gateway 2'},text:'The service asks Presence where Bob is connected.'},
+      {flow:['cs>g2','g2>b'],sub:{b:'hi (1042)'},text:'The message is pushed down Bob’s connection.'},
+      {flow:['b>g2','g2>cs','cs>g1','g1>a'],sub:{a:'✓✓ delivered'},text:'Bob’s app sends a delivery receipt, which flows back to Alice. If Bob had been offline, a push notification goes out and his app syncs from seq 1041 when it reconnects.'}], life);
+  }});
+
+topic({ id:'newsfeed', group:'Case studies', title:'Design a news feed', nav:'News feed',
+  card:'Fan-out on write vs read, and the celebrity problem.',
+  lede:'A feed shows recent posts from everyone you follow. You can build each feed when someone posts (push) or when someone opens the app (pull). Real systems mix both.',
+  body:()=> lab('Who pays the cost?', `<div class="ctls">${slider('nf-f','Followers of the poster',1,8,0.1,3)}${slider('nf-t','Push only below',3,7,0.5,5)}</div>${stats(stat('nf-w','Feed writes per post'),stat('nf-tm','Time to deliver (at 1M writes/s)'),stat('nf-d','Strategy for this user'))}<div class="formula" id="nf-x"></div>`, 'Push writes the post ID into every follower’s cached feed. Pull merges followed accounts’ recent posts at read time.') +
+    table(['','Fan-out on write (push)','Fan-out on read (pull)'],[['Work happens','When someone posts','When someone opens the feed'],['Feed load','Very fast: read a precomputed list','Slower: query and merge many sources'],['Problem','Celebrities: one post → millions of writes','Every read is expensive; hard to rank'],['Wasted work','Feeds built for inactive users','None']]) +
+    sec('The hybrid design', keys(['Normal users: push post IDs into followers’ feed caches (Redis lists, capped at ~800 items).','Celebrities (above a follower threshold): skip fan-out; merge their recent posts in at read time.','Store post IDs in feeds, not full posts; hydrate content from a post cache.','Ranking happens on read over a few hundred candidates.','Skip fan-out to users who have not logged in for weeks.'])) +
+    check('Why store only post IDs in each feed?', 'Posts can be edited or deleted, and copying full content to millions of feeds wastes memory. IDs are 8 bytes; content is fetched once from a shared cache.'),
+  mount(r){
+    let f=3, th=5; function calc(){ const F = Math.round(Math.pow(10,f)), T = Math.pow(10,th), push = F < T;
+      setT(r,'nf-w', push?fmt(F):'0 (skipped)', push?(F>1e5?'warn':'ok'):'ok'); setT(r,'nf-tm', push?fmtDur(Math.max(F/1e6,0.001)):'instant');
+      setT(r,'nf-d', push?'Push (fan-out on write)':'Pull (merge on read)', push?'':'warn');
+      $(r,'#nf-x').textContent = push ? `${fmt(F)} followers < ${fmt(T)} threshold → write the post ID into ${fmt(F)} feed caches` : `${fmt(F)} followers ≥ ${fmt(T)} → followers fetch this account’s recent posts when they load their feed` }
+    bindRange(r,'nf-f',v=>{f=v;calc()},v=>fmt(Math.round(Math.pow(10,v)))); bindRange(r,'nf-t',v=>{th=v;calc()},v=>fmt(Math.pow(10,v))+' followers');
+  }});
+
+const QZ = [
+  ['N = 3 replicas. Which setting guarantees reads see the latest write?',['W=1, R=1','W=2, R=2','W=1, R=2','W=2, R=1'],1,'R + W must exceed N: 2 + 2 = 4 > 3.','consistency'],
+  ['A celebrity with 50M followers posts. Best feed strategy for that post?',['Fan-out on write to all followers','Merge it in at read time (pull)','Email every follower','Store it in each follower’s SQL row'],1,'Pushing to 50M feeds is slow and wasteful; the hybrid model pulls celebrity posts at read time.','newsfeed'],
+  ['With consistent hashing, adding a 5th node to 4 moves roughly what share of keys?',['100%','80%','20%','0%'],2,'About 1/5 of keys move to the new node. With hash mod N, about 80% would move.','sharding'],
+  ['Which is NOT a reason to put a queue between two services?',['Absorb traffic spikes','Let the consumer fail without losing work','Get a synchronous answer faster','Decouple deploys and scaling'],2,'A queue makes work asynchronous. It does not make the caller’s answer faster.','queues'],
+  ['During a network partition, an AP system will…',['Reject all writes','Keep answering, possibly with stale data','Elect two leaders and stop','Lose all data'],1,'AP chooses availability: both sides keep serving and reconcile after the partition heals.','cap'],
+  ['99.9% availability allows about how much downtime per month?',['4 minutes','43 minutes','7 hours','3 days'],1,'0.1% of 30 days ≈ 43 minutes.','availability'],
+  ['Two components in series, each 99.9% available. Overall?',['99.99%','99.9%','99.8%','99%'],2,'0.999 × 0.999 ≈ 0.998.','availability'],
+  ['Token bucket of 10, refill 1/s, idle for a minute, then 15 requests arrive at once. How many pass?',['15','10','60','1'],1,'The bucket holds at most 10 tokens.','ratelimit'],
+  ['In cache-aside, who loads data into the cache on a miss?',['The database','The cache itself','The application','The CDN'],2,'The app reads the database and writes the result into the cache.','caching'],
+  ['A circuit breaker is open. A new call arrives. What happens?',['It waits for the timeout','It fails fast without calling the dependency','It is retried 3 times','It goes to a random server'],1,'Open means short-circuit: fail immediately and give the dependency time to recover.','resilience'],
+  ['Why add random jitter to retry delays?',['To make retries slower for everyone','To spread retries so they do not arrive in synchronized spikes','To encrypt requests','To skip timeouts'],1,'Without jitter, clients that failed together retry together.','resilience'],
+  ['10M daily users × 10 requests/day is roughly how many requests per second?',['~120','~1,200','~12,000','~120,000'],1,'100M ÷ 86,400 ≈ 1,160.','estimation'],
+  ['A user updates their profile, refreshes, and sees the old one. Which guarantee is missing?',['Linearizability across regions','Read-your-writes','Durability','Partition tolerance'],1,'The read went to a lagging replica. Route the user’s reads to the leader briefly after a write.','replication'],
+  ['A 5-node Raft cluster can survive how many failed nodes?',['1','2','3','4'],1,'A majority (3) must remain: 5 − 3 = 2.','consensus'],
+  ['Which ID scheme is time-sortable and needs no central coordinator per ID?',['UUID v4','Snowflake','Single-DB auto-increment','Random 6 characters'],1,'Snowflake packs a timestamp first, plus a machine ID, so servers mint IDs independently.','ids'],
+  ['8 consumers in one group read a topic with 4 partitions. What happens?',['All 8 share every partition','4 consumers are idle','Messages are duplicated 2×','Kafka adds partitions automatically'],1,'One partition goes to at most one consumer per group.','queues']];
+topic({ id:'quiz', group:'Practice', title:'Test yourself', nav:'Quiz',
+  card:'16 questions across every topic, with explanations.',
+  lede:'Pick an answer to see whether you got it and why. Each explanation links back to the topic.',
+  body:()=> `${stats(stat('qz-s','Score'),stat('qz-a','Answered'))}<div id="qz"></div><button class="btn" id="qz-r">Start over</button>`,
+  mount(r){
+    let ans = {};
+    function draw(){ $(r,'#qz').innerHTML = QZ.map(([q,o,a,why,t],i)=>{ const g = ans[i];
+      return `<div class="q"><p class="qq">${i+1}. ${q}</p><div class="opts">${o.map((x,j)=>`<button data-q="${i}" data-o="${j}" ${g!==undefined?'disabled':''} class="${g!==undefined?(j===a?'right':j===g?'wrong':''):''}">${x}</button>`).join('')}</div>${g!==undefined?`<p class="why">${g===a?'Correct.':'Not quite.'} ${why} <a href="#${t}">Review the topic →</a></p>`:''}</div>` }).join('');
+      const n = Object.keys(ans).length, s = Object.entries(ans).filter(([i,g])=>QZ[i][2]===g).length;
+      setT(r,'qz-s',`${s} / ${QZ.length}`, n===QZ.length?(s>=12?'ok':'warn'):''); setT(r,'qz-a',`${n} / ${QZ.length}`) }
+    $(r,'#qz').onclick = e => { const b = e.target.closest('button[data-q]'); if(!b) return; ans[b.dataset.q] = +b.dataset.o; draw() };
+    $(r,'#qz-r').onclick = () => { ans = {}; draw() };
+    draw();
+  }});
+
+/* ---------- app shell ---------- */
+const learned = new Set(store.get('sda-learned', []));
+const main = document.getElementById('main'), navList = document.getElementById('nav-list'), navEl = document.getElementById('nav');
+let cleanup = () => {};
+function progress(){ const tot = T.length-1, n = [...learned].filter(id=>id!=='map' && T.some(t=>t.id===id)).length;
+  document.getElementById('prog-t').textContent = `${n} / ${tot} understood`; document.getElementById('prog-b').style.width = (n/tot*100)+'%' }
+function renderNav(filter=''){ const f = filter.toLowerCase(), groups = [...new Set(T.map(t=>t.group))], cur = location.hash.slice(1) || 'map';
+  navList.innerHTML = groups.map(g => { const items = T.filter(t=>t.group===g && (!f || (t.title+' '+t.nav+' '+t.card).toLowerCase().includes(f)));
+    if(!items.length) return ''; return `<div class="ngroup"><h3>${g}</h3>${items.map(t=>`<a href="#${t.id}" class="${learned.has(t.id)?'done':''}" ${t.id===cur?'aria-current="page"':''}><span class="dot"></span>${t.nav}</a>`).join('')}</div>` }).join('') || '<p style="color:var(--muted);font-size:14px">No topics match.</p>' }
+function route(){
+  const id = location.hash.slice(1) || 'map', idx = Math.max(0, T.findIndex(t=>t.id===id)), t = T[idx];
+  cleanup(); const fns = [];
+  const life = { add:f=>fns.push(f), every(fn,ms){ const h=setInterval(fn,ms); fns.push(()=>clearInterval(h)) }, after(fn,ms){ const h=setTimeout(fn,ms); fns.push(()=>clearTimeout(h)) } };
+  cleanup = () => fns.forEach(f=>f());
+  const prev = T[idx-1], next = T[idx+1], done = learned.has(t.id);
+  main.innerHTML = `<article class="topic"><div class="eyebrow mono">${t.group}</div><h1>${t.title}</h1><p class="lede">${t.lede}</p>${t.body()}
+    <footer class="tfoot">${t.id!=='map'?`<div><button class="btn ${done?'done':''}" id="learn" aria-pressed="${done}">${done?'✓ Understood':'Mark as understood'}</button></div>`:''}
+    <div class="pn">${prev?`<a class="pn-l" href="#${prev.id}"><span>Previous</span>${prev.title}</a>`:''}${next?`<a class="pn-r" href="#${next.id}"><span>Next</span>${next.title}</a>`:''}</div></footer></article>`;
+  const lb = document.getElementById('learn');
+  if(lb) lb.onclick = () => { learned.has(t.id) ? learned.delete(t.id) : learned.add(t.id); store.set('sda-learned',[...learned]);
+    const d = learned.has(t.id); lb.className = 'btn'+(d?' done':''); lb.textContent = d?'✓ Understood':'Mark as understood'; lb.setAttribute('aria-pressed',d); renderNav(document.getElementById('q').value); progress() };
+  try { t.mount && t.mount(main, life) } catch(e){ console.error(e) }
+  renderNav(document.getElementById('q').value); progress(); closeNav();
+  document.title = t.id==='map' ? 'System Design Atlas' : t.nav+' · System Design Atlas';
+  window.scrollTo(0,0);
+}
+const menu = document.getElementById('menu'), scrim = document.getElementById('scrim');
+function closeNav(){ navEl.classList.remove('open'); scrim.classList.remove('on'); menu.setAttribute('aria-expanded','false') }
+menu.onclick = () => { const o = !navEl.classList.contains('open'); navEl.classList.toggle('open',o); scrim.classList.toggle('on',o); menu.setAttribute('aria-expanded',String(o)) };
+scrim.onclick = closeNav;
+document.getElementById('q').addEventListener('input', e => renderNav(e.target.value));
+window.addEventListener('hashchange', route);
+route();
+</script>

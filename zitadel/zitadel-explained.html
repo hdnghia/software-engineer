@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZITADEL Field Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column with wide interactive "bench" panels; a sticky chapter nav on top */
+:root{
+  --bg:#f5f6f3; --surface:#ffffff; --sunk:#eceee9; --line:#d5d9d1;
+  --fg:#18201c; --muted:#5a655e;
+  --accent:#0f6b5c; --accent-soft:#d6ece6; --accent-fg:#ffffff;
+  --warm:#b8561b; --warm-soft:#f6e3d5;
+  --blue:#2457a6; --blue-soft:#dde6f5;
+  --violet:#6b46a8; --violet-soft:#e9e1f5;
+  --ok:#2c7a3f; --code-bg:#1b2420; --code-fg:#dfe9e3; --code-key:#7fd1bc; --code-str:#f2b98b; --code-num:#a9c3ff;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201c; --sunk:#0d1210; --line:#2c3732;
+  --fg:#e6ece8; --muted:#9aa8a0;
+  --accent:#4fc2a8; --accent-soft:#16352e; --accent-fg:#06201a;
+  --warm:#f0965a; --warm-soft:#3a2416;
+  --blue:#82a9ea; --blue-soft:#1a2740;
+  --violet:#b89aec; --violet-soft:#2a1f3d;
+  --ok:#6fcf86; --code-bg:#0a0e0c; --code-fg:#dfe9e3;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201c; --sunk:#0d1210; --line:#2c3732;
+  --fg:#e6ece8; --muted:#9aa8a0;
+  --accent:#4fc2a8; --accent-soft:#16352e; --accent-fg:#06201a;
+  --warm:#f0965a; --warm-soft:#3a2416;
+  --blue:#82a9ea; --blue-soft:#1a2740;
+  --violet:#b89aec; --violet-soft:#2a1f3d;
+  --ok:#6fcf86; --code-bg:#0a0e0c; --code-fg:#dfe9e3;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.1rem,5vw,3.4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.55rem,3vw,2.1rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0}
+code,.mono{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--sunk);border:1px solid var(--line);padding:.05em .35em;border-radius:5px;overflow-wrap:anywhere}
+a{color:var(--accent)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.lede{font-size:1.12rem;color:var(--muted);max-width:62ch}
+.muted{color:var(--muted)}
+
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;gap:4px;align-items:center;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+nav.top .brand{font-family:var(--display);font-weight:800;margin-right:12px;white-space:nowrap}
+nav.top a{text-decoration:none;color:var(--muted);font-size:.88rem;padding:6px 10px;border-radius:6px;white-space:nowrap}
+nav.top a:hover{background:var(--sunk);color:var(--fg)}
+.theme-btn{margin-left:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:.82rem;white-space:nowrap}
+
+section{padding-block:56px;border-bottom:1px solid var(--line)}
+section .head{display:grid;gap:10px;margin-bottom:28px}
+
+/* hero */
+.hero{padding-block:56px 40px}
+.hero .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.hero .grid>*{min-width:0}
+.hero p.lede{margin-top:16px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{font-family:var(--mono);font-size:.78rem;padding:4px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.oneliner{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.oneliner .q{font-family:var(--display);font-size:1.25rem;font-weight:700;margin-bottom:12px}
+.oneliner ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.oneliner li::marker{color:var(--accent);font-family:var(--mono)}
+
+/* analogy */
+.analogy{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.an{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:6px;align-content:start}
+.an .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.an .z{font-family:var(--display);font-weight:700;font-size:1.1rem}
+.an .eq{color:var(--warm);font-weight:600;font-size:.95rem}
+.an p{font-size:.9rem;color:var(--muted)}
+
+/* explorer */
+.bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;font-family:var(--mono);font-size:.86rem;overflow-x:auto}
+.tree ul{list-style:none;margin:0;padding-left:18px;border-left:1px dashed var(--line)}
+.tree>ul{padding-left:0;border-left:0}
+.tree li{margin:3px 0}
+.node{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;background:none;padding:4px 8px;border-radius:6px;text-align:left;font-family:var(--mono);font-size:.86rem}
+.node:hover{background:var(--sunk)}
+.node[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.tag{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:4px;font-weight:500}
+.t-inst{background:var(--sunk);color:var(--fg);border:1px solid var(--line)}
+.t-org{background:var(--blue-soft);color:var(--blue)}
+.t-proj{background:var(--accent-soft);color:var(--accent)}
+.t-app{background:var(--warm-soft);color:var(--warm)}
+.t-user{background:var(--violet-soft);color:var(--violet)}
+.t-role{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:14px;position:sticky;top:70px}
+.detail .row{display:grid;gap:4px}
+.detail .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.detail .analog{background:var(--warm-soft);border-radius:8px;padding:10px 12px;font-size:.95rem}
+.detail .where{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.hint{font-size:.85rem;color:var(--muted);margin-top:10px}
+
+/* flow */
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:18px}
+.lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.lane{border:1px solid var(--line);border-radius:8px;padding:12px 10px;text-align:center;background:var(--bg);transition:background .25s,border-color .25s,transform .25s}
+.lane .ico{font-family:var(--mono);font-size:1.1rem;color:var(--muted)}
+.lane b{display:block;font-family:var(--display);font-size:1rem}
+.lane small{color:var(--muted);font-size:.78rem}
+.lane.on{background:var(--accent-soft);border-color:var(--accent);transform:translateY(-2px)}
+.arrowline{height:34px;position:relative}
+.arrowline .arr{position:absolute;top:14px;height:2px;background:var(--warm);transition:left .35s,width .35s}
+.arrowline .arr::after{content:"";position:absolute;top:-5px;border:6px solid transparent}
+.arrowline .arr.r::after{right:-10px;border-left-color:var(--warm)}
+.arrowline .arr.l::after{left:-10px;border-right-color:var(--warm)}
+.arrowline .msg{position:absolute;top:-6px;font-family:var(--mono);font-size:.72rem;color:var(--warm);white-space:nowrap;transform:translateX(-50%);transition:left .35s}
+.stepbox{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+.stepnum{font-family:var(--display);font-weight:800;font-size:2.4rem;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.stepbox h3{margin-bottom:6px}
+.stepbox pre{margin:10px 0 0}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.dots{display:flex;gap:6px;margin-left:auto}
+.dots span{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.55;margin:0}
+pre .k{color:var(--code-key)} pre .s{color:var(--code-str)} pre .n{color:var(--code-num)} pre .c{color:#7d8c84}
+
+/* playground */
+.play{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;align-content:start}
+.field{display:grid;gap:6px}
+.field label{font-size:.82rem;font-weight:600}
+select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);width:100%}
+.checks{display:grid;gap:6px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:.88rem;font-weight:400}
+.checks code{font-size:.78rem}
+.verdict{border-radius:8px;padding:12px 14px;font-size:.92rem}
+.verdict.ok{background:var(--accent-soft)}
+.verdict.no{background:var(--warm-soft)}
+.verdict b{font-family:var(--display)}
+
+/* users / grants */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:10px;align-content:start}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:.93rem}
+.mini-tbl{width:100%;border-collapse:collapse;font-size:.9rem}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.mini-tbl th,.mini-tbl td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.mini-tbl th{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--sunk)}
+.mini-tbl tr:last-child td{border-bottom:0}
+
+/* grant diagram */
+.grantdia{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;overflow-x:auto}
+.grantdia svg{display:block;min-width:620px;width:100%;height:auto}
+
+/* features */
+.feat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.feat .card h3{font-size:1.02rem}
+.feat .card p{font-size:.9rem;color:var(--muted)}
+.feat .card .kw{font-family:var(--mono);font-size:.74rem;color:var(--accent)}
+
+/* events */
+.es{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.log{background:var(--code-bg);color:var(--code-fg);border-radius:var(--r);padding:12px;font-family:var(--mono);font-size:.78rem;max-height:330px;overflow:auto;display:grid;gap:4px;align-content:start}
+.log .ev{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:4px 6px;border-radius:4px}
+.log .ev.new{background:rgba(79,194,168,.18)}
+.log .seq{color:#7d8c84;font-variant-numeric:tabular-nums}
+.log .typ{color:var(--code-key)}
+.state{display:grid;gap:8px}
+.state .kv{display:grid;grid-template-columns:130px 1fr;gap:10px;font-size:.9rem;padding:6px 0;border-bottom:1px solid var(--line)}
+.state .kv span:first-child{color:var(--muted);font-family:var(--mono);font-size:.8rem}
+.evbtns{display:flex;flex-wrap:wrap;gap:6px}
+.evbtns .btn{font-size:.82rem;padding:6px 10px}
+
+/* checklist */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--display);font-weight:800;font-size:1.5rem;color:var(--accent);line-height:1.1}
+.steps li>div{min-width:0}
+.steps b{font-family:var(--display);font-size:1.02rem}
+.steps p{font-size:.92rem;color:var(--muted)}
+
+/* glossary */
+.gsearch{width:100%;max-width:420px;font:inherit;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.gloss{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;margin-top:18px}
+.gloss dl{margin:0}
+.gitem{padding:12px 0;border-bottom:1px solid var(--line)}
+.gitem dt{font-family:var(--display);font-weight:700}
+.gitem dd{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+
+footer{padding-block:32px 48px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:860px){
+  .hero .grid,.bench,.play,.es{grid-template-columns:1fr}
+  .analogy{grid-template-columns:repeat(2,1fr)}
+  .feat{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail{position:static}
+}
+@media (max-width:560px){
+  .analogy,.feat,.two,.gloss{grid-template-columns:1fr}
+  .lanes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .arrowline{display:none}
+  .stepnum{font-size:1.8rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Chapters">
+  <div class="wrap">
+    <span class="brand">ZITADEL Field Guide</span>
+    <a href="#picture">Big picture</a>
+    <a href="#explore">Building blocks</a>
+    <a href="#login">Login flow</a>
+    <a href="#token">Token lab</a>
+    <a href="#users">Users</a>
+    <a href="#grants">Grants</a>
+    <a href="#features">Features</a>
+    <a href="#events">Event store</a>
+    <a href="#start">Get started</a>
+    <a href="#glossary">Glossary</a>
+    <button class="theme-btn" id="themeBtn" type="button">Theme: system</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap grid">
+    <div>
+      <div class="eyebrow">Identity &amp; access management, explained</div>
+      <h1>ZITADEL decides who someone is and what they may do.</h1>
+      <p class="lede">ZITADEL is an open-source identity platform. Your apps send users to it to log in, and it sends them back with a signed token that says who they are and which roles they hold. You stop writing login pages, password storage, MFA and SSO yourself.</p>
+      <div class="facts">
+        <span class="chip">Written in Go</span>
+        <span class="chip">PostgreSQL</span>
+        <span class="chip">Event sourced</span>
+        <span class="chip">OIDC · OAuth 2.0 · SAML 2.0</span>
+        <span class="chip">Multi-tenant</span>
+        <span class="chip">Cloud or self-hosted</span>
+      </div>
+    </div>
+    <div class="oneliner">
+      <div class="q">What happens when a user clicks "Log in"?</div>
+      <ol>
+        <li>Your app redirects the browser to ZITADEL.</li>
+        <li>ZITADEL shows the login page: password, passkey, Google, Microsoft…</li>
+        <li>It checks MFA and policies for that user's organization.</li>
+        <li>It sends the browser back to your app with a one-time code.</li>
+        <li>Your app swaps the code for tokens and reads the user's roles.</li>
+      </ol>
+    </div>
+  </div>
+</header>
+
+<section id="picture">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">The big picture</div>
+      <h2>Think of ZITADEL as an office tower with a front desk</h2>
+      <p class="lede">Every ZITADEL concept maps to something in a shared office building. Keep this picture in mind and the rest of the guide falls into place.</p>
+    </div>
+    <div class="analogy">
+      <div class="an"><span class="k">Instance</span><span class="z">The whole tower</span><span class="eq">= one ZITADEL installation</span><p>Has its own domain (e.g. <code>auth.acme.com</code>), default settings and administrators.</p></div>
+      <div class="an"><span class="k">Organization</span><span class="z">A company renting a floor</span><span class="eq">= a tenant</span><p>Owns its own users, login policy, branding and domain. Floors are isolated from each other.</p></div>
+      <div class="an"><span class="k">Project</span><span class="z">A product team's room</span><span class="eq">= a group of apps + roles</span><p>Defines the roles (like <code>admin</code>, <code>editor</code>) that apps inside it understand.</p></div>
+      <div class="an"><span class="k">Application</span><span class="z">A door into the room</span><span class="eq">= a client (web, mobile, API)</span><p>Has a client ID and redirect URLs. Each app talks OIDC, SAML or API auth.</p></div>
+      <div class="an"><span class="k">User</span><span class="z">A person with a badge</span><span class="eq">= human or machine account</span><p>Belongs to exactly one organization. Can log in with password, passkey or an external IdP.</p></div>
+      <div class="an"><span class="k">Role</span><span class="z">What the badge opens</span><span class="eq">= a permission label</span><p>Plain strings defined on a project. Your app checks them in the token.</p></div>
+      <div class="an"><span class="k">Authorization</span><span class="z">Badge programmed for a room</span><span class="eq">= user + project + roles</span><p>Also called a user grant. Gives one user some roles in one project.</p></div>
+      <div class="an"><span class="k">Project grant</span><span class="z">Lending your room to another company</span><span class="eq">= B2B sharing</span><p>Lets another organization assign your project's roles to its own users.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="explore">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Interactive · Building blocks</div>
+      <h2>Click through a real-looking setup</h2>
+      <p class="lede">Below is an example instance for a fictional SaaS company, Acme, that sells a project-tracking tool to other businesses. Select any item to see what it is and where you'd find it in the ZITADEL Console.</p>
+    </div>
+    <div class="bench">
+      <div>
+        <div class="tree" id="tree" role="group" aria-label="Example hierarchy"></div>
+        <p class="hint">Example data. Names and IDs are invented.</p>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section id="login">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Interactive · Login flow</div>
+      <h2>Follow one login, step by step</h2>
+      <p class="lede">This is the OpenID Connect Authorization Code flow with PKCE, the recommended flow for web and mobile apps. Press Next to move the message between the four parties.</p>
+    </div>
+    <div class="flow">
+      <div class="lanes" id="lanes">
+        <div class="lane" data-lane="0"><div class="ico">[ ]</div><b>Browser</b><small>the user</small></div>
+        <div class="lane" data-lane="1"><div class="ico">&lt;/&gt;</div><b>Your app</b><small>client</small></div>
+        <div class="lane" data-lane="2"><div class="ico">#</div><b>ZITADEL</b><small>identity provider</small></div>
+        <div class="lane" data-lane="3"><div class="ico">{ }</div><b>Your API</b><small>resource server</small></div>
+      </div>
+      <div class="arrowline" id="arrowline"><div class="arr" id="arr"></div><div class="msg" id="arrmsg"></div></div>
+      <div class="stepbox">
+        <div class="stepnum" id="stepnum">1</div>
+        <div style="min-width:0">
+          <h3 id="steptitle"></h3>
+          <p id="steptext" class="muted"></p>
+          <pre id="stepcode"></pre>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="prevBtn" type="button">Back</button>
+        <button class="btn primary" id="nextBtn" type="button">Next</button>
+        <button class="btn" id="resetBtn" type="button">Restart</button>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="token">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Interactive · Token lab</div>
+      <h2>What ends up inside the token</h2>
+      <p class="lede">Pick a user and the scopes your app asks for. The panel shows the decoded ID token ZITADEL would issue, and whether the user can reach the Acme Tracker app at all.</p>
+    </div>
+    <div class="play">
+      <div class="panel">
+        <div class="field">
+          <label for="pUser">User logging in</label>
+          <select id="pUser"></select>
+        </div>
+        <div class="field">
+          <label>Scopes requested by the app</label>
+          <div class="checks" id="pScopes"></div>
+        </div>
+        <div class="field">
+          <label for="pCheck">Project setting "Check authorization on authentication"</label>
+          <select id="pCheck"><option value="on">On: block users without a role</option><option value="off">Off: let everyone in</option></select>
+        </div>
+        <div class="verdict" id="pVerdict"></div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <pre id="pToken" style="border-radius:0;min-height:100%"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="users">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Users</div>
+      <h2>Two kinds of users: people and programs</h2>
+    </div>
+    <div class="two">
+      <div class="card">
+        <span class="tag t-user" style="justify-self:start">Human user</span>
+        <h3>Someone who logs in through a browser</h3>
+        <ul>
+          <li>Has a username, email and profile.</li>
+          <li>Logs in with password, passkey, or an external IdP (Google, Entra ID, GitHub, any OIDC/SAML/LDAP).</li>
+          <li>Can add second factors: authenticator app (TOTP), SMS, email OTP, security key (U2F).</li>
+          <li>Can register themselves if the organization allows it.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag t-role" style="justify-self:start">Machine user</span>
+        <h3>A service account for backend jobs</h3>
+        <ul>
+          <li>No password and no login page.</li>
+          <li><b>Personal access token (PAT):</b> a long-lived bearer token. Easiest to start with.</li>
+          <li><b>JWT profile:</b> signs a JWT with a private key and exchanges it for a token. Most secure.</li>
+          <li><b>Client credentials:</b> client ID and secret, standard OAuth.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:16px">
+      <table class="mini-tbl">
+        <thead><tr><th>Who manages what</th><th>Role example</th><th>Scope of power</th></tr></thead>
+        <tbody>
+          <tr><td>Instance administrator</td><td><code>IAM_OWNER</code></td><td>Everything in the instance: all organizations, default policies, SMTP, identity providers.</td></tr>
+          <tr><td>Organization administrator</td><td><code>ORG_OWNER</code></td><td>One organization: its users, projects, policies, branding and domains.</td></tr>
+          <tr><td>Project administrator</td><td><code>PROJECT_OWNER</code></td><td>One project: its apps, roles and who is authorized.</td></tr>
+          <tr><td>Your app's end user</td><td><code>editor</code> (your own role)</td><td>Whatever your app decides. ZITADEL only puts the role in the token.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">The upper-case roles are ZITADEL "managers" that control the Console itself. Lower-case roles are ones you define for your own apps.</p>
+  </div>
+</section>
+
+<section id="grants">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Grants</div>
+      <h2>How roles reach users, including users in other companies</h2>
+      <p class="lede">Acme owns the "Acme Tracker" project. Its customer Globex needs its own staff to use the tracker, and Globex's admin wants to decide who gets which role. A project grant makes this possible without Acme touching Globex's users.</p>
+    </div>
+    <div class="grantdia">
+      <svg viewBox="0 0 760 290" role="img" aria-label="Diagram of a project grant from Acme to Globex and authorizations to users">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--warm)"/></marker>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/></marker>
+        </defs>
+        <rect x="10" y="10" width="330" height="270" rx="12" fill="var(--blue-soft)" stroke="var(--blue)"/>
+        <text x="26" y="36" fill="var(--blue)" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="1">ORGANIZATION · ACME (owner)</text>
+        <rect x="30" y="54" width="290" height="104" rx="10" fill="var(--surface)" stroke="var(--accent)"/>
+        <text x="46" y="80" fill="var(--fg)" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="16">Project: Acme Tracker</text>
+        <text x="46" y="104" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12">roles: admin · editor · viewer</text>
+        <text x="46" y="126" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12">apps: tracker-web · tracker-api</text>
+        <rect x="30" y="190" width="290" height="66" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="46" y="216" fill="var(--violet)" font-family="IBM Plex Mono, monospace" font-size="12">USER</text>
+        <text x="46" y="238" fill="var(--fg)" font-family="IBM Plex Sans, sans-serif" font-size="14">alice@acme.com → admin</text>
+        <path d="M175 190 L175 162" stroke="var(--violet)" stroke-width="2" fill="none" marker-end="url(#ah2)"/>
+
+        <rect x="420" y="10" width="330" height="270" rx="12" fill="var(--sunk)" stroke="var(--line)"/>
+        <text x="436" y="36" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="1">ORGANIZATION · GLOBEX (customer)</text>
+        <rect x="440" y="54" width="290" height="104" rx="10" fill="var(--surface)" stroke="var(--warm)" stroke-dasharray="5 4"/>
+        <text x="456" y="80" fill="var(--fg)" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="16">Granted: Acme Tracker</text>
+        <text x="456" y="104" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12">allowed roles: editor · viewer</text>
+        <text x="456" y="126" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12">(admin was not granted)</text>
+        <rect x="440" y="190" width="290" height="66" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="456" y="216" fill="var(--violet)" font-family="IBM Plex Mono, monospace" font-size="12">USERS</text>
+        <text x="456" y="238" fill="var(--fg)" font-family="IBM Plex Sans, sans-serif" font-size="14">bob@globex.io → editor</text>
+        <path d="M585 190 L585 162" stroke="var(--violet)" stroke-width="2" fill="none" marker-end="url(#ah2)"/>
+
+        <path d="M322 100 L436 100" stroke="var(--warm)" stroke-width="2.5" fill="none" marker-end="url(#ah)"/>
+        <text x="379" y="90" text-anchor="middle" fill="var(--warm)" font-family="IBM Plex Mono, monospace" font-size="11">project grant</text>
+        <text x="379" y="122" text-anchor="middle" fill="var(--violet)" font-family="IBM Plex Mono, monospace" font-size="11">↑ authorization</text>
+        <text x="379" y="138" text-anchor="middle" fill="var(--violet)" font-family="IBM Plex Mono, monospace" font-size="11">(user grant)</text>
+      </svg>
+    </div>
+    <div class="two" style="margin-top:16px">
+      <div class="card"><h3>Authorization (user grant)</h3><p class="muted">"Give this user these roles in this project." Alice gets <code>admin</code> on Acme Tracker. It is the most common action you'll take in the Console.</p></div>
+      <div class="card"><h3>Project grant</h3><p class="muted">"Let this other organization hand out a subset of my roles." Globex can assign <code>editor</code> and <code>viewer</code> to its own people, but never <code>admin</code>.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">What you get out of the box</div>
+      <h2>Features, in plain words</h2>
+    </div>
+    <div class="feat">
+      <div class="card"><span class="kw">Login UI</span><h3>Hosted login pages</h3><p>Ready-made login, registration, password reset and MFA screens. Or build your own with the Session API.</p></div>
+      <div class="card"><span class="kw">Passkeys · TOTP · OTP</span><h3>Strong authentication</h3><p>Passwordless login with passkeys (Face ID, Windows Hello, security keys) and second factors you can force per organization.</p></div>
+      <div class="card"><span class="kw">Identity providers</span><h3>"Log in with…" buttons</h3><p>Connect Google, Microsoft Entra ID, GitHub, GitLab, Apple, any generic OIDC, SAML or LDAP source.</p></div>
+      <div class="card"><span class="kw">Multi-tenancy</span><h3>One system, many customers</h3><p>Each organization has its own users, policies, branding and verified domains, fully isolated.</p></div>
+      <div class="card"><span class="kw">Branding</span><h3>Your colors and logo</h3><p>Customize logo, colors, fonts and texts per organization, so each customer sees their own brand on login.</p></div>
+      <div class="card"><span class="kw">Actions</span><h3>Hook into events</h3><p>Call your own webhook when something happens, for example to add custom claims to a token or sync a new user to a CRM.</p></div>
+      <div class="card"><span class="kw">Audit trail</span><h3>Every change is recorded</h3><p>Because ZITADEL stores events, you can see who changed what and when, for every object.</p></div>
+      <div class="card"><span class="kw">APIs</span><h3>Everything is an API</h3><p>The Console only uses public gRPC and REST (connectRPC) APIs, so anything you click can be automated.</p></div>
+      <div class="card"><span class="kw">Standards</span><h3>OIDC, OAuth 2.0, SAML</h3><p>Plugs into most frameworks and products, with token introspection, device flow, token exchange and SCIM provisioning.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="events">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Interactive · Under the hood</div>
+      <h2>Event sourcing: ZITADEL remembers every change</h2>
+      <p class="lede">Most systems overwrite a row when you change something. ZITADEL appends an event instead, and builds the current state by replaying events. That is why it has a complete audit trail for free. Try it on one user below.</p>
+    </div>
+    <div class="es">
+      <div class="panel">
+        <div class="evbtns" id="evbtns"></div>
+        <div class="log" id="log" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <span class="lbl eyebrow">Projection: current state of user 2840…</span>
+        <div class="state" id="state"></div>
+        <p class="hint">The "projection" is a read model built from events. ZITADEL keeps many projections (users, orgs, tokens…) in PostgreSQL tables for fast queries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Get started</div>
+      <h2>From zero to a working login in eight steps</h2>
+    </div>
+    <ol class="steps">
+      <li><div><b>Run ZITADEL</b><p>Use ZITADEL Cloud, or self-host with Docker Compose next to PostgreSQL. The Console opens at <code>http://localhost:8080/ui/console</code>.</p></div></li>
+      <li><div><b>Create an organization</b><p>One per customer or business unit. Small setups can use the default organization.</p></div></li>
+      <li><div><b>Create a project</b><p>Name it after your product, for example "Acme Tracker".</p></div></li>
+      <li><div><b>Add roles to the project</b><p>Plain keys such as <code>admin</code>, <code>editor</code>, <code>viewer</code>. Turn on "Assert roles on authentication" so they land in tokens.</p></div></li>
+      <li><div><b>Add an application</b><p>Pick the type: Web, Native, User Agent (SPA) or API. Set the redirect URI, e.g. <code>http://localhost:3000/callback</code>. Copy the Client ID.</p></div></li>
+      <li><div><b>Create a user</b><p>Or let people self-register, or connect Google or Entra ID as an identity provider.</p></div></li>
+      <li><div><b>Authorize the user</b><p>Give them a role in your project. That's the authorization (user grant).</p></div></li>
+      <li><div><b>Wire up your app</b><p>Point any OIDC library to your issuer. It discovers all endpoints from <code>/.well-known/openid-configuration</code>. Read roles from the token claim <code>urn:zitadel:iam:org:project:roles</code>.</p></div></li>
+    </ol>
+    <div class="tblwrap" style="margin-top:20px">
+      <table class="mini-tbl">
+        <thead><tr><th>Endpoint</th><th>Path</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td>Discovery</td><td><code>/.well-known/openid-configuration</code></td><td>Lets libraries configure themselves.</td></tr>
+          <tr><td>Authorize</td><td><code>/oauth/v2/authorize</code></td><td>Where the browser is sent to log in.</td></tr>
+          <tr><td>Token</td><td><code>/oauth/v2/token</code></td><td>Swap the code (or credentials) for tokens.</td></tr>
+          <tr><td>Userinfo</td><td><code>/oidc/v1/userinfo</code></td><td>Get the profile of the logged-in user.</td></tr>
+          <tr><td>Introspect</td><td><code>/oauth/v2/introspect</code></td><td>APIs ask "is this token still valid?"</td></tr>
+          <tr><td>Keys (JWKS)</td><td><code>/oauth/v2/keys</code></td><td>Public keys to verify token signatures.</td></tr>
+          <tr><td>End session</td><td><code>/oidc/v1/end_session</code></td><td>Log out.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="glossary" style="border-bottom:0">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Glossary</div>
+      <h2>Every term, one sentence each</h2>
+    </div>
+    <label for="gq" class="muted" style="font-size:.85rem">Filter terms</label><br>
+    <input id="gq" class="gsearch" type="search" placeholder="Try: token, grant, PKCE…" autocomplete="off">
+    <div class="gloss" id="gloss"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">An independent learning guide. All organization names, users and IDs on this page are examples. Check the official ZITADEL documentation for the version you run.</div>
+</footer>
+
+<script>
+(function(){
+  /* ---------- theme toggle ---------- */
+  var root=document.documentElement, tb=document.getElementById('themeBtn');
+  var modes=['system','light','dark'], cur='system';
+  try{cur=localStorage.getItem('zg-theme')||'system'}catch(e){}
+  function applyTheme(){ if(cur==='system')root.removeAttribute('data-theme'); else root.setAttribute('data-theme',cur); tb.textContent='Theme: '+cur; }
+  applyTheme();
+  tb.addEventListener('click',function(){cur=modes[(modes.indexOf(cur)+1)%3];try{localStorage.setItem('zg-theme',cur)}catch(e){}applyTheme();});
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  /* ---------- explorer ---------- */
+  var T={
+    inst:{tag:'inst',label:'Instance',name:'auth.acme.com',what:'The top level. One running ZITADEL (or one tenant in ZITADEL Cloud) with its own domain. It holds default settings that every organization inherits unless it overrides them.',analog:'The office tower itself, with building-wide rules like opening hours.',ex:'Default login policy: password + passkey allowed. Default password complexity: 8 characters, 1 number. SMTP server for emails.',where:'Console → Default settings (instance)'},
+    orgAcme:{tag:'org',label:'Organization',name:'Acme',what:'A tenant. It owns users, projects, login and password policies, branding and verified domains. Users from one organization cannot see another unless you grant access.',analog:'Acme rents a floor. Its own badge office, its own logo on the door.',ex:'Verified domain acme.com, so users log in as alice@acme.com. MFA forced for everyone.',where:'Console → Organization'},
+    orgGlobex:{tag:'org',label:'Organization',name:'Globex',what:'A second tenant, here a customer of Acme. It manages its own people and can use Acme Tracker through a project grant.',analog:'Another company on a different floor, borrowing access to Acme\'s room.',ex:'Globex logs in with "Sign in with Microsoft" because it connected its Entra ID tenant.',where:'Console → switch organization (top left)'},
+    proj:{tag:'proj',label:'Project',name:'Acme Tracker',what:'A container for applications that belong together and share the same roles. Roles are defined here, once, and every app in the project understands them.',analog:'The product team\'s room. Any door into it uses the same badge rules.',ex:'Settings: "Assert roles on authentication" ON, so roles appear in tokens. "Check authorization on authentication" ON, so users without a role are blocked.',where:'Console → Projects → Acme Tracker'},
+    appWeb:{tag:'app',label:'Application',name:'tracker-web',what:'A web app that users log into. Configured as a Web or User Agent (SPA) application using OIDC with PKCE. It has a client ID and a list of allowed redirect URIs.',analog:'The front door into the team room.',ex:'Client ID 2840331197230612@acme-tracker. Redirect: https://tracker.acme.com/callback. Auth method: PKCE (no secret).',where:'Project → Applications → New → Web'},
+    appApi:{tag:'app',label:'Application',name:'tracker-api',what:'A backend API. It does not log users in; it receives access tokens and checks them, either by verifying the JWT signature or by calling the introspection endpoint.',analog:'A guard inside the room who checks each badge before handing over files.',ex:'Type: API. Auth method: Private Key JWT. Calls /oauth/v2/introspect for opaque tokens.',where:'Project → Applications → New → API'},
+    roleAdmin:{tag:'role',label:'Role',name:'admin',what:'A label you invent. ZITADEL stores it and puts it into the token. Your code decides what an admin can actually do.',analog:'A badge colour that opens every cabinet.',ex:'Key: admin. Display name: Administrator. Group: management.',where:'Project → Roles'},
+    roleEditor:{tag:'role',label:'Role',name:'editor',what:'Another role on the same project. A user can hold several roles at once.',analog:'A badge colour that opens the shared drawers.',ex:'In code: if (roles.includes("editor")) allowEdit()',where:'Project → Roles'},
+    alice:{tag:'user',label:'Human user',name:'alice@acme.com',what:'A person in the Acme organization. She has an authorization on Acme Tracker with the admin role.',analog:'An Acme employee with an all-access badge for the team room.',ex:'Login: passkey on her laptop. MFA: authenticator app as backup.',where:'Console → Users → alice'},
+    bot:{tag:'user',label:'Machine user',name:'billing-sync',what:'A service account for a nightly job. It has no password; it authenticates with a key or a personal access token and calls the API.',analog:'A delivery robot with a programmed badge, no face to scan.',ex:'Auth: JWT profile with a private key file. Role: viewer.',where:'Console → Users → Service users'},
+    grant:{tag:'proj',label:'Project grant',name:'Acme Tracker (granted)',what:'Acme shared the Acme Tracker project with Globex, limited to the editor and viewer roles. Globex admins can now assign those roles to Globex users themselves.',analog:'Acme lends its room to Globex but keeps the master key.',ex:'Granted roles: editor, viewer. Globex cannot grant admin.',where:'Project → Grants → New'},
+    bob:{tag:'user',label:'Human user',name:'bob@globex.io',what:'A Globex employee. He got the editor role on the granted project from his own admin, and logs in with Microsoft.',analog:'A Globex employee with a visitor badge for Acme\'s room.',ex:'Token claim: roles → editor, from org Globex.',where:'Globex org → Authorizations'}
+  };
+  var treeHTML=
+   '<ul><li>'+nodeBtn('inst','Instance','auth.acme.com')+
+    '<ul>'+
+     '<li>'+nodeBtn('orgAcme','Org','Acme')+
+      '<ul>'+
+       '<li>'+nodeBtn('proj','Project','Acme Tracker')+
+        '<ul>'+
+          '<li>'+nodeBtn('appWeb','App','tracker-web')+'</li>'+
+          '<li>'+nodeBtn('appApi','App','tracker-api')+'</li>'+
+          '<li>'+nodeBtn('roleAdmin','Role','admin')+'</li>'+
+          '<li>'+nodeBtn('roleEditor','Role','editor')+'</li>'+
+        '</ul></li>'+
+       '<li>'+nodeBtn('alice','User','alice@acme.com')+'</li>'+
+       '<li>'+nodeBtn('bot','User','billing-sync')+'</li>'+
+      '</ul></li>'+
+     '<li>'+nodeBtn('orgGlobex','Org','Globex')+
+      '<ul>'+
+       '<li>'+nodeBtn('grant','Grant','Acme Tracker')+'</li>'+
+       '<li>'+nodeBtn('bob','User','bob@globex.io')+'</li>'+
+      '</ul></li>'+
+    '</ul></li></ul>';
+  function nodeBtn(id,lbl,name){return '<button type="button" class="node" data-id="'+id+'" aria-pressed="false"><span class="tag t-'+T[id].tag+'">'+lbl+'</span>'+esc(name)+'</button>'}
+  var treeEl=document.getElementById('tree'), det=document.getElementById('detail');
+  treeEl.innerHTML=treeHTML;
+  function show(id){
+    var d=T[id];
+    treeEl.querySelectorAll('.node').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.id===id?'true':'false')});
+    det.innerHTML='<div><span class="tag t-'+d.tag+'">'+esc(d.label)+'</span></div>'+
+      '<h3 style="font-size:1.5rem">'+esc(d.name)+'</h3>'+
+      '<div class="row"><span class="lbl">What it is</span><p>'+esc(d.what)+'</p></div>'+
+      '<div class="row"><span class="lbl">Office-tower analogy</span><p class="analog">'+esc(d.analog)+'</p></div>'+
+      '<div class="row"><span class="lbl">Example</span><p>'+esc(d.ex)+'</p></div>'+
+      '<div class="row"><span class="lbl">Where in the Console</span><p class="where">'+esc(d.where)+'</p></div>';
+  }
+  treeEl.addEventListener('click',function(e){var b=e.target.closest('.node');if(b)show(b.dataset.id)});
+  show('proj');
+
+  /* ---------- login flow ---------- */
+  var S=[
+    {from:0,to:1,msg:'click "Log in"',t:'The user clicks "Log in" in your app',x:'Your app creates a random code_verifier and its SHA-256 hash, the code_challenge. This is PKCE: it proves later that the same app finishes the login.',c:'<span class="c">// in your app</span>\nverifier  = randomString(64)\nchallenge = base64url(sha256(verifier))'},
+    {from:1,to:2,msg:'302 → /authorize',t:'Your app redirects the browser to ZITADEL',x:'The browser lands on ZITADEL\'s authorize endpoint. The URL says which app is asking, where to come back to, and which scopes it wants.',c:'GET https://auth.acme.com<span class="k">/oauth/v2/authorize</span>\n  ?client_id=<span class="s">2840331197230612@acme-tracker</span>\n  &redirect_uri=<span class="s">https://tracker.acme.com/callback</span>\n  &response_type=<span class="s">code</span>\n  &scope=<span class="s">openid profile email urn:zitadel:iam:org:project:roles</span>\n  &code_challenge=<span class="s">E9Melhoa2Owv…</span>&code_challenge_method=<span class="s">S256</span>'},
+    {from:2,to:0,msg:'login page',t:'ZITADEL shows the login page',x:'ZITADEL picks the login policy and branding of the user\'s organization. The user enters a username, then a password or passkey, or clicks "Sign in with Microsoft". If MFA is required, it asks for the second factor now.',c:'<span class="c">// what ZITADEL checks</span>\n✓ user exists and is active\n✓ password / passkey / external IdP OK\n✓ MFA satisfied (org policy: required)\n✓ user has a role in the project (if the check is on)'},
+    {from:2,to:1,msg:'302 → /callback?code=…',t:'ZITADEL sends the user back with a code',x:'The browser is redirected to your redirect URI with a short-lived, one-time authorization code. The code alone is useless without the verifier from step 1.',c:'GET https://tracker.acme.com<span class="k">/callback</span>\n  ?code=<span class="s">vKQ9xD1Lg…</span>\n  &state=<span class="s">af0ifjsldkj</span>'},
+    {from:1,to:2,msg:'POST /token',t:'Your app swaps the code for tokens',x:'Your app calls the token endpoint server-to-server (or from the SPA) with the code and the original verifier. ZITADEL hashes the verifier and checks it matches the challenge.',c:'POST https://auth.acme.com<span class="k">/oauth/v2/token</span>\n  grant_type=<span class="s">authorization_code</span>\n  code=<span class="s">vKQ9xD1Lg…</span>\n  code_verifier=<span class="s">dBjftJeZ4CVP…</span>\n  client_id=<span class="s">2840331197230612@acme-tracker</span>'},
+    {from:2,to:1,msg:'id_token + access_token',t:'ZITADEL returns tokens',x:'The ID token tells your app who the user is. The access token is what you send to your APIs. A refresh token (with scope offline_access) lets you get new tokens without another login.',c:'{\n  <span class="k">"access_token"</span>: <span class="s">"eyJhbGciOiJSUzI1NiIs…"</span>,\n  <span class="k">"id_token"</span>: <span class="s">"eyJhbGciOiJSUzI1NiIs…"</span>,\n  <span class="k">"token_type"</span>: <span class="s">"Bearer"</span>,\n  <span class="k">"expires_in"</span>: <span class="n">43199</span>\n}'},
+    {from:1,to:3,msg:'Authorization: Bearer …',t:'Your app calls your API',x:'The API receives the access token. It verifies the JWT signature with ZITADEL\'s public keys (/oauth/v2/keys) or asks ZITADEL via /oauth/v2/introspect. Then it reads the roles and decides.',c:'GET https://api.acme.com/projects\nAuthorization: Bearer <span class="s">eyJhbGciOiJSUzI1NiIs…</span>\n\n<span class="c">// in the API</span>\nif (!token.roles.includes("editor")) return 403'}
+  ];
+  var step=0, lanes=document.querySelectorAll('.lane'), arr=document.getElementById('arr'), arrmsg=document.getElementById('arrmsg');
+  var dots=document.getElementById('dots');
+  S.forEach(function(){dots.appendChild(document.createElement('span'))});
+  function renderStep(){
+    var s=S[step];
+    lanes.forEach(function(l,i){l.classList.toggle('on',i===s.from||i===s.to)});
+    var a=Math.min(s.from,s.to), b=Math.max(s.from,s.to);
+    var left=(a*25+12.5), width=((b-a)*25);
+    arr.style.left=left+'%'; arr.style.width='calc('+width+'% - 10px)';
+    arr.className='arr '+(s.to>s.from?'r':'l');
+    if(s.to<s.from){arr.style.left='calc('+left+'% + 10px)';}
+    arrmsg.style.left=(left+width/2)+'%'; arrmsg.textContent=s.msg;
+    document.getElementById('stepnum').textContent=step+1;
+    document.getElementById('steptitle').textContent=s.t;
+    document.getElementById('steptext').textContent=s.x;
+    document.getElementById('stepcode').innerHTML=s.c;
+    document.getElementById('prevBtn').disabled=step===0;
+    document.getElementById('nextBtn').disabled=step===S.length-1;
+    dots.querySelectorAll('span').forEach(function(d,i){d.classList.toggle('on',i<=step)});
+  }
+  document.getElementById('nextBtn').onclick=function(){if(step<S.length-1){step++;renderStep()}};
+  document.getElementById('prevBtn').onclick=function(){if(step>0){step--;renderStep()}};
+  document.getElementById('resetBtn').onclick=function(){step=0;renderStep()};
+  renderStep();
+
+  /* ---------- token lab ---------- */
+  var U={
+    alice:{label:'alice@acme.com (Acme, role: admin)',sub:'284033125874519312',name:'Alice Nguyen',email:'alice@acme.com',org:'Acme',orgId:'284031800215663121',domain:'acme.com',roles:['admin']},
+    bob:{label:'bob@globex.io (Globex, role: editor via grant)',sub:'284035522871094291',name:'Bob Tran',email:'bob@globex.io',org:'Globex',orgId:'284034917520781331',domain:'globex.io',roles:['editor']},
+    carol:{label:'carol@acme.com (Acme, no role)',sub:'284036110984771345',name:'Carol Le',email:'carol@acme.com',org:'Acme',orgId:'284031800215663121',domain:'acme.com',roles:[]}
+  };
+  var SC=[
+    {id:'openid',def:true,lock:true,d:'required for OIDC'},
+    {id:'profile',def:true,d:'name, username'},
+    {id:'email',def:true,d:'email, email_verified'},
+    {id:'urn:zitadel:iam:org:project:roles',def:true,d:'project roles'},
+    {id:'urn:zitadel:iam:user:resourceowner',def:false,d:'which org the user belongs to'},
+    {id:'offline_access',def:false,d:'get a refresh token'}
+  ];
+  var pUser=document.getElementById('pUser'), pScopes=document.getElementById('pScopes'), pCheck=document.getElementById('pCheck');
+  Object.keys(U).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=U[k].label;pUser.appendChild(o)});
+  SC.forEach(function(s,i){
+    var l=document.createElement('label');
+    l.innerHTML='<input type="checkbox" id="sc'+i+'" '+(s.def?'checked ':'')+(s.lock?'disabled ':'')+'><span><code>'+esc(s.id)+'</code> <span class="muted">· '+esc(s.d)+'</span></span>';
+    pScopes.appendChild(l);
+  });
+  function on(i){return document.getElementById('sc'+i).checked}
+  function j(v){return '<span class="s">"'+esc(v)+'"</span>'}
+  function renderToken(){
+    var u=U[pUser.value], blocked=pCheck.value==='on'&&u.roles.length===0;
+    var v=document.getElementById('pVerdict'), out=document.getElementById('pToken');
+    if(blocked){
+      v.className='verdict no';
+      v.innerHTML='<b>Login refused.</b> '+esc(u.email)+' has no role on Acme Tracker, and the project requires one. No token is issued. Fix: add an authorization, or turn the check off.';
+      out.innerHTML='<span class="c">// ZITADEL redirects back with an error</span>\nGET https://tracker.acme.com/callback\n  ?error=<span class="s">access_denied</span>\n  &error_description=<span class="s">user not authorized for project</span>';
+      return;
+    }
+    v.className='verdict ok';
+    v.innerHTML='<b>Login succeeds.</b> '+(u.roles.length?'Your app reads <code>'+esc(u.roles.join(', '))+'</code> from the token and shows the matching features.':'The user gets in, but has no roles. Your app must handle "logged in, but no permissions".');
+    var L=[], P='  ';
+    L.push(P+'<span class="k">"iss"</span>: '+j('https://auth.acme.com'));
+    L.push(P+'<span class="k">"sub"</span>: '+j(u.sub)+'  <span class="c">// stable user ID</span>');
+    L.push(P+'<span class="k">"aud"</span>: ['+j('2840331197230612@acme-tracker')+', '+j('2840330891235413')+']');
+    L.push(P+'<span class="k">"exp"</span>: <span class="n">1794129600</span>');
+    L.push(P+'<span class="k">"iat"</span>: <span class="n">1794086400</span>');
+    if(on(1)){L.push(P+'<span class="k">"name"</span>: '+j(u.name));L.push(P+'<span class="k">"preferred_username"</span>: '+j(u.email));}
+    if(on(2)){L.push(P+'<span class="k">"email"</span>: '+j(u.email));L.push(P+'<span class="k">"email_verified"</span>: <span class="n">true</span>');}
+    if(on(3)&&u.roles.length){
+      var r=u.roles.map(function(x){return P+P+'<span class="k">"'+esc(x)+'"</span>: { <span class="k">"'+u.orgId+'"</span>: '+j(u.domain)+' }'}).join(',\n');
+      L.push(P+'<span class="k">"urn:zitadel:iam:org:project:roles"</span>: {\n'+r+'\n'+P+'}');
+    }
+    if(on(4)){L.push(P+'<span class="k">"urn:zitadel:iam:user:resourceowner:id"</span>: '+j(u.orgId));L.push(P+'<span class="k">"urn:zitadel:iam:user:resourceowner:name"</span>: '+j(u.org));}
+    var head='<span class="c">// decoded ID token payload</span>\n{\n'+L.join(',\n')+'\n}';
+    if(on(5))head+='\n\n<span class="c">// plus, in the token response:</span>\n<span class="k">"refresh_token"</span>: <span class="s">"Yx3p…"</span>';
+    if(on(3)&&!u.roles.length)head+='\n\n<span class="c">// roles scope requested, but the user has none, so no roles claim</span>';
+    out.innerHTML=head;
+  }
+  pUser.onchange=renderToken; pCheck.onchange=renderToken; pScopes.addEventListener('change',renderToken);
+  renderToken();
+
+  /* ---------- event store ---------- */
+  var seq=1040, evs=[], st={};
+  var EV=[
+    {b:'Create user',t:'user.human.added',p:'username=dana email=dana@acme.com',f:function(){st={username:'dana',email:'dana@acme.com',verified:'no',state:'active',mfa:'none',password:'not set'}}},
+    {b:'Verify email',t:'user.human.email.verified',p:'',f:function(){st.verified='yes'}},
+    {b:'Set password',t:'user.human.password.changed',p:'hash=bcrypt(…)',f:function(){st.password='set'}},
+    {b:'Add TOTP',t:'user.human.mfa.otp.added',p:'',f:function(){st.mfa='authenticator app'}},
+    {b:'Change email',t:'user.human.email.changed',p:'email=dana.p@acme.com',f:function(){st.email='dana.p@acme.com';st.verified='no'}},
+    {b:'Lock user',t:'user.locked',p:'reason=too many attempts',f:function(){st.state='locked'}},
+    {b:'Unlock user',t:'user.unlocked',p:'',f:function(){st.state='active'}}
+  ];
+  var evb=document.getElementById('evbtns'), logEl=document.getElementById('log'), stateEl=document.getElementById('state');
+  EV.forEach(function(e,i){var b=document.createElement('button');b.type='button';b.className='btn';b.textContent=e.b;b.onclick=function(){push(i,true)};evb.appendChild(b)});
+  var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.textContent='Clear';rb.onclick=function(){evs=[];st={};seq=1040;draw()};evb.appendChild(rb);
+  function push(i,fresh){
+    if(i!==0&&!st.username){return}
+    if(i===0&&st.username){return}
+    EV[i].f(); seq++;
+    evs.push({s:seq,t:EV[i].t,p:EV[i].p,fresh:fresh});
+    draw();
+  }
+  function draw(){
+    logEl.innerHTML=evs.length?evs.map(function(e,k){return '<div class="ev'+(k===evs.length-1&&e.fresh?' new':'')+'"><span class="seq">#'+e.s+'</span><span><span class="typ">'+esc(e.t)+'</span>'+(e.p?' <span style="color:#9aa8a0">'+esc(e.p)+'</span>':'')+'</span></div>'}).join(''):'<div style="color:#9aa8a0">No events yet. Click "Create user".</div>';
+    logEl.scrollTop=logEl.scrollHeight;
+    var keys=['username','email','verified','password','mfa','state'];
+    stateEl.innerHTML=st.username?keys.map(function(k){return '<div class="kv"><span>'+k+'</span><span>'+esc(st[k])+'</span></div>'}).join(''):'<p class="muted">User does not exist yet. Its state appears once the first event is stored.</p>';
+    evb.querySelectorAll('button').forEach(function(b,i){ if(i<EV.length) b.disabled = i===0 ? !!st.username : !st.username; });
+  }
+  [0,1,2,3].forEach(function(i){push(i,false)});
+
+  /* ---------- glossary ---------- */
+  var G=[
+    ['Access token','What your app sends to an API to prove the user logged in. Can be a JWT or an opaque string.'],
+    ['Action','Your own code or webhook that ZITADEL calls on events, e.g. to add custom claims or sync users.'],
+    ['Application','A client registered in a project: Web, Native, SPA (User Agent), API, or SAML.'],
+    ['Authorization (user grant)','A record that gives one user certain roles in one project.'],
+    ['Branding','Logo, colors and fonts shown on login pages, set per organization.'],
+    ['Claim','A key/value fact inside a token, like email or roles.'],
+    ['Client ID','The public identifier of an application, sent in every login request.'],
+    ['Console','ZITADEL\'s admin web UI at /ui/console.'],
+    ['Event sourcing','Storing every change as an event and computing current state from them.'],
+    ['ID token','A JWT that tells your app who the user is. Not for calling APIs.'],
+    ['Identity provider (IdP)','An external login source such as Google, Entra ID, GitHub, SAML or LDAP.'],
+    ['Instance','One ZITADEL installation or cloud tenant with its own domain and defaults.'],
+    ['Introspection','An API asking ZITADEL whether a token is active and what it contains.'],
+    ['JWKS','The public keys ZITADEL publishes so anyone can verify its token signatures.'],
+    ['Login policy','Rules for how users log in: allowed methods, MFA, self-registration.'],
+    ['Machine user','A service account with no password. Uses PAT, JWT profile or client credentials.'],
+    ['Manager','A user with an administrative ZITADEL role, like ORG_OWNER or IAM_OWNER.'],
+    ['MFA','Multi-factor authentication: a second proof such as TOTP, SMS, email code or security key.'],
+    ['OIDC','OpenID Connect: the login standard built on OAuth 2.0 that ZITADEL speaks.'],
+    ['Organization','A tenant that owns users, projects, policies and branding.'],
+    ['Passkey','Passwordless login using device biometrics or a security key (WebAuthn).'],
+    ['PAT','Personal access token: a long-lived bearer token for a machine user.'],
+    ['PKCE','Proof Key for Code Exchange: protects the code exchange from interception.'],
+    ['Project','A group of applications that share one set of roles.'],
+    ['Project grant','Sharing a project with another organization, with a subset of its roles.'],
+    ['Projection','A read-optimized table built by replaying events.'],
+    ['Redirect URI','The URL ZITADEL is allowed to send the user back to after login.'],
+    ['Refresh token','A long-lived token used to get new access tokens without logging in again.'],
+    ['Role','A label you define on a project, put in tokens for your app to check.'],
+    ['SAML','An older XML-based SSO standard, used by many enterprise apps.'],
+    ['SCIM','A standard API for provisioning users from HR or directory systems.'],
+    ['Scope','What the app asks for in a login request, e.g. openid, email, project roles.'],
+    ['Session API','APIs for building your own login UI instead of the hosted one.'],
+    ['Verified domain','A domain an organization proved it owns, so users can log in as name@domain.']
+  ];
+  var gl=document.getElementById('gloss'), gq=document.getElementById('gq');
+  function drawG(){
+    var q=gq.value.trim().toLowerCase();
+    var items=G.filter(function(g){return !q||(g[0]+' '+g[1]).toLowerCase().indexOf(q)>-1});
+    if(!items.length){gl.innerHTML='<p class="muted">No term matches "'+esc(gq.value)+'". Try a shorter word.</p>';return}
+    var half=Math.ceil(items.length/2);
+    function col(a){return '<dl>'+a.map(function(g){return '<div class="gitem"><dt>'+esc(g[0])+'</dt><dd>'+esc(g[1])+'</dd></div>'}).join('')+'</dl>'}
+    gl.innerHTML=col(items.slice(0,half))+col(items.slice(half));
+  }
+  gq.addEventListener('input',drawG); drawG();
+})();
+</script>
+</body>
+</html>

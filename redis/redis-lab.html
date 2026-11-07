@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redis Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky tab bar over one panel at a time; each panel = lede, a live simulation, then takeaways. */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --surface2:#e9edf2; --ink:#121c26; --muted:#58697a; --line:#d5dce4;
+  --accent:#d82c2c; --accent-soft:#fde6e4; --good:#0b8a7d; --good-soft:#d9f2ee; --warn:#b36b00; --warn-soft:#fbecd0;
+  --term:#101820; --term-ink:#d8e3ee; --term-dim:#7f93a6;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141a; --surface:#16202a; --surface2:#1e2b37; --ink:#e6edf3; --muted:#92a3b3; --line:#2a3947;
+  --accent:#ff5d52; --accent-soft:#3a1b1b; --good:#3cc7b7; --good-soft:#12342f; --warn:#f0b04a; --warn-soft:#3a2d12;
+  --term:#0a0f14; --term-ink:#d8e3ee; --term-dim:#6f8396; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141a; --surface:#16202a; --surface2:#1e2b37; --ink:#e6edf3; --muted:#92a3b3; --line:#2a3947;
+  --accent:#ff5d52; --accent-soft:#3a1b1b; --good:#3cc7b7; --good-soft:#12342f; --warn:#f0b04a; --warn-soft:#3a2d12;
+  --term:#0a0f14; --term-ink:#d8e3ee; --term-dim:#6f8396; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1040px;margin:0 auto}
+header.top{padding-block:28px 12px}
+header.top h1{font-family:var(--display);font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0 0 8px;letter-spacing:-.02em}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);max-width:62ch}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding-block:8px;margin-bottom:24px;scrollbar-width:thin}
+nav.tabs button{flex:none;font:500 14px var(--body);color:var(--muted);background:none;border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
+nav.tabs button:hover{color:var(--ink);background:var(--surface2)}
+nav.tabs button[aria-selected="true"]{color:#fff;background:var(--accent)}
+:root[data-theme="dark"] nav.tabs button[aria-selected="true"]{color:#1a0b0a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#1a0b0a}}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.panel{display:none}
+section.panel.on{display:block}
+h2{font-family:var(--display);font-size:clamp(24px,3.4vw,32px);line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+h3{font-family:var(--display);font-size:18px;margin:0 0 8px}
+.lede{color:var(--muted);max-width:68ch;margin:0 0 20px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:16px;margin-bottom:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 13px var(--body);background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#1a0b0a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#1a0b0a}}
+.btn.danger{border-color:var(--accent);color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.cmd{font:400 12.5px var(--mono);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;color:var(--ink);text-align:left}
+.cmd:hover{border-color:var(--accent)}
+.label{font:500 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.chip{display:inline-block;font:500 11px var(--mono);padding:2px 7px;border-radius:99px;background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.chip.red{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.green{background:var(--good-soft);color:var(--good);border-color:transparent}
+.chip.amber{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.take{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
+.take ul{margin:0;padding-left:20px;max-width:72ch}
+.take li{margin-bottom:6px}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{background:var(--surface2);padding:1px 5px;border-radius:4px}
+input[type=text],select{font:400 14px var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0}
+.small{font-size:13px;color:var(--muted)}
+/* terminal */
+.term{background:var(--term);color:var(--term-ink);border-radius:8px;font:400 13px/1.5 var(--mono);padding:12px;height:260px;overflow:auto}
+.term .in{color:#fff}.term .in::before{content:"127.0.0.1:6379> ";color:var(--term-dim)}
+.term .err{color:#ff8a80}.term .out{white-space:pre-wrap;color:var(--term-ink)}
+.prompt{display:flex;gap:8px;margin-top:8px}
+.prompt input{flex:1}
+/* types */
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pills button{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:99px;cursor:pointer}
+.pills button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kv{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.kv .k{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:500 13px var(--mono);margin-bottom:6px}
+.cells{display:flex;flex-wrap:wrap;gap:4px}
+.cell{font:400 12px var(--mono);border:1px solid var(--line);background:var(--surface2);border-radius:4px;padding:2px 8px}
+.cell.hl{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.zrow{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;font:400 12px var(--mono)}
+.zrow i{display:block;height:8px;background:var(--accent);border-radius:4px}
+.bit{width:14px;height:14px;border-radius:3px;background:var(--surface2);border:1px solid var(--line)}
+.bit.on{background:var(--accent);border-color:var(--accent)}
+table.t{border-collapse:collapse;font:400 12.5px var(--mono);width:100%}
+table.t td,table.t th{border-bottom:1px solid var(--line);padding:3px 8px;text-align:left}
+.empty{color:var(--muted);font-size:13px;padding:14px;border:1px dashed var(--line);border-radius:8px}
+/* latency bars */
+.lat{display:grid;grid-template-columns:150px 1fr 90px;gap:10px;align-items:center;margin-bottom:8px;font-size:13px}
+.lat .bar{height:14px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.lat .bar i{display:block;height:100%;background:var(--muted)}
+.lat.me .bar i{background:var(--accent)}
+.lat span:last-child{text-align:right;font-family:var(--mono)}
+@media (max-width:560px){.lat{grid-template-columns:100px 1fr 70px}}
+/* flow */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:10px 0}
+.node{flex:1 1 120px;border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--surface);transition:border-color .2s,background .2s;min-width:0}
+.node b{display:block;font-family:var(--display)}
+.node.hot{border-color:var(--accent);background:var(--accent-soft)}
+.node.ok{border-color:var(--good);background:var(--good-soft)}
+.node.dead{opacity:.45;border-style:dashed}
+.arrow{flex:0 0 80px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 11px var(--mono);color:var(--muted);text-align:center}
+.arrow::after{content:"";display:block;width:100%;height:2px;background:var(--line);margin-top:3px}
+.arrow.hot{color:var(--accent)}.arrow.hot::after{background:var(--accent)}
+@media (max-width:620px){.arrow{flex:1 0 100%;height:44px}}
+.logline{font:400 12.5px var(--mono);padding:4px 0;border-bottom:1px solid var(--line)}
+.meter{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--good)}
+.slotbar{display:flex;height:34px;border-radius:6px;overflow:hidden;position:relative;margin:34px 0 8px}
+.slotbar div{display:flex;align-items:center;justify-content:center;font:500 11px var(--mono);color:#fff;overflow:hidden;white-space:nowrap}
+.pin{position:absolute;top:-28px;transform:translateX(-50%);font:500 11px var(--mono);color:var(--ink);white-space:nowrap}
+.pin::after{content:"";position:absolute;left:50%;top:18px;width:2px;height:46px;background:var(--ink)}
+.cellrow{display:flex;gap:3px;flex-wrap:wrap}
+.wcell{width:26px;height:26px;border-radius:4px;background:var(--surface2);border:1px solid var(--line);font:500 10px var(--mono);display:flex;align-items:center;justify-content:center}
+.wcell.ok{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.wcell.lost{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);text-decoration:line-through}
+.wcell.snap{outline:2px solid var(--ink)}
+.entry{border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:400 12.5px var(--mono);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;background:var(--surface)}
+.inbox{min-height:60px}
+.mini{font:400 12.5px var(--mono);padding:3px 0}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>Redis <span>Lab</span></h1>
+  <p>Six hands-on stations covering what Redis is, its data structures, caching, durability, scaling and messaging. Everything runs in your browser as a small simulation, so click freely.</p>
+</header>
+
+<nav class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-tab="overview">1 · What it is</button>
+  <button role="tab" data-tab="types">2 · Data types</button>
+  <button role="tab" data-tab="caching">3 · Caching &amp; eviction</button>
+  <button role="tab" data-tab="persistence">4 · Persistence</button>
+  <button role="tab" data-tab="scaling">5 · Replication &amp; Cluster</button>
+  <button role="tab" data-tab="messaging">6 · Pub/Sub &amp; Streams</button>
+</nav>
+
+<!-- ============ 1 OVERVIEW ============ -->
+<section class="panel" id="p-overview">
+  <h2>An in-memory data structure server</h2>
+  <p class="lede">Redis keeps its data in RAM and exposes rich structures (lists, sets, sorted sets and more) over a simple text protocol. Because there is no disk read on the hot path, a command returns in microseconds. Most of the time you see is the network.</p>
+
+  <div class="grid2">
+    <div class="box">
+      <p class="label">Typical time for one lookup (log scale)</p>
+      <div id="lat"></div>
+      <p class="small">Order-of-magnitude figures for a same-region deployment. Real numbers depend on hardware and load.</p>
+    </div>
+    <div class="box">
+      <p class="label">Why one thread is fast enough</p>
+      <svg viewBox="0 0 420 200" role="img" aria-label="Many clients send commands into a queue; a single-threaded event loop executes them one at a time against in-memory data, so commands never interleave." style="width:100%;height:auto;max-width:100%">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.5" color="var(--muted)">
+          <rect x="6" y="20" width="70" height="26" rx="5"/><rect x="6" y="64" width="70" height="26" rx="5"/><rect x="6" y="108" width="70" height="26" rx="5"/><rect x="6" y="152" width="70" height="26" rx="5"/>
+          <line x1="78" y1="33" x2="140" y2="90" marker-end="url(#ar)"/><line x1="78" y1="77" x2="140" y2="95" marker-end="url(#ar)"/><line x1="78" y1="121" x2="140" y2="105" marker-end="url(#ar)"/><line x1="78" y1="165" x2="140" y2="110" marker-end="url(#ar)"/>
+          <rect x="142" y="78" width="104" height="44" rx="6" color="var(--ink)"/>
+          <line x1="248" y1="100" x2="288" y2="100" marker-end="url(#ar)"/>
+          <rect x="290" y="62" width="124" height="76" rx="6" color="var(--accent)"/>
+        </g>
+        <g fill="currentColor" font-size="12" font-family="IBM Plex Mono,monospace" text-anchor="middle" color="var(--ink)">
+          <text x="41" y="37">client A</text><text x="41" y="81">client B</text><text x="41" y="125">client C</text><text x="41" y="169">client D</text>
+          <text x="194" y="96">event loop</text><text x="194" y="112" font-size="10" fill="var(--muted)">1 cmd at a time</text>
+          <text x="352" y="96">RAM</text><text x="352" y="112" font-size="10" fill="var(--muted)">hash tables</text>
+        </g>
+      </svg>
+      <p class="small">Each command runs to completion before the next starts, so <code>INCR</code> or a Lua script needs no locks. The cost is that one slow command (like <code>KEYS *</code> on millions of keys) blocks everyone.</p>
+    </div>
+  </div>
+
+  <div class="box">
+    <p class="label">What people use it for, and which structure fits</p>
+    <table class="t">
+      <tr><th>Job</th><th>Structure</th><th>Key commands</th></tr>
+      <tr><td>Cache a query or page</td><td>String / Hash + TTL</td><td>SET EX, GET</td></tr>
+      <tr><td>Session store</td><td>Hash + TTL</td><td>HSET, EXPIRE</td></tr>
+      <tr><td>Rate limiter, counters</td><td>String</td><td>INCR, EXPIRE</td></tr>
+      <tr><td>Leaderboard</td><td>Sorted set</td><td>ZADD, ZREVRANGE</td></tr>
+      <tr><td>Job queue</td><td>List or Stream</td><td>LPUSH, BRPOP, XADD</td></tr>
+      <tr><td>Unique visitors</td><td>Set / HyperLogLog</td><td>SADD, PFADD</td></tr>
+      <tr><td>Daily active flags</td><td>Bitmap</td><td>SETBIT, BITCOUNT</td></tr>
+      <tr><td>Live notifications</td><td>Pub/Sub</td><td>PUBLISH, SUBSCRIBE</td></tr>
+    </table>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>Redis is a data structure server first and a cache second. The structure you pick decides which operations are cheap.</li>
+    <li>Data lives in RAM, so memory size is your capacity limit. Persistence is optional and covered in station 4.</li>
+    <li>A single command is atomic. Sequences of commands are not, unless you use <code>MULTI/EXEC</code> or a Lua script.</li>
+  </ul></div>
+</section>
+
+<!-- ============ 2 TYPES ============ -->
+<section class="panel" id="p-types">
+  <h2>Data types playground</h2>
+  <p class="lede">Pick a type, click a command to run it, and watch the keyspace on the right change. You can also type any command from the list yourself.</p>
+  <div class="pills" id="typePills"></div>
+  <div class="grid2">
+    <div class="stack" style="margin:0">
+      <div class="box" id="typeInfo"></div>
+      <div class="box">
+        <p class="label">Terminal</p>
+        <div class="term" id="term" aria-live="polite"></div>
+        <form class="prompt" id="promptForm"><input type="text" id="cli" autocomplete="off" spellcheck="false" placeholder="SET name redis" aria-label="Redis command"><button class="btn primary" type="submit">Run</button><button class="btn" type="button" id="flush">FLUSHALL</button></form>
+      </div>
+    </div>
+    <div class="box"><p class="label">Keyspace <span class="chip" id="keyCount"></span></p><div id="store"></div></div>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>Strings hold text, numbers or raw bytes up to 512 MB. <code>INCR</code> works on strings that look like integers.</li>
+    <li>Sorted sets keep members ordered by score at all times, which is why leaderboards and time-ordered feeds are cheap (O(log N) insert).</li>
+    <li>In this demo, HyperLogLog counts exactly. The real one uses about 12 KB per key and is accurate to around 0.8%, no matter how many items you add.</li>
+    <li>Using the wrong command on a key gives <code>WRONGTYPE</code>. Try <code>LPUSH name x</code> after <code>SET name redis</code>.</li>
+  </ul></div>
+</section>
+
+<!-- ============ 3 CACHING ============ -->
+<section class="panel" id="p-caching">
+  <h2>Caching &amp; eviction</h2>
+  <p class="lede">The cache-aside pattern: the app asks Redis first, and only on a miss reads the database and stores the result with a time to live (TTL). Try changing data and see how staleness appears.</p>
+  <div class="grid2">
+    <div class="box">
+      <p class="label">Cache-aside, step by step</p>
+      <div class="row" style="margin-bottom:10px">
+        <label class="small" for="prod">Product</label>
+        <select id="prod"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        <label class="small" for="ttl">TTL</label>
+        <select id="ttl"><option value="5">5 s</option><option value="15" selected>15 s</option><option value="60">60 s</option></select>
+      </div>
+      <div class="row" style="margin-bottom:6px">
+        <button class="btn primary" id="reqBtn">Request product</button>
+        <button class="btn" id="editBtn">Edit price in DB</button>
+        <button class="btn" id="editDelBtn">Edit price + DEL key</button>
+      </div>
+      <div class="flow">
+        <div class="node" id="nApp"><b>App</b><span class="small">needs product</span></div>
+        <div class="arrow" id="a1">GET product:N</div>
+        <div class="node" id="nRedis"><b>Redis</b><span class="small" id="rSub">~1 ms</span></div>
+        <div class="arrow" id="a2">on miss: SELECT</div>
+        <div class="node" id="nDb"><b>Database</b><span class="small">~80 ms</span></div>
+      </div>
+      <div id="cacheMsg" class="small" style="min-height:44px">Press “Request product” to start.</div>
+      <div id="cacheLog"></div>
+    </div>
+    <div class="stack" style="margin:0">
+      <div class="box">
+        <p class="label">Stats</p>
+        <div class="row"><span class="chip green" id="sHit">hits 0</span><span class="chip red" id="sMiss">misses 0</span><span class="chip amber" id="sStale">stale reads 0</span></div>
+        <p class="small" style="margin:10px 0 4px">Hit ratio</p>
+        <div class="meter"><i id="ratio" style="width:0%"></i></div>
+        <p class="small" style="margin:10px 0 4px">Average latency: <b id="avgLat">–</b></p>
+      </div>
+      <div class="box"><p class="label">Keys in Redis</p><div id="cacheKeys"></div></div>
+    </div>
+  </div>
+
+  <div class="box" style="margin-bottom:16px">
+    <h3>When memory is full: eviction</h3>
+    <p class="small" style="margin-top:0">This cache holds 4 keys (<code>maxmemory</code>). Access keys A to H and see which one the policy removes. Access A, B, C, D, then A again, then E under each policy.</p>
+    <div class="row" style="margin-bottom:10px">
+      <label class="small" for="pol">maxmemory-policy</label>
+      <select id="pol"><option value="lru">allkeys-lru</option><option value="lfu">allkeys-lfu</option><option value="no">noeviction</option></select>
+      <button class="btn" id="evReset">Reset</button>
+    </div>
+    <div class="row" id="evKeys" style="margin-bottom:10px"></div>
+    <div id="evState" class="cells" style="min-height:34px"></div>
+    <p id="evMsg" class="small" style="min-height:22px"></p>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>A TTL bounds how stale data can get. Deleting the key on write removes most staleness, but only if every writer does it.</li>
+    <li>Add a little random jitter to TTLs so a batch of keys does not all expire in the same second and stampede the database.</li>
+    <li><code>allkeys-lru</code> drops the least recently used key, <code>allkeys-lfu</code> the least frequently used, <code>noeviction</code> returns an error on writes. Redis samples a few keys rather than tracking exact order.</li>
+  </ul></div>
+</section>
+
+<!-- ============ 4 PERSISTENCE ============ -->
+<section class="panel" id="p-persistence">
+  <h2>Persistence: what survives a crash?</h2>
+  <p class="lede">Redis can write snapshots (RDB), an append-only log of commands (AOF), or both. Add writes, take a snapshot, then crash the server and compare how much each mode keeps.</p>
+  <div class="box" style="margin-bottom:16px">
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn primary" id="pWrite">Write ×1</button>
+      <button class="btn" id="pWrite5">Write ×5</button>
+      <button class="btn" id="pSnap">BGSAVE (snapshot)</button>
+      <button class="btn" id="pWait2">Wait 2 s</button>
+      <button class="btn" id="pWait30">Wait 30 s</button>
+      <button class="btn danger" id="pCrash">Crash &amp; restart</button>
+      <button class="btn" id="pReset">Reset</button>
+    </div>
+    <p class="small" id="pClock" style="margin:0 0 12px"></p>
+    <div id="pRows"></div>
+  </div>
+  <div class="grid2">
+    <div class="box"><h3>RDB snapshot</h3><p class="small" style="margin:0">A forked child writes the whole dataset to <code>dump.rdb</code> at intervals (for example every 5 minutes if 100 keys changed). Compact and fast to load, but everything since the last snapshot is lost on a crash.</p></div>
+    <div class="box"><h3>AOF log</h3><p class="small" style="margin:0">Every write is appended to a file. <code>appendfsync always</code> syncs each command (safest, slowest). <code>everysec</code> loses up to about a second. <code>no</code> leaves flushing to the OS, which on Linux can mean around 30 seconds. The log is rewritten in the background to stay small.</p></div>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>A pure cache can run with no persistence. Anything you cannot rebuild should use AOF <code>everysec</code> at minimum, or RDB + AOF together.</li>
+    <li>Replication is not a backup. A bad <code>FLUSHALL</code> is replicated too, so keep snapshot files somewhere else.</li>
+  </ul></div>
+</section>
+
+<!-- ============ 5 SCALING ============ -->
+<section class="panel" id="p-scaling">
+  <h2>Replication, failover and Cluster</h2>
+  <p class="lede">Replicas copy the primary asynchronously. Sentinel promotes a replica when the primary dies. Redis Cluster goes further and splits the keyspace across several primaries.</p>
+
+  <div class="box" style="margin-bottom:16px">
+    <h3>Replication and failover</h3>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn primary" id="rWrite">Write to primary</button>
+      <button class="btn danger" id="rKill">Kill primary</button>
+      <button class="btn" id="rReset">Reset</button>
+    </div>
+    <div class="grid3" id="rNodes" style="margin-bottom:10px"></div>
+    <div id="rLog" class="small"></div>
+  </div>
+
+  <div class="box" style="margin-bottom:16px">
+    <h3>Cluster: 16384 hash slots</h3>
+    <p class="small" style="margin-top:0">A key goes to slot <code>CRC16(key) mod 16384</code>, and each primary owns a range of slots. Only the part inside <code>{braces}</code> is hashed when present, which keeps related keys together.</p>
+    <div class="row" style="margin-bottom:8px">
+      <label class="small" for="ck">Key</label><input type="text" id="ck" value="user:1001" style="flex:1;min-width:140px" autocomplete="off" spellcheck="false">
+      <label class="small" for="cn">Primaries</label><select id="cn"><option value="3">3</option><option value="4">4</option></select>
+    </div>
+    <div class="slotbar" id="slotbar"></div>
+    <p id="cres" style="margin:8px 0"></p>
+    <p class="label" style="margin-top:14px">More keys</p>
+    <table class="t" id="ctable"></table>
+    <p class="small" id="cmulti" style="margin-bottom:0"></p>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>Replication is asynchronous. A write acknowledged by the primary can be lost if the primary dies before replicas receive it (watch the “lost writes” count above).</li>
+    <li>Replicas scale reads and give you a failover target. Cluster scales writes and memory.</li>
+    <li>Multi-key commands in Cluster work only when all keys share a slot. Use hash tags like <code>{user:1}:cart</code> to arrange that.</li>
+  </ul></div>
+</section>
+
+<!-- ============ 6 MESSAGING ============ -->
+<section class="panel" id="p-messaging">
+  <h2>Pub/Sub vs Streams</h2>
+  <p class="lede">Both move messages between programs. Pub/Sub is fire and forget. Streams keep an append-only log with consumer groups, so work survives a consumer crash.</p>
+  <div class="grid2">
+    <div class="box">
+      <h3>Pub/Sub</h3>
+      <p class="small" style="margin-top:0">Toggle a subscriber offline, then publish. It never sees the message.</p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn primary" id="psPub">PUBLISH news</button>
+        <label class="small"><input type="checkbox" id="subA" checked> sub A online</label>
+        <label class="small"><input type="checkbox" id="subB" checked> sub B online</label>
+      </div>
+      <div class="grid2" style="margin:0">
+        <div><p class="label">Sub A inbox</p><div class="inbox" id="inA"></div></div>
+        <div><p class="label">Sub B inbox</p><div class="inbox" id="inB"></div></div>
+      </div>
+    </div>
+    <div class="box">
+      <h3>Streams + consumer group</h3>
+      <p class="small" style="margin-top:0">Each entry goes to one consumer in the group. Unacknowledged entries stay pending and can be claimed.</p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn primary" id="xAdd">XADD job</button>
+        <button class="btn" id="xr1">c1 XREADGROUP</button>
+        <button class="btn" id="xr2">c2 XREADGROUP</button>
+        <button class="btn" id="xa1">c1 XACK</button>
+        <button class="btn" id="xa2">c2 XACK</button>
+        <button class="btn danger" id="xclaim">c1 crashed: c2 XAUTOCLAIM</button>
+        <button class="btn" id="xReset">Reset</button>
+      </div>
+      <div id="xLog"></div>
+    </div>
+  </div>
+  <div class="take"><p class="label">Remember</p><ul>
+    <li>Pub/Sub has no storage. Use it for live signals where missing one is fine (cache invalidation hints, chat presence).</li>
+    <li>Streams persist entries, track what each consumer has been given, and let another consumer take over stuck work. Use them for queues you cannot afford to drop.</li>
+  </ul></div>
+</section>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- tabs (hash routed) ---------- */
+const TABS=['overview','types','caching','persistence','scaling','messaging'];
+function showTab(){
+  let t=(location.hash||'').slice(1); if(!TABS.includes(t)) t='overview';
+  $$('section.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));
+  $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+}
+$$('#tabs button').forEach(b=>b.onclick=()=>{location.hash=b.dataset.tab; window.scrollTo({top:0})});
+window.addEventListener('hashchange',showTab); showTab();
+
+/* ---------- 1 latency ---------- */
+(function(){
+  const rows=[['RAM access',100e-9,'~100 ns',0],['Redis (in-process)',2e-6,'~2 µs',0],['Redis over network',3e-4,'~0.3 ms',1],['SQL indexed query',3e-3,'~3 ms',0],['Cross-region call',7e-2,'~70 ms',0]];
+  const lo=Math.log10(5e-8), hi=Math.log10(0.2);
+  $('#lat').innerHTML=rows.map(r=>`<div class="lat ${r[3]?'me':''}"><span>${r[0]}</span><div class="bar"><i style="width:${(Math.log10(r[1])-lo)/(hi-lo)*100}%"></i></div><span>${r[2]}</span></div>`).join('');
+})();
+
+/* ---------- 2 data types: mini Redis engine ---------- */
+const DB=new Map();
+const live=k=>{const e=DB.get(k); if(e&&e.exp&&e.exp<=Date.now()){DB.delete(k);return null} return e||null};
+function need(k,t,create){
+  let e=live(k);
+  if(!e){ if(!create) return null; e={type:t,v:t==='list'||t==='stream'?[]:t==='hash'||t==='zset'?new Map():new Set()}; if(t==='string')e.v=''; DB.set(k,e); }
+  if(e.type!==t) throw new Error('WRONGTYPE Operation against a key holding the wrong kind of value');
+  return e;
+}
+const q=s=>s==null?'(nil)':`"${s}"`, ar=a=>a.length?a.map((x,i)=>`${i+1}) ${x}`).join('\n'):'(empty array)', it=n=>`(integer) ${n}`;
+const rng=(a,b,n)=>{a=+a;b=+b;if(a<0)a+=n;if(b<0)b+=n;a=Math.max(a,0);b=Math.min(b,n-1);return a>b?null:[a,b]};
+const sortedZ=e=>[...e.v].sort((x,y)=>x[1]-y[1]||(x[0]<y[0]?-1:1));
+function exec(line){
+  const a=[...line.matchAll(/"([^"]*)"|(\S+)/g)].map(m=>m[1]!==undefined?m[1]:m[2]); if(!a.length) return null;
+  const c=a[0].toUpperCase(), k=a[1];
+  const argc=n=>{if(a.length<n) throw new Error(`ERR wrong number of arguments for '${c.toLowerCase()}' command`)};
+  switch(c){
+    case 'PING': return 'PONG';
+    case 'SET':{argc(3); DB.set(k,{type:'string',v:a[2]}); const i=a.findIndex(x=>x.toUpperCase()==='EX'); if(i>0) DB.get(k).exp=Date.now()+(+a[i+1])*1000; return 'OK'}
+    case 'GET':{argc(2); const e=live(k); if(!e) return '(nil)'; if(e.type!=='string') throw new Error('WRONGTYPE Operation against a key holding the wrong kind of value'); return q(e.v)}
+    case 'DEL':{argc(2); let n=0; a.slice(1).forEach(x=>{if(live(x)){DB.delete(x);n++}}); return it(n)}
+    case 'EXISTS':{argc(2); return it(live(k)?1:0)}
+    case 'INCR': case 'DECR': case 'INCRBY':{argc(2); const e=need(k,'string',true); const d=c==='INCR'?1:c==='DECR'?-1:+a[2]; const cur=e.v===''?0:Number(e.v); if(!Number.isInteger(cur)) throw new Error('ERR value is not an integer or out of range'); e.v=String(cur+d); return it(e.v)}
+    case 'EXPIRE':{argc(3); const e=live(k); if(!e) return it(0); e.exp=Date.now()+(+a[2])*1000; return it(1)}
+    case 'TTL':{argc(2); const e=live(k); return it(!e?-2:!e.exp?-1:Math.ceil((e.exp-Date.now())/1000))}
+    case 'TYPE':{argc(2); const e=live(k); return !e?'none':({bitmap:'string',hll:'string'}[e.type]||e.type)}
+    case 'KEYS':{const re=new RegExp('^'+(a[1]||'*').replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\?/g,'.')+'$'); return ar([...DB.keys()].filter(x=>live(x)&&re.test(x)).map(q))}
+    case 'FLUSHALL': DB.clear(); return 'OK';
+    case 'LPUSH': case 'RPUSH':{argc(3); const e=need(k,'list',true); a.slice(2).forEach(x=>c==='LPUSH'?e.v.unshift(x):e.v.push(x)); return it(e.v.length)}
+    case 'LPOP': case 'RPOP':{argc(2); const e=need(k,'list'); if(!e||!e.v.length) return '(nil)'; const x=c==='LPOP'?e.v.shift():e.v.pop(); if(!e.v.length)DB.delete(k); return q(x)}
+    case 'LLEN':{const e=need(k,'list'); return it(e?e.v.length:0)}
+    case 'LRANGE':{argc(4); const e=need(k,'list'); if(!e) return '(empty array)'; const r=rng(a[2],a[3],e.v.length); return r?ar(e.v.slice(r[0],r[1]+1).map(q)):'(empty array)'}
+    case 'HSET':{argc(4); const e=need(k,'hash',true); let n=0; for(let i=2;i+1<a.length;i+=2){if(!e.v.has(a[i]))n++; e.v.set(a[i],a[i+1])} return it(n)}
+    case 'HGET':{argc(3); const e=need(k,'hash'); return q(e&&e.v.has(a[2])?e.v.get(a[2]):null)}
+    case 'HGETALL':{const e=need(k,'hash'); return e?ar([...e.v].flat().map(q)):'(empty array)'}
+    case 'SADD':{argc(3); const e=need(k,'set',true); let n=0; a.slice(2).forEach(x=>{if(!e.v.has(x)){e.v.add(x);n++}}); return it(n)}
+    case 'SREM':{argc(3); const e=need(k,'set'); let n=0; if(e) a.slice(2).forEach(x=>{if(e.v.delete(x))n++}); return it(n)}
+    case 'SMEMBERS':{const e=need(k,'set'); return e?ar([...e.v].map(q)):'(empty array)'}
+    case 'SISMEMBER':{argc(3); const e=need(k,'set'); return it(e&&e.v.has(a[2])?1:0)}
+    case 'SCARD':{const e=need(k,'set'); return it(e?e.v.size:0)}
+    case 'SINTER':{argc(2); const sets=a.slice(1).map(x=>need(x,'set')); if(sets.some(s=>!s)) return '(empty array)'; return ar([...sets[0].v].filter(x=>sets.every(s=>s.v.has(x))).map(q))}
+    case 'ZADD':{argc(4); const e=need(k,'zset',true); let n=0; for(let i=2;i+1<a.length;i+=2){if(isNaN(+a[i])) throw new Error('ERR value is not a valid float'); if(!e.v.has(a[i+1]))n++; e.v.set(a[i+1],+a[i])} return it(n)}
+    case 'ZINCRBY':{argc(4); const e=need(k,'zset',true); const s=(e.v.get(a[3])||0)+ +a[2]; e.v.set(a[3],s); return q(s)}
+    case 'ZRANGE': case 'ZREVRANGE':{argc(4); const e=need(k,'zset'); if(!e) return '(empty array)'; let l=sortedZ(e); if(c==='ZREVRANGE') l.reverse(); const r=rng(a[2],a[3],l.length); if(!r) return '(empty array)'; const ws=a.some(x=>x.toUpperCase()==='WITHSCORES'); return ar(l.slice(r[0],r[1]+1).flatMap(([m,s])=>ws?[q(m),q(s)]:[q(m)]))}
+    case 'ZRANK':{argc(3); const e=need(k,'zset'); const i=e?sortedZ(e).findIndex(x=>x[0]===a[2]):-1; return i<0?'(nil)':it(i)}
+    case 'ZSCORE':{argc(3); const e=need(k,'zset'); return q(e&&e.v.has(a[2])?e.v.get(a[2]):null)}
+    case 'ZCARD':{const e=need(k,'zset'); return it(e?e.v.size:0)}
+    case 'XADD':{argc(5); const e=need(k,'stream',true); const id=`${Date.now()}-${e.v.filter(x=>x.id.startsWith(Date.now()+'-')).length}`; const f={}; for(let i=3;i+1<a.length;i+=2) f[a[i]]=a[i+1]; e.v.push({id,f}); return q(id)}
+    case 'XLEN':{const e=need(k,'stream'); return it(e?e.v.length:0)}
+    case 'XRANGE':{const e=need(k,'stream'); return e&&e.v.length?ar(e.v.map(x=>`${q(x.id)} → ${Object.entries(x.f).map(([p,v])=>p+'='+v).join(' ')}`)):'(empty array)'}
+    case 'SETBIT':{argc(4); const e=need(k,'bitmap',true); const old=e.v.has(+a[2])?1:0; +a[3]?e.v.add(+a[2]):e.v.delete(+a[2]); return it(old)}
+    case 'GETBIT':{argc(3); const e=need(k,'bitmap'); return it(e&&e.v.has(+a[2])?1:0)}
+    case 'BITCOUNT':{const e=need(k,'bitmap'); return it(e?e.v.size:0)}
+    case 'PFADD':{argc(3); const e=need(k,'hll',true); let ch=0; a.slice(2).forEach(x=>{if(!e.v.has(x)){e.v.add(x);ch=1}}); return it(ch)}
+    case 'PFCOUNT':{argc(2); const e=need(k,'hll'); return it(e?e.v.size:0)}
+    default: throw new Error(`ERR unknown command '${a[0]}'`);
+  }
+}
+const TYPES={
+  string:{n:'String',d:'The basic value: text, a number or raw bytes. Supports atomic counters and expiry.',use:'Cache entries, counters, rate limits, feature flags',cx:'GET / SET O(1)',cmds:['SET name redis','GET name','SET page:views 0','INCR page:views','SET session:42 abc EX 30','TTL session:42','EXPIRE name 20']},
+  list:{n:'List',d:'An ordered sequence you can push to or pop from either end. Backed by a linked list of compact nodes.',use:'Queues, recent activity, timelines',cx:'push / pop O(1), LRANGE O(N)',cmds:['RPUSH queue job1 job2 job3','LPUSH queue urgent','LRANGE queue 0 -1','LPOP queue','RPOP queue','LLEN queue']},
+  hash:{n:'Hash',d:'A map of field → value stored under one key. Good for objects without serialising JSON.',use:'User profiles, sessions, small records',cx:'HGET / HSET O(1)',cmds:['HSET user:1 name Ana age 31 city Hue','HGET user:1 name','HGETALL user:1','HSET user:1 age 32']},
+  set:{n:'Set',d:'Unordered collection of unique strings with fast membership tests and set algebra.',use:'Tags, unique visitors, friends in common',cx:'SADD / SISMEMBER O(1)',cmds:['SADD tags:a redis cache db','SADD tags:b cache queue','SISMEMBER tags:a redis','SMEMBERS tags:a','SINTER tags:a tags:b','SADD tags:a redis']},
+  zset:{n:'Sorted set',d:'Unique members, each with a score. Always kept in score order.',use:'Leaderboards, delayed jobs, time-ordered feeds',cx:'ZADD O(log N), ZRANGE O(log N + M)',cmds:['ZADD board 120 ana 95 binh 210 chi','ZREVRANGE board 0 2 WITHSCORES','ZINCRBY board 100 binh','ZRANK board ana','ZSCORE board chi']},
+  stream:{n:'Stream',d:'Append-only log of field/value entries with auto-generated IDs. Supports consumer groups (station 6).',use:'Event logs, durable queues',cx:'XADD O(1)',cmds:['XADD events * type login user ana','XADD events * type buy user binh','XLEN events','XRANGE events - +']},
+  bitmap:{n:'Bitmap',d:'Bit-level operations on a string. One bit per id, so a million users take about 125 KB.',use:'Daily active users, feature flags per id',cx:'SETBIT / GETBIT O(1)',cmds:['SETBIT active:today 3 1','SETBIT active:today 7 1','SETBIT active:today 12 1','GETBIT active:today 7','BITCOUNT active:today']},
+  hll:{n:'HyperLogLog',d:'Estimates the number of distinct items using about 12 KB, however many you add.',use:'Unique counts at huge scale',cx:'PFADD / PFCOUNT O(1)',cmds:['PFADD visitors u1 u2 u3','PFADD visitors u2 u9','PFCOUNT visitors']}
+};
+let curType='string';
+function renderPills(){
+  $('#typePills').innerHTML=Object.entries(TYPES).map(([k,t])=>`<button aria-pressed="${k===curType}" data-t="${k}">${t.n}</button>`).join('');
+  $$('#typePills button').forEach(b=>b.onclick=()=>{curType=b.dataset.t;renderPills()});
+  const t=TYPES[curType];
+  $('#typeInfo').innerHTML=`<h3>${t.n}</h3><p style="margin:0 0 8px">${t.d}</p><p class="small" style="margin:0 0 4px"><b>Use for:</b> ${t.use}</p><p class="small" style="margin:0 0 12px"><b>Cost:</b> ${t.cx}</p><p class="label">Click to run, top to bottom</p><div class="row">${t.cmds.map(c=>`<button class="cmd" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+  $$('#typeInfo .cmd').forEach(b=>b.onclick=()=>run(b.dataset.c));
+}
+function run(line){
+  const term=$('#term'); line=line.trim(); if(!line) return;
+  term.insertAdjacentHTML('beforeend',`<div class="in">${esc(line)}</div>`);
+  try{ const out=exec(line); term.insertAdjacentHTML('beforeend',`<div class="out">${esc(out)}</div>`) }
+  catch(e){ term.insertAdjacentHTML('beforeend',`<div class="err">(error) ${esc(e.message)}</div>`) }
+  term.scrollTop=term.scrollHeight; renderStore();
+}
+function valueHtml(e){
+  const v=e.v;
+  switch(e.type){
+    case 'string': return `<span class="cell">${esc(v)}</span>`;
+    case 'list': return `<div class="cells">${v.map((x,i)=>`<span class="cell ${i===0||i===v.length-1?'hl':''}">${esc(x)}</span>`).join('')}</div><div class="small">left end highlighted: LPUSH/LPOP act there</div>`;
+    case 'hash': return `<table class="t">${[...v].map(([f,x])=>`<tr><td>${esc(f)}</td><td>${esc(x)}</td></tr>`).join('')}</table>`;
+    case 'set': return `<div class="cells">${[...v].map(x=>`<span class="cell">${esc(x)}</span>`).join('')}</div>`;
+    case 'zset':{const l=sortedZ(e),mx=Math.max(...l.map(x=>x[1]),1); return l.map(([m,s])=>`<div class="zrow"><span>${esc(m)}</span><i style="width:${Math.max(3,s/mx*100)}%"></i><span>${s}</span></div>`).join('')}
+    case 'stream': return v.map(x=>`<div class="mini">${esc(x.id)} ${Object.entries(x.f).map(([p,y])=>`<span class="cell">${esc(p)}=${esc(y)}</span>`).join(' ')}</div>`).join('');
+    case 'bitmap':{const n=Math.max(16,Math.ceil((Math.max(...v,0)+1)/8)*8); return `<div class="cells">${Array.from({length:n},(_,i)=>`<span class="bit ${v.has(i)?'on':''}" title="bit ${i}"></span>`).join('')}</div><div class="small">${v.size} bits set</div>`}
+    case 'hll': return `<span class="cell">≈ ${v.size} distinct</span> <span class="small">(exact in this demo)</span>`;
+  }
+}
+function renderStore(){
+  const ks=[...DB.keys()].filter(live);
+  $('#keyCount').textContent=ks.length+' keys';
+  $('#store').innerHTML=ks.length?ks.map(k=>{const e=DB.get(k); const ttl=e.exp?Math.max(0,Math.ceil((e.exp-Date.now())/1000)):null;
+    return `<div class="kv"><div class="k"><span>${esc(k)}</span><span class="chip">${({bitmap:'string·bitmap',hll:'string·hll'}[e.type]||e.type)}</span>${ttl!==null?`<span class="chip amber">TTL ${ttl}s</span>`:''}</div>${valueHtml(e)}</div>`}).join(''):'<div class="empty">The keyspace is empty. Click a command on the left to create a key.</div>';
+}
+$('#promptForm').onsubmit=e=>{e.preventDefault(); run($('#cli').value); $('#cli').value=''};
+$('#flush').onclick=()=>run('FLUSHALL');
+$('#term').insertAdjacentHTML('beforeend','<div class="out" style="color:var(--term-dim)">Mini Redis ready. Supports SET GET INCR EXPIRE TTL LPUSH LRANGE HSET SADD ZADD XADD SETBIT PFADD and more.</div>');
+['SET name redis','RPUSH queue job1 job2','HSET user:1 name Ana age 31','ZADD board 120 ana 210 chi'].forEach(c=>exec(c));
+renderPills(); renderStore(); setInterval(()=>{if($('#p-types').classList.contains('on')) renderStore()},1000);
+
+/* ---------- 3 cache-aside ---------- */
+const CA={cache:new Map(),ver:{1:1,2:1,3:1,4:1},hit:0,miss:0,stale:0,lat:[],log:[]};
+function caFlow(path){
+  ['nApp','nRedis','nDb','a1','a2'].forEach(i=>$('#'+i).className=i[0]==='a'?'arrow':'node');
+  $('#nApp').classList.add('hot'); $('#a1').classList.add('hot');
+  if(path==='hit'){ $('#nRedis').classList.add('ok'); }
+  else{ $('#nRedis').classList.add('hot'); $('#a2').classList.add('hot'); $('#nDb').classList.add('ok'); }
+}
+function caRender(){
+  const t=CA.hit+CA.miss;
+  $('#sHit').textContent='hits '+CA.hit; $('#sMiss').textContent='misses '+CA.miss; $('#sStale').textContent='stale reads '+CA.stale;
+  $('#ratio').style.width=(t?CA.hit/t*100:0)+'%';
+  $('#avgLat').textContent=CA.lat.length?(CA.lat.reduce((a,b)=>a+b,0)/CA.lat.length).toFixed(1)+' ms':'–';
+  $('#cacheLog').innerHTML=CA.log.slice(-5).reverse().map(l=>`<div class="logline">${l}</div>`).join('');
+  const now=Date.now(), ks=[...CA.cache].filter(([,e])=>e.exp>now);
+  $('#cacheKeys').innerHTML=ks.length?ks.map(([k,e])=>`<div class="kv"><div class="k"><span>product:${k}</span><span class="chip ${e.ver!==CA.ver[k]?'red':'green'}">${e.ver!==CA.ver[k]?'STALE':'fresh'} · v${e.ver}</span><span class="chip amber">TTL ${Math.ceil((e.exp-now)/1000)}s</span></div><div class="meter"><i style="width:${(e.exp-now)/e.ttl*100}%;background:var(--warn)"></i></div></div>`).join(''):'<div class="empty">Cache is empty. The first request will always miss.</div>';
+}
+$('#reqBtn').onclick=()=>{
+  const id=$('#prod').value, ttl=+$('#ttl').value, now=Date.now(), e=CA.cache.get(id);
+  if(e&&e.exp>now){ CA.hit++; CA.lat.push(1); const st=e.ver!==CA.ver[id]; if(st)CA.stale++; caFlow('hit');
+    $('#cacheMsg').innerHTML=`<b>HIT.</b> Redis answered in ~1 ms.${st?` <span style="color:var(--accent)">But the database now has v${CA.ver[id]} and this is v${e.ver}: a stale read.</span>`:''}`;
+    CA.log.push(`product:${id} → hit (v${e.ver}) 1 ms${st?' · stale':''}`);
+  } else { CA.miss++; CA.lat.push(81); caFlow('miss');
+    CA.cache.set(id,{ver:CA.ver[id],exp:now+ttl*1000+Math.random()*ttl*100,ttl:ttl*1000*1.1});
+    $('#cacheMsg').innerHTML=`<b>MISS.</b> Redis had nothing, the app read the database (~80 ms) then ran <code>SET product:${id} … EX ${ttl}</code>.`;
+    CA.log.push(`product:${id} → miss, loaded v${CA.ver[id]} from DB 81 ms`); }
+  caRender();
+};
+$('#editBtn').onclick=()=>{const id=$('#prod').value; CA.ver[id]++; $('#cacheMsg').innerHTML=`Database updated to v${CA.ver[id]}. Redis was not told, so it keeps serving the old copy until the TTL ends.`; CA.log.push(`DB write product:${id} → v${CA.ver[id]} (no invalidation)`); caRender()};
+$('#editDelBtn').onclick=()=>{const id=$('#prod').value; CA.ver[id]++; CA.cache.delete(id); $('#cacheMsg').innerHTML=`Database updated to v${CA.ver[id]} and <code>DEL product:${id}</code> sent. The next request misses and reloads fresh data.`; CA.log.push(`DB write product:${id} → v${CA.ver[id]} + DEL`); caRender()};
+caRender(); setInterval(()=>{if($('#p-caching').classList.contains('on')) caRender()},500);
+
+/* eviction */
+const EV={items:[],clock:0,names:'ABCDEFGH'.split('')};
+function evRender(){
+  const pol=$('#pol').value;
+  $('#evState').innerHTML=EV.items.length?[...EV.items].sort((a,b)=>b.last-a.last).map(i=>`<span class="cell" title="last used #${i.last}">${i.k}<span class="small"> · used ${i.freq}×</span></span>`).join('')+'<span class="small">  ← newest first</span>':'<span class="empty">Cache empty</span>';
+}
+function evReset(){EV.items=[];EV.clock=0;$('#evMsg').textContent='';evRender()}
+$('#evKeys').innerHTML=EV.names.map(n=>`<button class="btn" data-k="${n}">GET ${n}</button>`).join('');
+$$('#evKeys button').forEach(b=>b.onclick=()=>{
+  const k=b.dataset.k, pol=$('#pol').value; EV.clock++;
+  let it=EV.items.find(x=>x.k===k);
+  if(it){it.last=EV.clock;it.freq++;$('#evMsg').innerHTML=`<b>${k}</b> is cached (hit).`}
+  else if(EV.items.length>=4){
+    if(pol==='no'){ $('#evMsg').innerHTML=`<span style="color:var(--accent)">(error) OOM command not allowed when used memory &gt; 'maxmemory'.</span> Nothing is removed.`; }
+    else{ const v=[...EV.items].sort((a,b)=>pol==='lru'?a.last-b.last:(a.freq-b.freq||a.last-b.last))[0];
+      EV.items=EV.items.filter(x=>x!==v); EV.items.push({k,last:EV.clock,freq:1});
+      $('#evMsg').innerHTML=`<b>${k}</b> missed and was added. Memory was full so <b style="color:var(--accent)">${v.k}</b> was evicted (${pol==='lru'?'least recently used':'least frequently used, '+v.freq+'×'}).`; }
+  } else { EV.items.push({k,last:EV.clock,freq:1}); $('#evMsg').innerHTML=`<b>${k}</b> missed and was added.`; }
+  evRender();
+});
+$('#evReset').onclick=evReset; $('#pol').onchange=evReset; evRender();
+
+/* ---------- 4 persistence ---------- */
+const P={w:[],snap:0,off:0,crashed:null};
+const pNow=()=>Date.now()+P.off;
+function pAdd(n){for(let i=0;i<n;i++)P.w.push({i:P.w.length+1,t:pNow()}); P.crashed=null; pRender()}
+function pRender(){
+  const T=pNow();
+  const modes=[
+    ['RDB only','snapshot at write #'+(P.snap||'–'),w=>w.i<=P.snap],
+    ['AOF · always','fsync every command',w=>true],
+    ['AOF · everysec','fsync once a second',w=>T-w.t>=1000],
+    ['AOF · no','OS decides (≈30 s)',w=>T-w.t>=30000]
+  ];
+  $('#pClock').innerHTML=P.crashed?`<span class="chip red">CRASHED</span> Green writes were recovered after restart, red ones were lost.`:`${P.w.length} writes so far. Crash to see what each mode would recover.`;
+  $('#pRows').innerHTML=modes.map(([n,sub,ok])=>{
+    const kept=P.w.filter(ok).length;
+    return `<div style="margin-bottom:14px"><div class="row" style="margin-bottom:6px"><b>${n}</b><span class="small">${sub}</span>${P.crashed?`<span class="chip ${kept===P.w.length?'green':'red'}">recovered ${kept}/${P.w.length}</span>`:''}</div><div class="cellrow">${P.w.length?P.w.map(w=>`<span class="wcell ${P.crashed?(ok(w)?'ok':'lost'):''} ${w.i===P.snap?'snap':''}">${w.i}</span>`).join(''):'<span class="small">No writes yet. Press “Write”.</span>'}</div></div>`}).join('');
+}
+$('#pWrite').onclick=()=>pAdd(1); $('#pWrite5').onclick=()=>pAdd(5);
+$('#pSnap').onclick=()=>{P.snap=P.w.length;P.crashed=null;pRender()};
+$('#pWait2').onclick=()=>{P.off+=2000;pRender()}; $('#pWait30').onclick=()=>{P.off+=30000;pRender()};
+$('#pCrash').onclick=()=>{P.crashed=pNow();pRender()};
+$('#pReset').onclick=()=>{P.w=[];P.snap=0;P.off=0;P.crashed=null;pRender()};
+pRender();
+
+/* ---------- 5a replication ---------- */
+let R, RT=[];
+function rInit(){RT.forEach(clearTimeout);RT=[];R={nodes:[{id:'n1',role:'primary',off:0,up:true},{id:'n2',role:'replica',off:0,up:true},{id:'n3',role:'replica',off:0,up:true}],log:['Three nodes in sync. Press “Write to primary”.'],lost:0};rRender()}
+const rPrimary=()=>R.nodes.find(n=>n.role==='primary'&&n.up);
+function rRender(){
+  const mo=Math.max(...R.nodes.filter(n=>n.role==='primary').map(n=>n.off),1);
+  $('#rNodes').innerHTML=R.nodes.map(n=>`<div class="node ${!n.up?'dead':n.role==='primary'?'ok':''}"><b>${n.id}</b><span class="chip ${n.role==='primary'?'green':''}">${n.up?n.role:'DOWN'}</span><div class="mono" style="margin:8px 0 4px">offset ${n.off}</div><div class="meter"><i style="width:${n.off/mo*100}%"></i></div>${n.up&&n.role==='replica'&&rPrimary()?`<div class="small">lag ${rPrimary().off-n.off}</div>`:''}</div>`).join('');
+  $('#rLog').innerHTML=R.log.map(l=>`<div class="logline">${l}</div>`).join('')+(R.lost?`<div class="logline" style="color:var(--accent)"><b>${R.lost} acknowledged write(s) lost</b></div>`:'');
+}
+$('#rWrite').onclick=()=>{
+  const p=rPrimary(); if(!p){R.log.push('No primary is available, so the write fails.');rRender();return}
+  p.off++; const target=p.off; R.log.push(`SET on ${p.id} → offset ${target}. Client gets OK immediately; replicas follow async.`);
+  R.nodes.filter(n=>n.role==='replica'&&n.up).forEach((n,i)=>RT.push(setTimeout(()=>{if(n.up&&n.role==='replica')n.off=Math.max(n.off,target);rRender()},i?1800:600)));
+  rRender();
+};
+$('#rKill').onclick=()=>{
+  const p=rPrimary(); if(!p) return; RT.forEach(clearTimeout);RT=[]; p.up=false;
+  const reps=R.nodes.filter(n=>n.role==='replica'&&n.up).sort((a,b)=>b.off-a.off), win=reps[0];
+  R.log.push(`${p.id} stops answering. Sentinels mark it subjectively down, then a quorum agrees: objectively down.`);
+  R.log.push(`Sentinels elect a leader, which picks the replica with the highest offset: ${win.id} (offset ${win.off}).`);
+  R.lost=p.off-win.off; p.role='replica-old';
+  win.role='primary'; reps.slice(1).forEach(n=>n.off=win.off);
+  R.log.push(`${win.id} is promoted. Other replicas run REPLICAOF ${win.id}.`);
+  R.log.push(R.lost?`${p.id} had accepted writes up to ${p.off}, but ${win.id} only received ${win.off}.`:'Every write had already reached the new primary, so nothing was lost this time. Try pressing Write then Kill straight away.');
+  rRender();
+};
+$('#rReset').onclick=rInit; rInit();
+
+/* ---------- 5b cluster ---------- */
+function crc16(s){let c=0;for(const b of new TextEncoder().encode(s)){c^=b<<8;for(let i=0;i<8;i++)c=(c&0x8000)?((c<<1)^0x1021)&0xffff:(c<<1)&0xffff}return c}
+function slotOf(k){const m=k.match(/\{([^}]+)\}/); return crc16(m?m[1]:k)%16384}
+const COL=['#d82c2c','#0b8a7d','#6a5acd','#b36b00'];
+function ranges(n){const sz=Math.ceil(16384/n);return Array.from({length:n},(_,i)=>[i*sz,Math.min(16383,(i+1)*sz-1)])}
+const nodeOf=(s,r)=>r.findIndex(x=>s>=x[0]&&s<=x[1]);
+function cRender(){
+  const n=+$('#cn').value, r=ranges(n), key=$('#ck').value||' ', s=slotOf(key), ni=nodeOf(s,r);
+  $('#slotbar').innerHTML=r.map((x,i)=>`<div style="width:${(x[1]-x[0]+1)/16384*100}%;background:${COL[i]}">node ${i+1} · ${x[0]}–${x[1]}</div>`).join('')+`<span class="pin" style="left:${Math.min(96,Math.max(4,s/16384*100))}%">slot ${s}</span>`;
+  $('#cres').innerHTML=`<code>${esc(key)}</code> → hashes <code>${esc((key.match(/\{([^}]+)\}/)||[,key])[1])}</code> → slot <b>${s}</b> → <b style="color:${COL[ni]}">node ${ni+1}</b>`;
+  const samples=['user:1','user:2','order:77','{user:1}:cart','{user:1}:profile','session:abc'];
+  $('#ctable').innerHTML='<tr><th>Key</th><th>Slot</th><th>Node</th></tr>'+samples.map(k=>{const sl=slotOf(k);return `<tr><td>${esc(k)}</td><td>${sl}</td><td style="color:${COL[nodeOf(sl,r)]}">node ${nodeOf(sl,r)+1}</td></tr>`}).join('');
+  const a=slotOf('user:1'),b=slotOf('user:2'),c1=slotOf('{user:1}:cart'),c2=slotOf('{user:1}:profile');
+  $('#cmulti').innerHTML=`<code>MGET user:1 user:2</code> → ${a===b?'same slot, works':'<b style="color:var(--accent)">CROSSSLOT error</b> (slots '+a+' and '+b+')'}.  <code>MGET {user:1}:cart {user:1}:profile</code> → ${c1===c2?'<b style="color:var(--good)">same slot '+c1+', works</b>':'different slots'}.`;
+}
+$('#ck').oninput=cRender; $('#cn').onchange=cRender; cRender();
+
+/* ---------- 6 messaging ---------- */
+let ps=0;
+$('#psPub').onclick=()=>{ps++; const m=`news #${ps}`;
+  ['A','B'].forEach(x=>{const on=$('#sub'+x).checked; $('#in'+x).insertAdjacentHTML('afterbegin',`<div class="entry" style="${on?'':'opacity:.55'}">${m} ${on?'<span class="chip green">received</span>':'<span class="chip red">missed, gone forever</span>'}</div>`)});
+};
+let X;
+function xInit(){X={e:[],n:0};xRender()}
+function xRender(){
+  $('#xLog').innerHTML=X.e.length?X.e.map(e=>`<div class="entry"><span>${e.id}</span><span>${e.msg}</span>${e.s==='new'?'<span class="chip">undelivered</span>':e.s==='pend'?`<span class="chip amber">pending · ${e.o}</span>`:`<span class="chip green">acked · ${e.o}</span>`}</div>`).join(''):'<div class="empty">Stream is empty. Press XADD.</div>';
+}
+$('#xAdd').onclick=()=>{X.n++;X.e.push({id:`${1700000000000+X.n*37}-0`,msg:`job ${X.n}`,s:'new',o:''});xRender()};
+const xRead=o=>{const e=X.e.find(x=>x.s==='new'); if(e){e.s='pend';e.o=o;xRender()}};
+const xAck=o=>{const e=X.e.find(x=>x.s==='pend'&&x.o===o); if(e){e.s='ack';xRender()}};
+$('#xr1').onclick=()=>xRead('c1'); $('#xr2').onclick=()=>xRead('c2');
+$('#xa1').onclick=()=>xAck('c1'); $('#xa2').onclick=()=>xAck('c2');
+$('#xclaim').onclick=()=>{X.e.filter(x=>x.s==='pend'&&x.o==='c1').forEach(x=>x.o='c2');xRender()};
+$('#xReset').onclick=xInit; xInit();
+</script>
+</body>
+</html>

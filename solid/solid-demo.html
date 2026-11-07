@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLID Principles Interactive Demo</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#1c2233; --muted:#5d667c; --line:#e1e5ef;
+  --accent:#4f46e5; --bad:#d93a4a; --badbg:#fdeceb; --good:#12945a; --goodbg:#e6f6ee;
+  --code:#0f172a; --codeink:#e2e8f0; --warn:#f59e0b;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1220; --card:#171c2e; --ink:#e8ebf5; --muted:#9aa3bb; --line:#2a3150;
+    --accent:#8b8cff; --bad:#ff6b78; --badbg:#2f1a22; --good:#3dd68c; --goodbg:#14301f; --code:#0a0d18;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1220; --card:#171c2e; --ink:#e8ebf5; --muted:#9aa3bb; --line:#2a3150;
+  --accent:#8b8cff; --bad:#ff6b78; --badbg:#2f1a22; --good:#3dd68c; --goodbg:#14301f; --code:#0a0d18;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px 80px}
+header{padding:36px 0 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+h1{margin:0;font-size:clamp(26px,5vw,38px);letter-spacing:-.5px}
+header p{margin:6px 0 0;color:var(--muted);max-width:620px}
+.theme{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:14px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid var(--line)}
+nav button{flex:1;min-width:92px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 6px;cursor:pointer;font:inherit;text-align:center;transition:.15s}
+nav button b{display:block;font-size:22px;color:var(--accent)}
+nav button small{color:var(--muted);font-size:12px}
+nav button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+section{display:none;margin-top:22px}
+section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+h2{margin:4px 0 6px;font-size:26px}
+.rule{font-size:18px;font-weight:600}
+.analogy{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border-radius:12px;padding:12px 14px;margin-top:12px}
+.analogy span{font-size:26px}
+.switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:4px 0 14px}
+.switch button{border:0;padding:8px 16px;cursor:pointer;font:inherit;background:transparent;color:var(--muted)}
+.switch button.bad.on{background:var(--bad);color:#fff}
+.switch button.good.on{background:var(--good);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+pre{margin:0;background:var(--code);color:var(--codeink);padding:14px;border-radius:12px;overflow-x:auto;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
+.hl{background:rgba(245,158,11,.28);display:inline-block;width:100%}
+.k{color:#c4b5fd}.c{color:#7c8aa8}.s{color:#86efac}
+.panel{border-radius:12px;padding:12px;border:1px solid var(--line)}
+.panel.bad{background:var(--badbg);border-color:var(--bad)}
+.panel.good{background:var(--goodbg);border-color:var(--good)}
+.verdict{font-weight:700;margin-bottom:8px}
+.bad .verdict{color:var(--bad)}.good .verdict{color:var(--good)}
+.box{display:inline-block;border:2px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;margin:4px;font-size:14px;transition:.25s}
+.box.changed{border-color:var(--bad);background:var(--badbg);animation:pop .4s}
+.box.safe{border-color:var(--good);background:var(--goodbg)}
+.box.new{border-color:var(--accent);animation:pop .4s}
+.box.dead{opacity:.45;text-decoration:line-through}
+@keyframes pop{50%{transform:scale(1.08)}}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font:inherit;font-weight:600;margin:4px 4px 4px 0}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.log{margin-top:10px;background:var(--bg);border-radius:10px;padding:10px 12px;min-height:44px;font-size:14px}
+.log p{margin:2px 0}
+.log .e{color:var(--bad);font-weight:600}.log .o{color:var(--good);font-weight:600}
+.lbl{font-size:13px;color:var(--muted);margin:6px 0 2px}
+.takeaway{border-left:4px solid var(--accent);padding:4px 12px;margin-top:12px;color:var(--muted)}
+.ico{font-size:30px}
+.bulb{transition:.2s}
+.sum{width:100%;border-collapse:collapse;font-size:14px}
+.sum td,.sum th{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+footer{margin-top:30px;text-align:center;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>SOLID, made visual</h1>
+    <p>Five design rules that keep code easy to change. For each one: a real-life analogy, the broken design, the fixed design, and a button to feel the difference.</p>
+  </div>
+  <button class="theme" id="theme">🌓 Theme</button>
+</header>
+
+<nav id="nav">
+  <button data-t="s"><b>S</b><small>Single Resp.</small></button>
+  <button data-t="o"><b>O</b><small>Open/Closed</small></button>
+  <button data-t="l"><b>L</b><small>Liskov</small></button>
+  <button data-t="i"><b>I</b><small>Interface Seg.</small></button>
+  <button data-t="d"><b>D</b><small>Dep. Inversion</small></button>
+  <button data-t="all"><b>★</b><small>Summary</small></button>
+</nav>
+
+<!-- ================= S ================= -->
+<section id="s">
+  <div class="card">
+    <span class="tag">S · Single Responsibility</span>
+    <h2>One class, one reason to change</h2>
+    <div class="rule">A class should do one job. If two different people could ask you to change it, it does too much.</div>
+    <div class="analogy"><span>🍳</span><div><b>Restaurant.</b> If one person cooks, takes payment and cleans, a new tax law forces you to retrain the cook. With separate roles, only the cashier changes.</div></div>
+  </div>
+  <div class="card">
+    <div class="switch" data-for="s"><button class="bad on" data-m="bad">❌ Violation</button><button class="good" data-m="good">✅ Fixed</button></div>
+    <div class="grid">
+      <div>
+        <div data-mode="bad"><pre><span class="k">class</span> Invoice {
+  calculateTotal() {...}   <span class="c">// business</span>
+  saveToDatabase() {...}   <span class="c">// persistence</span>
+  printPdf() {...}         <span class="c">// presentation</span>
+}</pre></div>
+        <div data-mode="good" hidden><pre><span class="k">class</span> Invoice        { calculateTotal() }
+<span class="k">class</span> InvoiceRepo    { save(invoice) }
+<span class="k">class</span> InvoicePrinter { toPdf(invoice) }</pre></div>
+      </div>
+      <div>
+        <div class="panel bad" data-mode="bad"><div class="verdict">One God class</div>
+          <div id="s-bad"><span class="box" data-r="calc">calculateTotal</span><span class="box" data-r="save">saveToDatabase</span><span class="box" data-r="print">printPdf</span></div>
+          <div class="lbl">All three live in <b>Invoice</b>: a change to any one touches this file.</div></div>
+        <div class="panel good" data-mode="good" hidden><div class="verdict">Three small classes</div>
+          <div id="s-good"><span class="box" data-r="calc">Invoice</span><span class="box" data-r="save">InvoiceRepo</span><span class="box" data-r="print">InvoicePrinter</span></div>
+          <div class="lbl">Each class has exactly one reason to change.</div></div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <span class="lbl">Simulate a request:</span><br>
+      <button class="btn" data-s="calc">💶 Tax rule changed</button>
+      <button class="btn" data-s="save">🗄️ Switch to a new database</button>
+      <button class="btn" data-s="print">🖨️ New PDF layout</button>
+    </div>
+    <div class="log" id="s-log"><p>Pick a change request and see which code must be edited.</p></div>
+    <div class="takeaway">Smell: the class name needs "and" ("Invoice <i>and</i> storage <i>and</i> printing"). Split by <b>who asks for the change</b>.</div>
+  </div>
+</section>
+
+<!-- ================= O ================= -->
+<section id="o">
+  <div class="card">
+    <span class="tag">O · Open / Closed</span>
+    <h2>Add new behavior without editing old code</h2>
+    <div class="rule">Open for extension, closed for modification.</div>
+    <div class="analogy"><span>🔌</span><div><b>Power strip.</b> To plug in a new device you don't rewire the wall. You just plug it in. Your code should accept new "devices" the same way.</div></div>
+  </div>
+  <div class="card">
+    <div class="switch" data-for="o"><button class="bad on" data-m="bad">❌ Violation</button><button class="good" data-m="good">✅ Fixed</button></div>
+    <div class="grid">
+      <div>
+        <div data-mode="bad"><pre><span class="k">function</span> pay(type, amount) {
+  <span class="k">if</span> (type === <span class="s">"card"</span>)   {...}
+  <span class="k">else if</span> (type === <span class="s">"paypal"</span>) {...}
+  <span class="hl"><span class="c">// new method? edit this function again!</span></span>
+}</pre></div>
+        <div data-mode="good" hidden><pre><span class="k">interface</span> Payment { pay(amount) }
+<span class="k">class</span> Card   <span class="k">implements</span> Payment {...}
+<span class="k">class</span> PayPal <span class="k">implements</span> Payment {...}
+<span class="hl"><span class="k">class</span> Crypto <span class="k">implements</span> Payment {...}  <span class="c">// new file only</span></span>
+
+<span class="k">function</span> checkout(p: Payment, amt) { p.pay(amt) }</pre></div>
+      </div>
+      <div>
+        <div class="panel bad" data-mode="bad"><div class="verdict">Edit the shared function</div>
+          <div id="o-bad"><span class="box" id="ob-fn">pay()</span><span class="box">card</span><span class="box">paypal</span></div></div>
+        <div class="panel good" data-mode="good" hidden><div class="verdict">Plug in a new class</div>
+          <div id="o-good"><span class="box safe">checkout()</span><span class="box">Card</span><span class="box">PayPal</span></div></div>
+      </div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="o-add">➕ Add Crypto payment</button><button class="btn ghost" id="o-reset">Reset</button></div>
+    <div class="log" id="o-log"><p>Press the button to add a new payment method.</p></div>
+    <div class="takeaway">Smell: a growing <code>if/else</code> or <code>switch</code> on a "type". Replace it with polymorphism.</div>
+  </div>
+</section>
+
+<!-- ================= L ================= -->
+<section id="l">
+  <div class="card">
+    <span class="tag">L · Liskov Substitution</span>
+    <h2>A child must work wherever its parent works</h2>
+    <div class="rule">If code works with <code>Bird</code>, it must also work with any subclass of <code>Bird</code>, without surprises.</div>
+    <div class="analogy"><span>🐧</span><div><b>Penguin.</b> Is a penguin a bird? Yes. Can it fly? No. If <code>Bird</code> promises <code>fly()</code>, a penguin breaks that promise. The model is wrong, not the penguin.</div></div>
+  </div>
+  <div class="card">
+    <div class="switch" data-for="l"><button class="bad on" data-m="bad">❌ Violation</button><button class="good" data-m="good">✅ Fixed</button></div>
+    <div class="grid">
+      <div>
+        <div data-mode="bad"><pre><span class="k">class</span> Bird { fly() {...} }
+<span class="k">class</span> Sparrow <span class="k">extends</span> Bird {...}
+<span class="k">class</span> Penguin <span class="k">extends</span> Bird {
+  <span class="hl">fly() { <span class="k">throw</span> Error(<span class="s">"can't fly"</span>) }</span>
+}</pre></div>
+        <div data-mode="good" hidden><pre><span class="k">class</span> Bird { eat() {...} }
+<span class="k">class</span> FlyingBird <span class="k">extends</span> Bird { fly() {...} }
+<span class="k">class</span> Sparrow <span class="k">extends</span> FlyingBird {}
+<span class="k">class</span> Penguin <span class="k">extends</span> Bird { swim() {...} }</pre></div>
+      </div>
+      <div>
+        <div class="panel bad" data-mode="bad"><div class="verdict">Penguin breaks the contract</div>
+          <div><span class="box">🐦 Sparrow</span><span class="box">🦅 Eagle</span><span class="box" id="l-peng">🐧 Penguin</span></div></div>
+        <div class="panel good" data-mode="good" hidden><div class="verdict">Types tell the truth</div>
+          <div><span class="box">FlyingBird: 🐦 🦅</span><span class="box safe">Bird: 🐧</span></div></div>
+      </div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="l-run">🚀 Make every bird in the list fly</button></div>
+    <div class="log" id="l-log"><p>Run the loop <code>birds.forEach(b =&gt; b.fly())</code>.</p></div>
+    <div class="takeaway">Smell: a subclass that throws "not supported", returns nothing, or needs an <code>instanceof</code> check. Fix the hierarchy, not the caller.</div>
+  </div>
+</section>
+
+<!-- ================= I ================= -->
+<section id="i">
+  <div class="card">
+    <span class="tag">I · Interface Segregation</span>
+    <h2>Don't force clients to depend on what they don't use</h2>
+    <div class="rule">Prefer several small, focused interfaces over one big one.</div>
+    <div class="analogy"><span>🖨️</span><div><b>Multifunction printer.</b> A cheap printer that must implement <code>scan()</code> and <code>fax()</code> just to satisfy one giant interface ends up with fake, broken methods.</div></div>
+  </div>
+  <div class="card">
+    <div class="switch" data-for="i"><button class="bad on" data-m="bad">❌ Violation</button><button class="good" data-m="good">✅ Fixed</button></div>
+    <div class="grid">
+      <div>
+        <div data-mode="bad"><pre><span class="k">interface</span> Machine { print(); scan(); fax(); }
+
+<span class="k">class</span> BasicPrinter <span class="k">implements</span> Machine {
+  print() {...}
+  <span class="hl">scan() { <span class="k">throw</span> <span class="s">"unsupported"</span> }</span>
+  <span class="hl">fax()  { <span class="k">throw</span> <span class="s">"unsupported"</span> }</span>
+}</pre></div>
+        <div data-mode="good" hidden><pre><span class="k">interface</span> Printer { print() }
+<span class="k">interface</span> Scanner { scan() }
+<span class="k">interface</span> Fax     { fax() }
+
+<span class="k">class</span> BasicPrinter <span class="k">implements</span> Printer {...}
+<span class="k">class</span> OfficeAllInOne <span class="k">implements</span> Printer, Scanner, Fax {...}</pre></div>
+      </div>
+      <div>
+        <div class="lbl">Choose a device and try its buttons:</div>
+        <button class="btn ghost" data-dev="basic">Basic printer</button>
+        <button class="btn ghost" data-dev="all">All-in-one</button>
+        <div id="i-panel" class="panel" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="log" id="i-log"><p>Pick a device.</p></div>
+    <div class="takeaway">Smell: empty methods or <code>throw NotSupported</code> inside an implementation. Split the interface by <b>client need</b>.</div>
+  </div>
+</section>
+
+<!-- ================= D ================= -->
+<section id="d">
+  <div class="card">
+    <span class="tag">D · Dependency Inversion</span>
+    <h2>Depend on abstractions, not concrete details</h2>
+    <div class="rule">High-level code should not know low-level details. Both should depend on an interface.</div>
+    <div class="analogy"><span>💡</span><div><b>Wall switch.</b> The switch doesn't care if it controls a bulb, a fan or a heater. It only knows "on/off". Welding a switch to one bulb means rewiring to change it.</div></div>
+  </div>
+  <div class="card">
+    <div class="switch" data-for="d"><button class="bad on" data-m="bad">❌ Violation</button><button class="good" data-m="good">✅ Fixed</button></div>
+    <div class="grid">
+      <div>
+        <div data-mode="bad"><pre><span class="k">class</span> Switch {
+  <span class="hl">bulb = <span class="k">new</span> LightBulb()  <span class="c">// hard-wired</span></span>
+  press() { <span class="k">this</span>.bulb.turnOn() }
+}</pre></div>
+        <div data-mode="good" hidden><pre><span class="k">interface</span> Switchable { turnOn(); turnOff() }
+<span class="k">class</span> LightBulb <span class="k">implements</span> Switchable {...}
+<span class="k">class</span> Fan       <span class="k">implements</span> Switchable {...}
+
+<span class="k">class</span> Switch {
+  <span class="hl">constructor(<span class="k">private</span> d: Switchable) {}</span>
+  press() { <span class="k">this</span>.d.turnOn() }
+}</pre></div>
+      </div>
+      <div>
+        <div class="panel bad" data-mode="bad"><div class="verdict">Switch → LightBulb (concrete)</div>
+          <div class="lbl">To control a fan you must edit <code>Switch</code>.</div></div>
+        <div class="panel good" data-mode="good" hidden><div class="verdict">Switch → Switchable ← devices</div>
+          <div class="lbl">Inject any device from outside.</div></div>
+      </div>
+    </div>
+    <div class="lbl" style="margin-top:12px">Plug a device into the switch:</div>
+    <button class="btn ghost" data-plug="bulb">💡 Bulb</button>
+    <button class="btn ghost" data-plug="fan">🌀 Fan</button>
+    <button class="btn ghost" data-plug="heater">🔥 Heater</button>
+    <div style="margin:8px 0"><button class="btn" id="d-press">🔘 Press switch</button> <span class="ico bulb" id="d-ico">⚫</span></div>
+    <div class="log" id="d-log"><p>Try to plug in a Fan or Heater.</p></div>
+    <div class="takeaway">Smell: <code>new ConcreteClass()</code> inside business logic. Pass dependencies in (dependency injection).</div>
+  </div>
+</section>
+
+<!-- ================= Summary ================= -->
+<section id="all">
+  <div class="card">
+    <h2>Cheat sheet</h2>
+    <table class="sum">
+      <tr><th>Letter</th><th>Question to ask</th><th>Red flag</th></tr>
+      <tr><td><b>S</b></td><td>Does this class have more than one reason to change?</td><td>Name contains "and"; huge class</td></tr>
+      <tr><td><b>O</b></td><td>Can I add a feature without editing existing code?</td><td>Long if/else or switch on type</td></tr>
+      <tr><td><b>L</b></td><td>Can a child replace its parent safely?</td><td>Overrides that throw or do nothing</td></tr>
+      <tr><td><b>I</b></td><td>Does the client use every method it must implement?</td><td>Empty / "unsupported" methods</td></tr>
+      <tr><td><b>D</b></td><td>Does my logic depend on interfaces, not concrete classes?</td><td><code>new</code> inside business logic</td></tr>
+    </table>
+    <div class="takeaway">Remember them as one idea: <b>keep pieces small, swappable and honest</b>, so a change in one place doesn't break ten others. They are guidelines, not laws. Don't over-engineer tiny programs.</div>
+  </div>
+</section>
+
+<footer>Tip: use the ❌/✅ switch inside each lesson, then press the demo buttons.</footer>
+</div>
+
+<script>
+const $ = (s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const log=(id,html,reset)=>{const el=$('#'+id); if(reset) el.innerHTML=''; el.insertAdjacentHTML('beforeend','<p>'+html+'</p>');};
+const mode={s:'bad',o:'bad',l:'bad',i:'bad',d:'bad'};
+
+/* nav */
+function show(t){ $$('section').forEach(s=>s.classList.toggle('on',s.id===t)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); try{localStorage.setItem('solid-tab',t)}catch(e){} window.scrollTo({top:0}); }
+$$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.t));
+let start='s'; try{start=localStorage.getItem('solid-tab')||'s'}catch(e){} show(start);
+
+/* theme */
+$('#theme').onclick=()=>{const r=document.documentElement; const dark=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0e1220'; r.dataset.theme=dark?'light':'dark';};
+
+/* bad/good switch */
+$$('.switch').forEach(sw=>{
+  const k=sw.dataset.for;
+  $$('button',sw).forEach(b=>b.onclick=()=>{
+    mode[k]=b.dataset.m;
+    $$('button',sw).forEach(x=>x.classList.toggle('on',x===b));
+    $$('#'+k+' [data-mode]').forEach(p=>p.hidden=p.dataset.mode!==mode[k]);
+    if(k==='i') renderI(); if(k==='d') resetD(); if(k==='l') $('#l-log').innerHTML='<p>Run the loop <code>birds.forEach(b =&gt; b.fly())</code>.</p>';
+  });
+});
+
+/* S */
+const sMap={calc:['Invoice','Tax rule'],save:['InvoiceRepo','Database'],print:['InvoicePrinter','PDF layout']};
+$$('[data-s]').forEach(b=>b.onclick=()=>{
+  const r=b.dataset.s; const bad=mode.s==='bad';
+  $$('#s .box').forEach(x=>x.classList.remove('changed','safe'));
+  if(bad){
+    $$('#s-bad .box').forEach(x=>x.classList.add('changed'));
+    log('s-log','<span class="e">⚠ Edit Invoice.</span> It also contains save + print code, so you risk breaking them. Retest all 3 jobs.',true);
+  } else {
+    $(`#s-good [data-r="${r}"]`).classList.add('changed');
+    $$('#s-good .box').filter(x=>x.dataset.r!==r).forEach(x=>x.classList.add('safe'));
+    log('s-log',`<span class="o">✔ Only ${sMap[r][0]} changes.</span> The other two classes are untouched, nothing to retest there.`,true);
+  }
+});
+
+/* O */
+let oAdded=false;
+$('#o-add').onclick=()=>{
+  if(oAdded) return; oAdded=true;
+  if(mode.o==='bad'){
+    $('#ob-fn').classList.add('changed');
+    $('#o-bad').insertAdjacentHTML('beforeend','<span class="box new">crypto (new branch)</span>');
+    log('o-log','<span class="e">⚠ pay() was modified.</span> Card and PayPal code now risk regressions; every caller is affected.',true);
+  } else {
+    $('#o-good').insertAdjacentHTML('beforeend','<span class="box new">Crypto (new class)</span>');
+    log('o-log','<span class="o">✔ Zero existing files edited.</span> <code>checkout()</code>, Card and PayPal are untouched.',true);
+  }
+};
+$('#o-reset').onclick=()=>{oAdded=false; $$('#o .box.new').forEach(x=>x.remove()); $('#ob-fn').classList.remove('changed'); $('#o-log').innerHTML='<p>Press the button to add a new payment method.</p>';};
+
+/* L */
+$('#l-run').onclick=()=>{
+  $('#l-log').innerHTML='';
+  if(mode.l==='bad'){
+    log('l-log','🐦 Sparrow.fly() <span class="o">ok</span>'); log('l-log','🦅 Eagle.fly() <span class="o">ok</span>');
+    log('l-log','🐧 Penguin.fly() <span class="e">💥 Error: can\'t fly</span>'); log('l-log','The loop crashes. The caller must now add <code>if (b instanceof Penguin)</code> hacks.');
+    $('#l-peng').classList.add('changed');
+  } else {
+    log('l-log','Only <code>FlyingBird</code> items are passed to the loop:');
+    log('l-log','🐦 Sparrow.fly() <span class="o">ok</span>'); log('l-log','🦅 Eagle.fly() <span class="o">ok</span>');
+    log('l-log','🐧 Penguin is a plain <code>Bird</code>: the compiler never lets it into <code>fly()</code>. <span class="o">✔ No crash.</span>');
+  }
+};
+
+/* I */
+let dev='basic';
+function renderI(){
+  const bad=mode.i==='bad';
+  const rows=[['print','🖨 Print'],['scan','📠 Scan'],['fax','☎ Fax']];
+  const has=k=>dev==='all'||k==='print';
+  $('#i-panel').className='panel '+(bad?'bad':'good');
+  $('#i-panel').innerHTML=(bad?'<div class="verdict">Machine (3 methods forced)</div>':'<div class="verdict">'+(dev==='all'?'Printer + Scanner + Fax':'Printer only')+'</div>')+
+    rows.map(([k,t])=>{
+      if(!bad&&!has(k)) return `<span class="box dead">${t}</span>`;
+      return `<button class="btn ghost" data-act="${k}">${t}</button>`;
+    }).join('');
+  $$('#i-panel [data-act]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.act;
+    if(has(k)) log('i-log',`<span class="o">✔ ${k}() works.</span>`,true);
+    else log('i-log',`<span class="e">💥 ${k}() → throw "unsupported".</span> BasicPrinter was forced to implement a method it can't do.`,true);
+  });
+  if(!bad) log('i-log', dev==='basic'?'BasicPrinter only implements <code>Printer</code>. Scan/Fax buttons don\'t even exist.':'OfficeAllInOne opts in to all three small interfaces.',true);
+  else log('i-log','Try Scan or Fax on the basic printer.',true);
+}
+$$('[data-dev]').forEach(b=>b.onclick=()=>{dev=b.dataset.dev; renderI();});
+renderI();
+
+/* D */
+let plug='bulb', on=false;
+const devs={bulb:['💡','⚫','LightBulb'],fan:['🌀','⚫','Fan'],heater:['🔥','⚫','Heater']};
+function resetD(){on=false; plug=mode.d==='bad'?'bulb':plug; $('#d-ico').textContent='⚫'; $('#d-log').innerHTML='<p>Try to plug in a Fan or Heater.</p>';}
+$$('[data-plug]').forEach(b=>b.onclick=()=>{
+  const p=b.dataset.plug; on=false; $('#d-ico').textContent='⚫';
+  if(mode.d==='bad'&&p!=='bulb'){
+    log('d-log',`<span class="e">✖ Can't plug ${devs[p][2]}.</span> Switch has <code>new LightBulb()</code> inside. You must edit and recompile <code>Switch</code>.`,true); return;
+  }
+  plug=p; log('d-log',mode.d==='bad'?'Only LightBulb is possible.':`<span class="o">✔ Injected ${devs[p][2]}</span> into Switch. <code>Switch</code> code unchanged.`,true);
+  $('#d-ico').textContent=devs[p][1];
+});
+$('#d-press').onclick=()=>{
+  on=!on; $('#d-ico').textContent=on?devs[plug][0]:'⚫';
+  log('d-log',`Switch.press() → ${devs[plug][2]}.${on?'turnOn':'turnOff'}()`,true);
+};
+</script>
+</body>
+</html>

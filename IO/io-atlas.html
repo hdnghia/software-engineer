@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>I/O Atlas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky lesson rail on the left, one lesson at a time on the right (rail becomes a chip strip on phones). */
+:root{
+  --bg:#f1f0ec; --surface:#ffffff; --ink:#1b1d22; --muted:#5d6370; --line:#dcdad3;
+  --accent:#4a4fd8; --accent-soft:#e3e4fb;
+  --work:#1f8a55; --work-soft:#d8f1e3;      /* CPU doing useful work */
+  --io:#c4720f;   --io-soft:#fbecd5;        /* CPU handling I/O */
+  --wait:#c23a3a; --wait-soft:#f9dfdd;      /* blocked / spinning */
+  --dma:#2b7bbf;  --dma-soft:#dcebf8;       /* device / DMA */
+  --codebg:#16181f; --codefg:#dfe3ec; --kw:#f29e74; --st:#a8d98a; --cm:#7a8292; --fn:#9ecbff;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1015; --surface:#181a22; --ink:#e8e9ee; --muted:#9aa0ad; --line:#2a2d38;
+  --accent:#8f93ff; --accent-soft:#272a52;
+  --work:#5fd394; --work-soft:#143826; --io:#f0a54a; --io-soft:#3b2a12;
+  --wait:#ff8379; --wait-soft:#3f1d1b; --dma:#6cb6f5; --dma-soft:#14304a; --codebg:#0b0c10; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1015; --surface:#181a22; --ink:#e8e9ee; --muted:#9aa0ad; --line:#2a2d38;
+  --accent:#8f93ff; --accent-soft:#272a52;
+  --work:#5fd394; --work-soft:#143826; --io:#f0a54a; --io-soft:#3b2a12;
+  --wait:#ff8379; --wait-soft:#3f1d1b; --dma:#6cb6f5; --dma-soft:#14304a; --codebg:#0b0c10; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1200px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px 8px;flex-wrap:wrap}
+.brand{font:700 26px/1 var(--display);letter-spacing:-.02em}
+.brand span{color:var(--accent)}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+.tools{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)}
+.bar{width:140px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.grid{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start;padding-block:12px 56px}
+nav.rail{position:sticky;top:0;max-height:100vh;overflow:auto;padding-block:8px}
+nav h4{margin:18px 0 6px;font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+nav h4:first-child{margin-top:0}
+nav a{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}
+nav a:hover{background:var(--surface)}
+nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav a .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--muted);flex:none}
+nav a.seen .dot{background:var(--accent);border-color:var(--accent)}
+section.lesson{display:none}
+section.lesson.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.kicker{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 34px/1.1 var(--display);letter-spacing:-.02em;margin:8px 0 10px;text-wrap:balance}
+h2{font:600 20px/1.25 var(--display);margin:30px 0 8px}
+h3{font:600 15px/1.3 var(--body);margin:0 0 6px}
+p{margin:0 0 12px;max-width:75ch}
+.lead{font-size:17px;color:var(--muted);max-width:70ch}
+code,.mono{font-family:var(--mono);font-size:.9em}
+:not(pre)>code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:4px}
+pre{background:var(--codebg);color:var(--codefg);border-radius:10px;padding:14px 16px;overflow:auto;font:13px/1.55 var(--mono);margin:0 0 14px}
+pre .k{color:var(--kw)} pre .s{color:var(--st)} pre .c{color:var(--cm)} pre .f{color:var(--fn)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.demo-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.demo-h b{font:600 13px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:14px 0}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:14px;font-size:14px}
+.ctl label{display:flex;align-items:center;gap:8px}
+input[type=range]{accent-color:var(--accent);width:160px}
+button{font:500 14px/1 var(--body);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] button.pri{color:#111}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.pri{color:#111}}
+button:disabled{opacity:.45;cursor:not-allowed}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;background:transparent;padding:8px 12px}
+.seg button.on{background:var(--accent);color:#fff}
+:root[data-theme="dark"] .seg button.on{color:#111}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button.on{color:#111}}
+.stat{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
+.stat div{min-width:110px}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat strong{font:600 22px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;max-width:80ch}
+.warn{border-left-color:var(--io);background:var(--io-soft)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:8px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.pill{display:inline-block;font:600 11px/1 var(--body);padding:4px 7px;border-radius:99px;letter-spacing:.04em}
+.p-work{background:var(--work-soft);color:var(--work)} .p-io{background:var(--io-soft);color:var(--io)}
+.p-wait{background:var(--wait-soft);color:var(--wait)} .p-dma{background:var(--dma-soft);color:var(--dma)}
+svg text{font-family:var(--body)}
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;min-width:560px;width:100%;height:auto}
+
+/* lesson 1: stack */
+.stack{display:grid;gap:6px}
+.layer{display:grid;grid-template-columns:28px 190px 1fr;gap:12px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);transition:.2s;font-size:14px}
+.layer .n{font:600 12px var(--mono);color:var(--muted)}
+.layer .t{font-weight:600}
+.layer .d{color:var(--muted);font-size:13px}
+.layer.kern{border-left:4px solid var(--io)}
+.layer.hw{border-left:4px solid var(--dma)}
+.layer.user{border-left:4px solid var(--work)}
+.layer.hot{background:var(--accent-soft);border-color:var(--accent);transform:translateX(6px)}
+.layer.skip{opacity:.35}
+.trace-out{min-height:48px;margin-top:12px;font-size:14px}
+.boundary{font:600 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;padding:2px 0;border-top:1px dashed var(--line)}
+
+/* latency */
+.lat{display:grid;grid-template-columns:minmax(150px,240px) 1fr 110px;gap:8px 12px;align-items:center;font-size:14px}
+.lat .b{height:16px;border-radius:4px;background:var(--accent);min-width:2px;transition:width .4s}
+.lat .v{font:500 13px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* timeline cells */
+.tl{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:center;margin-bottom:6px;font-size:13px}
+.cells{display:flex;gap:1px;height:22px}
+.cells span{flex:1;border-radius:2px;background:var(--line);opacity:.25;transition:opacity .15s}
+.cells span.v{opacity:1}
+.c-app{background:var(--work)!important}.c-spin{background:var(--wait)!important}.c-isr{background:var(--io)!important}.c-setup{background:var(--accent)!important}.c-dev{background:var(--dma)!important}.c-idle{background:var(--line)!important}
+
+/* rings / slots */
+.slots{display:flex;gap:4px;flex-wrap:wrap}
+.slot{width:62px;height:46px;border:1px solid var(--line);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:500 11px var(--mono);position:relative;background:var(--bg)}
+.slot.full{background:var(--accent-soft);border-color:var(--accent)}
+.slot.cq.full{background:var(--work-soft);border-color:var(--work)}
+.slot .ptr{position:absolute;bottom:-17px;font:600 10px var(--body);color:var(--muted)}
+.ringrow{margin:6px 0 26px}
+
+/* fds grid */
+.fds{display:grid;grid-template-columns:repeat(40,1fr);gap:2px;max-width:640px}
+.fds i{aspect-ratio:1;border-radius:2px;background:var(--line)}
+.fds i.r{background:var(--work)}
+.fds i.s{outline:2px solid var(--wait)}
+
+/* buffer bars */
+.fill{height:28px;border-radius:7px;background:var(--bg);border:1px solid var(--line);overflow:hidden;position:relative}
+.fill i{display:block;height:100%;background:var(--dma);transition:width .2s}
+.fill b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 12px var(--mono)}
+.log{font:12.5px/1.6 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;height:150px;overflow:auto}
+
+/* pipeline (durability / zero copy) */
+.pipe{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0}
+.box{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);min-height:92px;font-size:13px;position:relative}
+.box h3{font-size:13px}
+.box .tag{font:500 11px var(--mono);color:var(--muted)}
+.box.has{border-color:var(--accent);background:var(--accent-soft)}
+.box.lost{border-color:var(--wait);background:var(--wait-soft)}
+.box.safe{border-color:var(--work);background:var(--work-soft)}
+.data{display:inline-block;margin-top:6px;font:600 12px var(--mono);padding:3px 7px;border-radius:5px;background:var(--accent);color:#fff}
+.verdict{font:600 16px var(--display);margin-top:10px;min-height:26px}
+
+.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+.steps li{counter-increment:s;padding:7px 10px 7px 40px;position:relative;border-radius:8px;font-size:14px;color:var(--muted)}
+.steps li::before{content:counter(s);position:absolute;left:10px;top:7px;width:20px;height:20px;border-radius:50%;background:var(--line);color:var(--ink);font:600 11px/20px var(--body);text-align:center}
+.steps li.on{background:var(--accent-soft);color:var(--ink)}
+.steps li.on::before{background:var(--accent);color:#fff}
+
+.quiz .q{margin:0 0 16px}
+.quiz .opts{display:grid;gap:6px;margin-top:8px}
+.quiz .opts button{text-align:left;line-height:1.4;padding:10px 12px}
+.quiz .opts button.ok{border-color:var(--work);background:var(--work-soft)}
+.quiz .opts button.no{border-color:var(--wait);background:var(--wait-soft)}
+.quiz .why{font-size:13.5px;color:var(--muted);margin-top:6px;display:none}
+.quiz .q.done .why{display:block}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  nav.rail{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:var(--bg);padding:8px 0;max-height:none}
+  nav.rail h4{display:none}
+  nav a{white-space:nowrap;border:1px solid var(--line);font-size:13px}
+  h1{font-size:28px}
+  .layer{grid-template-columns:24px 1fr}
+  .layer .d{grid-column:2}
+  .pipe{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lat{grid-template-columns:120px 1fr 80px}
+  .tl{grid-template-columns:76px 1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="brand">I/O <span>Atlas</span></div>
+    <div class="sub">From device registers to epoll, io_uring and fsync. 15 interactive lessons.</div>
+  </div>
+  <div class="tools">
+    <span id="progTxt">0 / 15</span><div class="bar"><i id="progBar"></i></div>
+    <button id="themeBtn" title="Toggle theme">◐ Theme</button>
+  </div>
+</header>
+
+<div class="grid">
+<nav class="rail" id="rail"></nav>
+<main id="main">
+
+<!-- ============ 1 ============ -->
+<section class="lesson" id="stack" data-group="Foundations" data-title="The I/O stack">
+  <div class="kicker">Lesson 1 · Foundations</div>
+  <h1>What actually happens on <code>read()</code></h1>
+  <p class="lead">I/O moves bytes between memory and the outside world: disks, networks, terminals, GPUs. Devices are 100× to 1,000,000× slower than the CPU, so nearly every technique in this atlas falls into one of three ideas.</p>
+  <div class="cols">
+    <div class="card"><span class="pill p-wait">1 · Don't wait</span><h3 style="margin-top:8px">Overlap waiting with work</h3><p style="font-size:14px;color:var(--muted);margin:0">Interrupts, non-blocking sockets, event loops, async I/O, goroutines.</p></div>
+    <div class="card"><span class="pill p-io">2 · Batch</span><h3 style="margin-top:8px">Pay fixed costs fewer times</h3><p style="font-size:14px;color:var(--muted);margin:0">Buffers, read-ahead, write-back, io_uring rings, request merging.</p></div>
+    <div class="card"><span class="pill p-dma">3 · Don't copy</span><h3 style="margin-top:8px">Let hardware move the bytes</h3><p style="font-size:14px;color:var(--muted);margin:0">DMA, page cache, mmap, sendfile, splice.</p></div>
+  </div>
+  <div class="demo">
+    <div class="demo-h"><b>Trace a 4 KB file read through every layer</b>
+      <div class="ctl" style="margin:0"><label><input type="checkbox" id="stHit"> Page cache hit</label><button class="pri" id="stGo">▶ Trace read()</button></div></div>
+    <div class="stack" id="stackList"></div>
+    <div class="trace-out" id="stackOut">Press <b>Trace read()</b>. Then tick <b>Page cache hit</b> and trace again to see how much work a warm cache removes.</div>
+  </div>
+  <p>Green layers run in <b>user space</b>, orange layers in the <b>kernel</b>, blue layers in <b>hardware</b>. Crossing the green/orange line is a <em>system call</em>. Crossing orange/blue is done by <em>drivers</em> via MMIO, DMA and interrupts.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lesson" id="latency" data-group="Foundations" data-title="Latency numbers">
+  <div class="kicker">Lesson 2 · Foundations</div>
+  <h1>Why I/O dominates: the latency ladder</h1>
+  <p class="lead">These are rough modern figures. The exact numbers matter less than the orders of magnitude between them, which is why the bars use a log scale.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Approximate latency</b>
+      <div class="seg" id="latMode"><button class="on" data-m="real">Real time</button><button data-m="human">If 1 ns = 1 second</button></div></div>
+    <div class="lat" id="latList"></div>
+  </div>
+  <div class="note">At human scale, a CPU waiting on one HDD seek is like a person standing still for <b>two months</b>. During a cross-ocean round trip, it would wait about <b>4.8 years</b>. That is why blocking a thread on I/O is so expensive: the thread spends all that time doing nothing.</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lesson" id="devices" data-group="Hardware" data-title="Polling, interrupts, DMA">
+  <div class="kicker">Lesson 3 · Hardware</div>
+  <h1>How the CPU talks to a device</h1>
+  <p class="lead">A device controller exposes <b>registers</b> (status, command, data). The CPU reaches them through <b>port-mapped I/O</b> (x86 <code>in</code>/<code>out</code> instructions) or, more commonly today, <b>memory-mapped I/O</b> (MMIO), where device registers appear at physical addresses. The real question is how the CPU learns that the device is done.</p>
+  <div class="cols">
+    <div class="card"><h3>Polling (programmed I/O)</h3><p style="font-size:14px;margin:0;color:var(--muted)">CPU loops reading the status register. Lowest latency, but it burns 100% of a core while waiting.</p></div>
+    <div class="card"><h3>Interrupt-driven</h3><p style="font-size:14px;margin:0;color:var(--muted)">Device raises an interrupt when ready. CPU does other work but still copies each word itself.</p></div>
+    <div class="card"><h3>DMA</h3><p style="font-size:14px;margin:0;color:var(--muted)">CPU programs a DMA engine with an address and length. The device writes straight into RAM and raises one interrupt at the end.</p></div>
+  </div>
+  <div class="demo">
+    <div class="demo-h"><b>Simulate transferring a block</b>
+      <div class="ctl" style="margin:0">
+        <label>Words <input type="range" id="dvW" min="1" max="12" value="4"><span id="dvWv" class="mono">4</span></label>
+        <label>Device slowness <input type="range" id="dvD" min="1" max="10" value="5"><span id="dvDv" class="mono">5</span></label>
+        <button class="pri" id="dvGo">▶ Run</button></div></div>
+    <div class="legend"><span><i style="background:var(--work)"></i>CPU: app work</span><span><i style="background:var(--wait)"></i>CPU: busy-wait</span><span><i style="background:var(--io)"></i>CPU: ISR / copy</span><span><i style="background:var(--accent)"></i>CPU: DMA setup</span><span><i style="background:var(--dma)"></i>Device busy</span></div>
+    <div id="dvRows"></div>
+    <div class="stat" id="dvStat"></div>
+  </div>
+  <div class="note">Polling is making a comeback at the high end. NVMe <code>io_poll</code>, DPDK and SPDK spin on purpose because a µs-scale device finishes faster than an interrupt plus context switch would take. Linux NAPI switches between interrupts and polling depending on load.</div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lesson" id="syscall" data-group="Operating system" data-title="Syscalls & the boundary">
+  <div class="kicker">Lesson 4 · Operating system</div>
+  <h1>System calls: crossing into the kernel</h1>
+  <p class="lead">User programs cannot touch devices directly. They ask the kernel through a <b>system call</b>: arguments go into registers, a <code>syscall</code> instruction switches the CPU to kernel mode, the kernel does the work, then returns with <code>sysret</code>.</p>
+  <div class="cols">
+    <div class="card"><h3>Mode switch ≠ context switch</h3><p style="font-size:14px;color:var(--muted);margin:0">A syscall is a <b>mode switch</b> (~100 ns to 1 µs with Spectre/Meltdown mitigations). If the call <b>blocks</b>, the scheduler runs another thread. That <b>context switch</b> costs a few µs and pollutes the CPU caches.</p></div>
+    <div class="card"><h3>File descriptors</h3><p style="font-size:14px;color:var(--muted);margin:0">Everything is an fd: files, sockets, pipes, eventfd, timerfd. An fd is an index into the process's fd table, which points to a kernel <code>struct file</code>. That shared shape is what lets one <code>epoll</code> watch all of them.</p></div>
+    <div class="card"><h3>Blocking is a kernel decision</h3><p style="font-size:14px;color:var(--muted);margin:0">When data isn't ready, the kernel puts the thread on a <b>wait queue</b> and marks it sleeping. The device interrupt later wakes it. With <code>O_NONBLOCK</code>, the kernel returns <code>EAGAIN</code> instead.</p></div>
+  </div>
+<pre><span class="c">// The entire I/O universe on Unix funnels through a handful of calls</span>
+fd = <span class="f">open</span>(<span class="s">"data.log"</span>, O_RDONLY);          <span class="c">// get a descriptor</span>
+n  = <span class="f">read</span>(fd, buf, <span class="s">4096</span>);               <span class="c">// may block until data arrives</span>
+n  = <span class="f">write</span>(sock, buf, n);              <span class="c">// may block if the socket send buffer is full</span>
+<span class="f">fsync</span>(fd);                              <span class="c">// block until data is on stable storage</span>
+<span class="f">close</span>(fd);</pre>
+  <p>Tip: run <code>strace -c ./your_program</code> to count syscalls by type, and <code>strace -T</code> to see time spent in each one. It is often the fastest way to find an I/O bottleneck.</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lesson" id="buffering" data-group="Operating system" data-title="Buffering">
+  <div class="kicker">Lesson 5 · Operating system</div>
+  <h1>Buffering: fewer, bigger syscalls</h1>
+  <p class="lead">Every syscall has a fixed cost. Writing 1 byte at a time to a file means one syscall per byte. A user-space buffer (<code>bufio</code>, <code>stdio</code>, <code>BufferedWriter</code>) gathers small writes and flushes them in large chunks.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Write 1 MiB in small pieces</b>
+      <div class="ctl" style="margin:0"><label>Bytes per write() call <input type="range" id="bfW" min="0" max="13" value="4"><span id="bfWv" class="mono">16 B</span></label></div></div>
+    <div id="bfRows"></div>
+    <p style="font-size:13px;color:var(--muted);margin-top:10px">Model: ~0.5 µs per syscall plus ~20 GB/s memcpy. Real numbers vary, but the shape does not.</p>
+  </div>
+<pre><span class="c">// Go: wrap the file, then always Flush (or data stays in user space!)</span>
+f, _ := os.<span class="f">Create</span>(<span class="s">"out.txt"</span>)
+w := bufio.<span class="f">NewWriterSize</span>(f, <span class="s">64</span>*<span class="s">1024</span>)
+<span class="k">for</span> _, line := <span class="k">range</span> lines { w.<span class="f">WriteString</span>(line) }
+w.<span class="f">Flush</span>()   <span class="c">// one write() per 64 KiB instead of one per line</span>
+f.<span class="f">Sync</span>()    <span class="c">// fsync: see Lesson 12</span></pre>
+  <div class="note warn"><b>Trade-off:</b> buffering adds latency and risk. Data in the buffer is invisible to readers and lost if the process crashes. Interactive output such as a terminal is line-buffered for this reason, and network protocols flush at message boundaries.</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lesson" id="zerocopy" data-group="Operating system" data-title="Zero-copy">
+  <div class="kicker">Lesson 6 · Operating system</div>
+  <h1>Zero-copy: serving a file without touching it</h1>
+  <p class="lead">A static file server naively does <code>read(file)</code> then <code>write(socket)</code>. The bytes pass through user space for no reason. Zero-copy techniques keep them inside the kernel or let DMA do the work.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Follow the bytes</b>
+      <div class="seg" id="zcMode"><button class="on" data-m="rw">read + write</button><button data-m="mmap">mmap + write</button><button data-m="sf">sendfile</button><button data-m="sg">sendfile + SG-DMA</button></div></div>
+    <div class="svgbox"><svg id="zcSvg" viewBox="0 0 760 250"></svg></div>
+    <ol class="steps" id="zcSteps"></ol>
+    <div class="ctl"><button id="zcPrev">◀ Step</button><button class="pri" id="zcNext">Step ▶</button><button id="zcAll">Play all</button></div>
+    <div class="stat" id="zcStat"></div>
+  </div>
+  <p>Used by Nginx (<code>sendfile on;</code>), Kafka (consumers are served with <code>sendfile</code>, which is a big part of why Kafka is fast), and Java's <code>FileChannel.transferTo()</code>. <code>splice()</code> does the same between any fd and a pipe. With kTLS, the kernel can encrypt TLS traffic inside a <code>sendfile</code> path.</p>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="lesson" id="models" data-group="I/O models" data-title="The 5 I/O models">
+  <div class="kicker">Lesson 7 · I/O models</div>
+  <h1>The five I/O models (Stevens, UNP)</h1>
+  <p class="lead">Every input operation has two phases. <b>Phase 1:</b> wait for the data to be ready (packet arrives, disk finishes). <b>Phase 2:</b> copy it from the kernel to your buffer. The models differ only in what your thread does during each phase.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Timeline</b>
+      <div class="seg" id="mdMode"><button class="on" data-m="block">Blocking</button><button data-m="nb">Non-blocking</button><button data-m="mux">Multiplexing</button><button data-m="sig">Signal-driven</button><button data-m="async">Async I/O</button></div></div>
+    <div class="legend"><span><i style="background:var(--wait)"></i>App thread blocked</span><span><i style="background:var(--work)"></i>App free to do other work</span><span><i style="background:var(--dma)"></i>Kernel: waiting for data</span><span><i style="background:var(--io)"></i>Kernel: copying to user</span></div>
+    <div class="svgbox"><svg id="mdSvg" viewBox="0 0 760 190"></svg></div>
+    <div id="mdText" style="margin-top:10px"></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Model</th><th>Phase 1 (wait)</th><th>Phase 2 (copy)</th><th>POSIX class</th><th>Real APIs</th></tr>
+    <tr><td>Blocking</td><td>blocks</td><td>blocks</td><td>sync</td><td><code>read</code>, <code>recv</code></td></tr>
+    <tr><td>Non-blocking</td><td>busy polls (EAGAIN)</td><td>blocks</td><td>sync</td><td><code>O_NONBLOCK</code></td></tr>
+    <tr><td>I/O multiplexing</td><td>blocks on <i>many</i> fds</td><td>blocks</td><td>sync</td><td><code>select</code>, <code>poll</code>, <code>epoll</code>, <code>kqueue</code></td></tr>
+    <tr><td>Signal-driven</td><td>free</td><td>blocks</td><td>sync</td><td><code>SIGIO</code> (rarely used)</td></tr>
+    <tr><td>Asynchronous</td><td>free</td><td>free</td><td><b>async</b></td><td><code>io_uring</code>, Windows IOCP, POSIX <code>aio_*</code></td></tr>
+  </table></div>
+  <div class="note"><b>Key insight:</b> "non-blocking" and "asynchronous" are not the same thing. Non-blocking means "don't put me to sleep; tell me to try again." Asynchronous means "do the whole thing and notify me when the data is already in my buffer." An epoll event loop is non-blocking but still <i>synchronous</i> I/O.</div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="lesson" id="epoll" data-group="I/O models" data-title="select / poll / epoll">
+  <div class="kicker">Lesson 8 · I/O models</div>
+  <h1>Multiplexing: select vs poll vs epoll</h1>
+  <p class="lead">One thread, thousands of sockets. The question is how the kernel tells you <i>which</i> sockets are ready. <code>select</code> and <code>poll</code> rescan every fd on every call. <code>epoll</code> keeps a persistent interest list and a ready list in the kernel.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Find the ready sockets</b>
+      <div class="ctl" style="margin:0">
+        <label>Watched fds <input type="range" id="epN" min="0" max="5" value="2"><span id="epNv" class="mono">1,000</span></label>
+        <label>Ready <input type="range" id="epR" min="1" max="20" value="5"><span id="epRv" class="mono">5</span></label></div></div>
+    <div class="fds" id="epGrid"></div>
+    <div class="ctl" style="margin-top:12px"><button class="pri" id="epScan">▶ Animate select/poll scan</button><button id="epEpoll">▶ Animate epoll_wait</button></div>
+    <div id="epBars"></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th></th><th>select</th><th>poll</th><th>epoll (Linux) / kqueue (BSD, macOS)</th></tr>
+    <tr><td>Interest set</td><td>bitmask copied in each call</td><td>array copied in each call</td><td>registered once (<code>epoll_ctl</code>)</td></tr>
+    <tr><td>Cost per call</td><td>O(max fd)</td><td>O(n)</td><td>O(ready)</td></tr>
+    <tr><td>FD limit</td><td>FD_SETSIZE = 1024</td><td>none</td><td>none</td></tr>
+    <tr><td>Triggering</td><td>level</td><td>level</td><td>level or edge (<code>EPOLLET</code>)</td></tr>
+  </table></div>
+
+  <h2>Level-triggered vs edge-triggered</h2>
+  <p>Level-triggered (LT) reports "this fd is readable" <b>as long as</b> data remains. Edge-triggered (ET) reports only when <b>new data arrives</b>. With ET, you must read until <code>EAGAIN</code>, or leftover bytes sit there with no further wake-up.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Same socket, two modes</b>
+      <div class="ctl" style="margin:0"><button id="ltArrive">📦 2 KB arrives</button><button id="ltRead">📖 read 1 KB</button><button class="pri" id="ltWait">⏳ epoll_wait()</button><button id="ltReset">Reset</button></div></div>
+    <div class="cols" style="margin:0">
+      <div><h3>Level-triggered</h3><div class="fill"><i id="ltFill"></i><b id="ltFillT">0 KB</b></div><div class="log" id="ltLog" style="margin-top:8px"></div></div>
+      <div><h3>Edge-triggered</h3><div class="fill"><i id="etFill"></i><b id="etFillT">0 KB</b></div><div class="log" id="etLog" style="margin-top:8px"></div></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:10px 0 0">Try: arrive → wait → read → wait. LT wakes you again because 1 KB is still there. ET stays silent and the 1 KB is stranded.</p>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="lesson" id="uring" data-group="I/O models" data-title="io_uring">
+  <div class="kicker">Lesson 9 · I/O models</div>
+  <h1>io_uring: true async I/O via shared rings</h1>
+  <p class="lead">Since Linux 5.1. The app and kernel share two ring buffers in memory. The app writes requests to the <b>Submission Queue</b>, and the kernel posts results to the <b>Completion Queue</b>. One <code>io_uring_enter()</code> can submit many operations, and in SQPOLL mode a kernel thread polls the SQ so you need no syscalls at all.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Drive the rings</b>
+      <div class="ctl" style="margin:0"><label><input type="checkbox" id="urPoll"> SQPOLL mode</label></div></div>
+    <div><b style="font-size:13px">Submission Queue (app writes tail, kernel reads head)</b><div class="slots ringrow" id="urSQ"></div></div>
+    <div><b style="font-size:13px">In flight inside kernel / device</b><div class="slots ringrow" id="urFly" style="min-height:46px"></div></div>
+    <div><b style="font-size:13px">Completion Queue (kernel writes tail, app reads head)</b><div class="slots ringrow" id="urCQ"></div></div>
+    <div class="ctl"><button id="urPrep">1 · Prepare SQE</button><button class="pri" id="urEnter">2 · io_uring_enter()</button><button id="urDone">3 · Device completes</button><button id="urReap">4 · Reap CQEs</button><button id="urReset">Reset</button></div>
+    <div class="stat" id="urStat"></div>
+  </div>
+<pre><span class="c">// liburing, minimal read</span>
+<span class="k">struct</span> io_uring_sqe *sqe = <span class="f">io_uring_get_sqe</span>(&amp;ring);
+<span class="f">io_uring_prep_read</span>(sqe, fd, buf, <span class="s">4096</span>, <span class="s">0</span>);
+<span class="f">io_uring_submit</span>(&amp;ring);                  <span class="c">// one syscall for N SQEs</span>
+<span class="f">io_uring_wait_cqe</span>(&amp;ring, &amp;cqe);          <span class="c">// cqe-&gt;res = bytes read or -errno</span>
+<span class="f">io_uring_cqe_seen</span>(&amp;ring, cqe);</pre>
+  <div class="note">Unlike epoll, io_uring works for <b>regular files</b>. epoll treats files as "always ready" and reads still block on disk, which is why Node.js and Go push file I/O onto thread pools. It also supports linked ops, fixed buffers and registered files.</div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="lesson" id="arch" data-group="Architectures" data-title="Server concurrency models">
+  <div class="kicker">Lesson 10 · Architectures</div>
+  <h1>How servers juggle 100,000 connections</h1>
+  <p class="lead">The "C10K problem" (Dan Kegel, 1999): one thread per connection doesn't scale because threads cost memory and context switches. Each answer below is a way of mapping many I/O waits onto few CPUs.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Memory cost of idle connections</b>
+      <div class="ctl" style="margin:0"><label>Concurrent connections <input type="range" id="arN" min="1" max="6" step="0.1" value="4"><span id="arNv" class="mono">10,000</span></label></div></div>
+    <div id="arRows"></div>
+    <p style="font-size:13px;color:var(--muted);margin:10px 0 0">Assumes ~1 MiB per OS thread stack plus kernel structures, ~4 KiB per goroutine, ~2 KiB of state per event-loop connection. Socket buffers are excluded because every model pays those.</p>
+  </div>
+  <div class="cols">
+    <div class="card"><span class="pill p-wait">Thread per connection</span><p style="font-size:14px;margin:8px 0 0">Simple blocking code. Fine up to a few thousand connections, then it hits memory limits and scheduler thrash. <i>Apache prefork, classic JDBC, Java BIO.</i></p></div>
+    <div class="card"><span class="pill p-work">Reactor (event loop)</span><p style="font-size:14px;margin:8px 0 0">epoll tells you <i>when</i> a socket is ready, then non-blocking handlers do the I/O. One loop per core. Never block the loop! <i>Nginx, Redis, Node.js, Netty.</i></p></div>
+    <div class="card"><span class="pill p-dma">Proactor</span><p style="font-size:14px;margin:8px 0 0">You start the operation and get called when it's <i>done</i>, with data already in your buffer. <i>Windows IOCP, io_uring, Boost.Asio.</i></p></div>
+    <div class="card"><span class="pill p-io">Green threads</span><p style="font-size:14px;margin:8px 0 0">You write blocking-style code, and the runtime parks the cheap thread and uses epoll underneath. <i>Go goroutines + netpoller, Java 21 virtual threads, Erlang.</i></p></div>
+  </div>
+  <h2>Reactor loop in one picture</h2>
+<pre><span class="k">for</span> {
+    events := <span class="f">epoll_wait</span>(epfd, <span class="s">-1</span>)            <span class="c">// the ONLY place we block</span>
+    <span class="k">for</span> _, ev := <span class="k">range</span> events {
+        <span class="k">switch</span> {
+        <span class="k">case</span> ev.fd == listener: conn := <span class="f">accept</span>(); <span class="f">epoll_ctl</span>(ADD, conn, EPOLLIN)
+        <span class="k">case</span> ev.readable:        n := <span class="f">read</span>(ev.fd, buf)   <span class="c">// won't block: data is there</span>
+                                 <span class="f">handle</span>(buf[:n])      <span class="c">// must be fast; CPU work → worker pool</span>
+        <span class="k">case</span> ev.writable:        <span class="f">flushPending</span>(ev.fd)
+        }
+    }
+}</pre>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="lesson" id="storage" data-group="Storage" data-title="Disks & scheduling">
+  <div class="kicker">Lesson 11 · Storage</div>
+  <h1>Storage devices &amp; disk scheduling</h1>
+  <p class="lead">An HDD has a moving arm. Each random access costs a <b>seek</b> (~4–10 ms) plus <b>rotational latency</b> (~4 ms at 7200 rpm). Disk schedulers reorder requests to minimise arm travel. SSDs have no arm, so Linux uses <code>none</code> or <code>mq-deadline</code> for NVMe.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Head movement (cylinders 0–199)</b>
+      <div class="seg" id="dsAlg"><button class="on" data-a="FCFS">FCFS</button><button data-a="SSTF">SSTF</button><button data-a="SCAN">SCAN</button><button data-a="CSCAN">C-SCAN</button><button data-a="LOOK">LOOK</button><button data-a="CLOOK">C-LOOK</button></div></div>
+    <div class="ctl"><label>Queue <input id="dsQ" class="mono" style="width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)" value="98,183,37,122,14,124,65,67"></label>
+      <label>Head <input id="dsH" type="number" min="0" max="199" value="53" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></label>
+      <label><input type="checkbox" id="dsUp" checked> Moving toward 199</label><button id="dsRand">🎲 Random</button></div>
+    <div class="svgbox"><svg id="dsSvg" viewBox="0 0 760 300"></svg></div>
+    <div class="stat" id="dsStat"></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th></th><th>HDD</th><th>SATA SSD</th><th>NVMe SSD</th></tr>
+    <tr><td>Random 4K read latency</td><td>~5–10 ms</td><td>~100 µs</td><td>~10–80 µs</td></tr>
+    <tr><td>Random IOPS</td><td>~100–200</td><td>~90K</td><td>~500K–1M+</td></tr>
+    <tr><td>Sequential</td><td>~200 MB/s</td><td>~550 MB/s</td><td>3–14 GB/s</td></tr>
+    <tr><td>Queues</td><td>1 (NCQ 32)</td><td>1 × 32</td><td>up to 64K × 64K</td></tr>
+    <tr><td>Gotchas</td><td>Sequential ≫ random</td><td colspan="2">Erase blocks, write amplification, TRIM, FTL garbage collection</td></tr>
+  </table></div>
+  <div class="note">This is why databases use <b>append-only logs</b> (WAL, LSM-trees in RocksDB and Cassandra): they turn random writes into sequential ones. Kafka's design rests on the same idea.</div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="lesson" id="durability" data-group="Storage" data-title="Page cache & fsync">
+  <div class="kicker">Lesson 12 · Storage</div>
+  <h1><code>write()</code> returned. Is my data safe?</h1>
+  <p class="lead">Usually not yet. <code>write()</code> only copies bytes into the kernel <b>page cache</b> and marks the pages dirty. A writeback thread flushes them to disk later (default ~5–30 s). Reads hit the page cache too, and <b>read-ahead</b> prefetches sequential data.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Crash simulator</b></div>
+    <div class="ctl">
+      <label><input type="checkbox" id="duFlush" checked> called <code>Flush()</code> (→ write syscall)</label>
+      <label><input type="checkbox" id="duSync"> called <code>fsync()</code></label>
+      <label><input type="checkbox" id="duPlp"> Drive honours flush / has power-loss protection</label>
+    </div>
+    <div class="ctl"><span>Crash type:</span><div class="seg" id="duCrash"><button class="on" data-c="proc">Process killed (kill -9)</button><button data-c="power">Power loss / kernel panic</button></div><button class="pri" id="duGo">⚡ Write "hello" &amp; crash</button></div>
+    <div class="pipe" id="duPipe">
+      <div class="box" data-i="0"><h3>App buffer</h3><div class="tag">user space · bufio</div></div>
+      <div class="box" data-i="1"><h3>Page cache</h3><div class="tag">kernel RAM · dirty page</div></div>
+      <div class="box" data-i="2"><h3>Drive write cache</h3><div class="tag">volatile DRAM on device</div></div>
+      <div class="box" data-i="3"><h3>Stable media</h3><div class="tag">platter / NAND</div></div>
+    </div>
+    <div class="verdict" id="duVerdict"></div>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>O_DIRECT</h3><p style="font-size:14px;margin:0;color:var(--muted)">Bypasses the page cache, so the app manages its own cache (databases do this). It needs aligned buffers and still needs fsync for the device cache.</p></div>
+    <div class="card"><h3>fdatasync vs fsync</h3><p style="font-size:14px;margin:0;color:var(--muted)"><code>fdatasync</code> skips metadata such as mtime unless it's needed to read the data back. It's cheaper, and WALs use it.</p></div>
+    <div class="card"><h3>New file? fsync the directory</h3><p style="font-size:14px;margin:0;color:var(--muted)">The file's <i>name</i> lives in the directory. Atomic replace means: write tmp → fsync tmp → <code>rename</code> → fsync dir.</p></div>
+    <div class="card"><h3>"fsyncgate" (2018)</h3><p style="font-size:14px;margin:0;color:var(--muted)">On Linux, a failed fsync may drop the dirty pages, so retrying returns success with the data gone. PostgreSQL now panics instead of retrying.</p></div>
+  </div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="lesson" id="network" data-group="Network" data-title="Socket buffers & backpressure">
+  <div class="kicker">Lesson 13 · Network</div>
+  <h1>Socket buffers &amp; backpressure</h1>
+  <p class="lead">Each TCP socket has a kernel <b>send buffer</b> and <b>receive buffer</b>. <code>write()</code> succeeds as soon as bytes fit in the send buffer, not when the peer receives them. When the receiver is slow, its buffer fills, TCP flow control (the receive window) stops the sender, the send buffer fills, and then <code>write()</code> blocks or returns EAGAIN. That chain is <b>backpressure</b>.</p>
+  <div class="demo">
+    <div class="demo-h"><b>Producer → send buffer → slow consumer</b>
+      <div class="ctl" style="margin:0"><button class="pri" id="bpGo">▶ Start</button></div></div>
+    <div class="ctl">
+      <label>Producer MB/s <input type="range" id="bpP" min="0" max="100" value="60"><span id="bpPv" class="mono">60</span></label>
+      <label>Consumer MB/s <input type="range" id="bpC" min="0" max="100" value="35"><span id="bpCv" class="mono">35</span></label>
+      <label><input type="checkbox" id="bpNb"> Non-blocking socket</label>
+    </div>
+    <div class="fill"><i id="bpFill"></i><b id="bpFillT">0 / 64 units</b></div>
+    <canvas id="bpCanvas" height="110" style="width:100%;height:110px;margin-top:10px;display:block"></canvas>
+    <div class="stat" id="bpStat"></div>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>Never buffer unboundedly</h3><p style="font-size:14px;margin:0;color:var(--muted)">If your app catches EAGAIN and appends to an unbounded queue, you've thrown away backpressure and turned it into an OOM. Pause the producer instead: Node's <code>'drain'</code>, Netty's <code>isWritable()</code>, Reactive Streams <code>request(n)</code>.</p></div>
+    <div class="card"><h3>Nagle &amp; TCP_NODELAY</h3><p style="font-size:14px;margin:0;color:var(--muted)">Nagle's algorithm holds back small segments while earlier data is unacknowledged. Combined with delayed ACKs, that can add ~40 ms. Latency-sensitive apps set <code>TCP_NODELAY</code> (Go does this by default).</p></div>
+    <div class="card"><h3>Tuning</h3><p style="font-size:14px;margin:0;color:var(--muted)"><code>SO_SNDBUF</code>/<code>SO_RCVBUF</code>, <code>net.ipv4.tcp_rmem</code>. Buffer size should be about the bandwidth-delay product: 1 Gbps × 50 ms ≈ 6 MB.</p></div>
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="lesson" id="langs" data-group="Practice" data-title="I/O in your language">
+  <div class="kicker">Lesson 14 · Practice</div>
+  <h1>What your runtime does under the hood</h1>
+  <p class="lead">The same kernel primitives, wrapped differently.</p>
+  <div class="tbl"><table>
+    <tr><th>Runtime</th><th>Network I/O</th><th>File I/O</th><th>Programming model</th><th>Watch out for</th></tr>
+    <tr><td><b>Go</b></td><td>netpoller (epoll / kqueue / IOCP)</td><td>blocking syscall; the runtime hands the P to another M (OS thread)</td><td>goroutines, blocking-style code</td><td>Many concurrent file syscalls → many OS threads (limit 10,000)</td></tr>
+    <tr><td><b>Node.js</b></td><td>libuv event loop (epoll)</td><td>libuv thread pool (default 4, <code>UV_THREADPOOL_SIZE</code>)</td><td>callbacks / Promises / async-await</td><td>CPU work or sync APIs (<code>fs.readFileSync</code>) block the loop</td></tr>
+    <tr><td><b>Java</b></td><td>BIO, NIO <code>Selector</code>, Netty</td><td>blocking; NIO.2 async channels</td><td>threads → reactive → virtual threads (21+)</td><td>Virtual threads pinned by <code>synchronized</code> (fixed in 24)</td></tr>
+    <tr><td><b>Python</b></td><td>asyncio selector loop, uvloop</td><td><code>run_in_executor</code> / thread pool</td><td>async/await</td><td>One blocking call stalls every coroutine; the GIL limits CPU parallelism</td></tr>
+    <tr><td><b>Rust</b></td><td>tokio (mio → epoll), tokio-uring, glommio</td><td><code>spawn_blocking</code> pool</td><td>async/await futures (poll-based)</td><td>Blocking inside async fn; choosing a runtime</td></tr>
+    <tr><td><b>C# / .NET</b></td><td>IOCP (Windows), epoll (Linux)</td><td>IOCP true async on Windows</td><td>async/await, Task</td><td><code>.Result</code> / <code>.Wait()</code> deadlocks</td></tr>
+    <tr><td><b>Nginx / Redis</b></td><td>reactor, one loop per worker</td><td>sendfile, thread pools (aio threads)</td><td>event-driven C</td><td>Redis: one slow command (<code>KEYS *</code>) blocks everyone</td></tr>
+  </table></div>
+  <h2>Debugging I/O: your toolbox</h2>
+  <div class="tbl"><table>
+    <tr><th>Question</th><th>Tool</th></tr>
+    <tr><td>Which syscalls, and how long?</td><td><code>strace -f -T -e trace=%file,%network</code>, <code>perf trace</code></td></tr>
+    <tr><td>Is the disk saturated?</td><td><code>iostat -x 1</code> (look at <code>%util</code>, <code>await</code>, <code>aqu-sz</code>)</td></tr>
+    <tr><td>Who is doing I/O?</td><td><code>iotop</code>, <code>pidstat -d 1</code>, <code>biotop</code> (bcc)</td></tr>
+    <tr><td>Latency distribution?</td><td><code>biolatency</code>, <code>fio</code> for benchmarks</td></tr>
+    <tr><td>Is the CPU waiting on I/O?</td><td><code>vmstat 1</code> → <code>wa</code> column; threads in <code>D</code> state in <code>top</code></td></tr>
+    <tr><td>Sockets &amp; buffers?</td><td><code>ss -tmi</code> (Recv-Q/Send-Q, cwnd, rtt)</td></tr>
+    <tr><td>Page cache contents?</td><td><code>free -h</code>, <code>vmtouch</code>, <code>/proc/meminfo</code> (Dirty, Writeback)</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 15 ============ -->
+<section class="lesson" id="quiz" data-group="Practice" data-title="Quiz & cheat sheet">
+  <div class="kicker">Lesson 15 · Practice</div>
+  <h1>Check your understanding</h1>
+  <p class="lead">Each answer explains why. Score: <b id="qzScore">0 / 0</b></p>
+  <div class="quiz" id="quizList"></div>
+  <h2>One-screen cheat sheet</h2>
+  <div class="cols">
+    <div class="card"><h3>Hardware</h3><p style="font-size:14px;margin:0">MMIO registers · polling burns CPU · interrupts free the CPU · DMA frees the CPU from copying · MSI-X gives per-queue interrupts</p></div>
+    <div class="card"><h3>Kernel</h3><p style="font-size:14px;margin:0">syscall = mode switch · blocking = sleep on wait queue · page cache absorbs reads/writes · read-ahead · dirty writeback</p></div>
+    <div class="card"><h3>Models</h3><p style="font-size:14px;margin:0">blocking · non-blocking · multiplexing · signal · async. Only io_uring/IOCP/aio are truly async</p></div>
+    <div class="card"><h3>Scale</h3><p style="font-size:14px;margin:0">epoll O(ready) · ET → drain until EAGAIN · reactor = ready-notify · proactor = done-notify · green threads hide both</p></div>
+    <div class="card"><h3>Throughput</h3><p style="font-size:14px;margin:0">buffer small writes · batch syscalls · sendfile/splice · sequential &gt; random · append-only logs</p></div>
+    <div class="card"><h3>Correctness</h3><p style="font-size:14px;margin:0">flush ≠ fsync · fsync the dir after create/rename · bounded queues · respect backpressure · handle short reads/writes</p></div>
+  </div>
+</section>
+
+<div class="pager"><button id="prevBtn">← Previous</button><button class="pri" id="nextBtn">Next →</button></div>
+</main>
+</div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const fmt=n=>n.toLocaleString('en-US');
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs={},txt){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(txt!=null)e.textContent=txt;return e}
+function seg(id,cb){const s=$(id);s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;s.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset)});}
+
+/* ---------- theme ---------- */
+const savedTheme=store.get('io-theme'); if(savedTheme) document.documentElement.dataset.theme=savedTheme;
+$('#themeBtn').onclick=()=>{const dark=document.documentElement.dataset.theme? document.documentElement.dataset.theme==='dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+  const t=dark?'light':'dark';document.documentElement.dataset.theme=t;store.set('io-theme',t);redrawAll();};
+
+/* ---------- navigation ---------- */
+const lessons=$$('section.lesson'); const rail=$('#rail');
+let seen=new Set(JSON.parse(store.get('io-seen')||'[]')); let cur=0; let lastGroup='';
+lessons.forEach((s,i)=>{ if(s.dataset.group!==lastGroup){lastGroup=s.dataset.group;const h=document.createElement('h4');h.textContent=lastGroup;rail.appendChild(h);}
+  const a=document.createElement('a');a.href='#'+s.id;a.innerHTML='<span class="dot"></span>'+s.dataset.title;a.dataset.i=i;rail.appendChild(a);});
+function show(i){cur=Math.max(0,Math.min(lessons.length-1,i));lessons.forEach((s,j)=>s.classList.toggle('on',j===cur));
+  seen.add(lessons[cur].id);store.set('io-seen',JSON.stringify([...seen]));
+  $$('#rail a').forEach((a,j)=>{a.classList.toggle('on',j===cur);a.classList.toggle('seen',seen.has(lessons[j].id));});
+  const on=$('#rail a.on'); if(on&&on.scrollIntoView&&innerWidth<860) on.scrollIntoView({inline:'center',block:'nearest'});
+  $('#progTxt').textContent=seen.size+' / '+lessons.length;$('#progBar').style.width=(seen.size/lessons.length*100)+'%';
+  $('#prevBtn').disabled=cur===0;$('#nextBtn').disabled=cur===lessons.length-1;
+  if(history.replaceState)history.replaceState(null,'','#'+lessons[cur].id);
+  window.scrollTo({top:0});redrawAll();}
+rail.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();show(+a.dataset.i)});
+$('#prevBtn').onclick=()=>show(cur-1);$('#nextBtn').onclick=()=>show(cur+1);
+document.addEventListener('keydown',e=>{if(e.target.matches('input'))return;if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1)});
+
+/* ---------- 1. stack ---------- */
+const LAYERS=[
+ ['user','Application','n, err := f.Read(buf)','Your code asks for 4 KB.','~0'],
+ ['user','Runtime / libc','bufio / stdio / Go runtime','A user-space buffer may already hold the bytes. If not, issue the syscall.','~10 ns'],
+ ['kern','Syscall entry','syscall instruction → kernel mode','CPU switches privilege level, saves registers, jumps to sys_read.','~100 ns'],
+ ['kern','VFS','fd → struct file → inode','The fd table gives the open file; VFS dispatches to the filesystem.','~50 ns'],
+ ['kern','Page cache','find page for (inode, offset)','HIT: copy 4 KB to user buffer and return. MISS: allocate a page and go to the disk.','~1 µs on hit'],
+ ['kern','Filesystem','ext4 / xfs extent lookup','Map file offset → logical block number.','~1 µs'],
+ ['kern','Block layer','bio → request queue (blk-mq)','Merge adjacent requests; pick a hardware queue. Thread goes to sleep on a wait queue.','~2 µs'],
+ ['kern','Device driver','NVMe: write SQ entry, ring doorbell','Driver writes a command and pokes the doorbell register via MMIO.','~1 µs'],
+ ['hw','Controller + DMA','SSD reads NAND, DMAs into RAM','The device writes directly into the page-cache page. No CPU involved.','~20–100 µs'],
+ ['hw','Interrupt','MSI-X → IRQ handler → wake thread','Completion interrupt; handler marks the page up-to-date and wakes the sleeping reader.','~5 µs'],
+];
+const stackList=$('#stackList');
+LAYERS.forEach((L,i)=>{ if(i===2||i===8){const d=document.createElement('div');d.className='boundary';d.textContent=i===2?'— user / kernel boundary —':'— kernel / hardware boundary —';stackList.appendChild(d);}
+  const d=document.createElement('div');d.className='layer '+L[0];d.innerHTML=`<span class="n">${String(i+1).padStart(2,'0')}</span><span class="t">${L[1]}</span><span class="d"><code>${L[2]}</code></span>`;stackList.appendChild(d);});
+let stTimer=null;
+$('#stGo').onclick=()=>{clearInterval(stTimer);const hit=$('#stHit').checked;const rows=$$('#stackList .layer');rows.forEach(r=>r.classList.remove('hot','skip'));
+  let order=[...Array(LAYERS.length).keys()];
+  if(hit){order=[0,1,2,3,4];rows.forEach((r,i)=>{if(i>4)r.classList.add('skip')});}
+  else order=order.concat([4,3,2,1,0]); // return path
+  let k=0;const out=$('#stackOut');
+  stTimer=setInterval(()=>{rows.forEach(r=>r.classList.remove('hot'));if(k>=order.length){clearInterval(stTimer);
+      out.innerHTML=hit?'<b>Done in ~1–2 µs.</b> Page cache hit: no disk, no sleep, no interrupt. Just a syscall and a memcpy. This is why a warm server is so much faster than a cold one.'
+        :'<b>Done in ~30–120 µs.</b> Cache miss: the thread <b>slept</b> on a wait queue while the device worked, was woken by an interrupt, then the data was copied from the page cache to your buffer on the way back up.';return;}
+    const i=order[k];rows[i].classList.add('hot');const back=k>=LAYERS.length;
+    out.innerHTML=`<b>${back?'↑ return · ':''}${LAYERS[i][1]}</b> <span class="pill p-dma">${LAYERS[i][4]}</span><br>${back?(i===4?'Copy page → user buffer (copy_to_user).':'Unwind and return to caller.'):LAYERS[i][3]}`;k++;},hit?650:520);};
+
+/* ---------- 2. latency ---------- */
+const LAT=[['L1 cache reference',0.5],['Branch mispredict',5],['L2 cache reference',4],['Mutex lock/unlock',17],['Main memory reference',100],
+ ['System call (mode switch)',200],['Context switch',3000],['Read 1 MB sequentially from RAM',10000],['NVMe random 4 KB read',20000],['SATA SSD random 4 KB read',100000],
+ ['Round trip in same datacenter',500000],['Read 1 MB sequentially from SSD',250000],['HDD seek',5000000],['Read 1 MB sequentially from HDD',5000000],['Round trip US ↔ Europe',150000000]].sort((a,b)=>a[1]-b[1]);
+let latMode='real';
+function fmtNs(ns){if(ns<1000)return ns+' ns';if(ns<1e6)return +(ns/1e3).toFixed(1)+' µs';if(ns<1e9)return +(ns/1e6).toFixed(1)+' ms';return +(ns/1e9).toFixed(1)+' s'}
+function fmtHuman(s){const u=[[31536000,'years'],[2592000,'months'],[86400,'days'],[3600,'hours'],[60,'min'],[1,'s']];for(const [d,n] of u){if(s>=d)return +(s/d).toFixed(1)+' '+n}return s+' s'}
+function drawLat(){const box=$('#latList');box.innerHTML='';const mx=Math.log10(LAT[LAT.length-1][1]*10),mn=Math.log10(0.1);
+  LAT.forEach(([n,v])=>{const w=(Math.log10(v)-mn)/(mx-mn)*100;const io=v>=10000;
+    box.insertAdjacentHTML('beforeend',`<div>${n}</div><div><div class="b" style="width:${w}%;background:${io?'var(--io)':'var(--accent)'}"></div></div><div class="v">${latMode==='real'?fmtNs(v):fmtHuman(v)}</div>`)});}
+seg('#latMode',d=>{latMode=d.m;drawLat()});drawLat();
+
+/* ---------- 3. devices ---------- */
+let dvTimer=null;
+function dvBuild(){const W=+$('#dvW').value,D=+$('#dvD').value;$('#dvWv').textContent=W;$('#dvDv').textContent=D;
+  const modes={Polling:{cpu:[],dev:[]},Interrupt:{cpu:[],dev:[]},DMA:{cpu:[],dev:[]}};
+  for(let w=0;w<W;w++){for(let t=0;t<D;t++){modes.Polling.cpu.push('spin');modes.Polling.dev.push('dev')}modes.Polling.cpu.push('isr');modes.Polling.dev.push('idle')}
+  for(let w=0;w<W;w++){for(let t=0;t<D;t++){modes.Interrupt.cpu.push('app');modes.Interrupt.dev.push('dev')}modes.Interrupt.cpu.push('isr','isr');modes.Interrupt.dev.push('idle','idle')}
+  modes.DMA.cpu.push('setup','setup');modes.DMA.dev.push('idle','idle');for(let t=0;t<W*D;t++){modes.DMA.cpu.push('app');modes.DMA.dev.push('dev')}modes.DMA.cpu.push('isr','isr');modes.DMA.dev.push('idle','idle');
+  const T=Math.max(...Object.values(modes).map(m=>m.cpu.length))+2;
+  for(const m of Object.values(modes)){m.done=m.cpu.length;while(m.cpu.length<T){m.cpu.push('app');m.dev.push('idle')}}
+  return {modes,T,W,D};}
+function dvRender(reveal){const {modes,T}=dvBuild();const box=$('#dvRows');box.innerHTML='';
+  for(const [name,m] of Object.entries(modes)){
+    const row=(lab,arr)=>`<div class="tl"><div><b>${lab}</b></div><div class="cells">${arr.map((c,i)=>`<span class="c-${c}${i<reveal?' v':''}"></span>`).join('')}</div></div>`;
+    box.insertAdjacentHTML('beforeend',`<div style="margin-bottom:12px">${row(name+' · CPU',m.cpu)}${row('device',m.dev)}</div>`);}
+  const st=$('#dvStat');st.innerHTML='';
+  for(const [name,m] of Object.entries(modes)){const stolen=m.cpu.slice(0,m.done).filter(c=>c!=='app').length;
+    st.insertAdjacentHTML('beforeend',`<div><small>${name}: CPU ticks spent on I/O</small><strong style="color:${name==='Polling'?'var(--wait)':name==='DMA'?'var(--work)':'var(--io)'}">${stolen}</strong></div>`)}
+  return T;}
+function dvRun(){clearInterval(dvTimer);let r=0;const T=dvRender(0);dvTimer=setInterval(()=>{r++;$$('#dvRows .cells').forEach(c=>{const s=c.children[r-1];if(s)s.classList.add('v')});if(r>=T)clearInterval(dvTimer)},Math.max(25,1400/T));}
+$('#dvW').oninput=$('#dvD').oninput=()=>{clearInterval(dvTimer);dvRender(1e9)};$('#dvGo').onclick=dvRun;dvRender(1e9);
+
+/* ---------- 5. buffering ---------- */
+function bfRender(){const sz=2**+$('#bfW').value;$('#bfWv').textContent=sz>=1024?(sz/1024)+' KiB':sz+' B';const T=1<<20;
+  const opts=[['Unbuffered (raw write per call)',0],['bufio 4 KiB',4096],['bufio 64 KiB',65536]];
+  const rows=opts.map(([n,b])=>{const calls=b===0||sz>=b?Math.ceil(T/sz):Math.ceil(T/b);const us=calls*0.5+T/20000+(b?T/20000:0);return {n,calls,us}});
+  const mx=Math.max(...rows.map(r=>r.us));$('#bfRows').innerHTML=rows.map(r=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:14px;gap:10px;flex-wrap:wrap"><b>${r.n}</b><span class="mono">${fmt(r.calls)} syscalls · ≈ ${r.us>=1000?(r.us/1000).toFixed(1)+' ms':r.us.toFixed(0)+' µs'}</span></div>
+    <div class="fill" style="height:14px;margin-top:4px"><i style="width:${Math.max(.5,r.us/mx*100)}%;background:${r.calls>10000?'var(--wait)':r.calls>500?'var(--io)':'var(--work)'}"></i></div></div>`).join('');}
+$('#bfW').oninput=bfRender;bfRender();
+
+/* ---------- 6. zero copy ---------- */
+const ZC_NODES={disk:[60,195,'Disk'],pc:[250,135,'Page cache'],user:[250,40,'User buffer'],sock:[480,135,'Socket buffer'],nic:[680,195,'NIC']};
+const ZC={
+ rw:[['sw','read() syscall: user → kernel'],['dma','disk','pc','DMA copy: disk → page cache'],['cpu','pc','user','CPU copy: page cache → user buffer'],['sw','read() returns: kernel → user'],
+     ['sw','write() syscall: user → kernel'],['cpu','user','sock','CPU copy: user buffer → socket buffer'],['dma','sock','nic','DMA copy: socket buffer → NIC'],['sw','write() returns: kernel → user']],
+ mmap:[['sw','mmap(): page cache pages mapped into user address space (no copy)'],['dma','disk','pc','DMA copy: disk → page cache (on page fault)'],['sw','write() syscall: user → kernel'],['cpu','pc','sock','CPU copy: page cache → socket buffer'],
+     ['dma','sock','nic','DMA copy: socket buffer → NIC'],['sw','write() returns: kernel → user']],
+ sf:[['sw','sendfile(sock, file) syscall: user → kernel'],['dma','disk','pc','DMA copy: disk → page cache'],['cpu','pc','sock','CPU copy: page cache → socket buffer (inside kernel)'],['dma','sock','nic','DMA copy: socket buffer → NIC'],['sw','sendfile returns: kernel → user']],
+ sg:[['sw','sendfile(sock, file) syscall: user → kernel'],['dma','disk','pc','DMA copy: disk → page cache'],['desc','pc','sock','Only a descriptor (address + length) is appended to the socket buffer, no data copy'],['dma','pc','nic','Scatter-gather DMA: NIC gathers directly from page cache'],['sw','sendfile returns: kernel → user']]};
+let zcMode='rw',zcStep=0,zcTimer=null;
+function zcDraw(){const svg=$('#zcSvg');svg.innerHTML='';const steps=ZC[zcMode];const ink=css('--ink'),muted=css('--muted'),line=css('--line');
+  svg.appendChild(el('rect',{x:0,y:8,width:760,height:80,rx:10,fill:css('--work-soft')}));svg.appendChild(el('text',{x:12,y:28,fill:css('--work'),'font-size':12,'font-weight':600},'USER SPACE'));
+  svg.appendChild(el('rect',{x:0,y:96,width:760,height:80,rx:10,fill:css('--io-soft')}));svg.appendChild(el('text',{x:12,y:116,fill:css('--io'),'font-size':12,'font-weight':600},'KERNEL'));
+  svg.appendChild(el('text',{x:12,y:238,fill:css('--dma'),'font-size':12,'font-weight':600},'HARDWARE'));
+  const defs=el('defs');['dma','cpu','desc'].forEach(k=>{const m=el('marker',{id:'ah-'+k,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});m.appendChild(el('path',{d:'M0,0L10,5L0,10z',fill:k==='dma'?css('--dma'):k==='cpu'?css('--wait'):css('--muted')}));defs.appendChild(m)});svg.appendChild(defs);
+  steps.forEach((s,i)=>{if(s[0]==='sw')return;const a=ZC_NODES[s[1]],b=ZC_NODES[s[2]];const done=i<zcStep;const col=s[0]==='dma'?css('--dma'):s[0]==='cpu'?css('--wait'):muted;
+    const off=(s[1]==='pc'&&s[2]==='nic')?-18:0;
+    svg.appendChild(el('line',{x1:a[0]+(b[0]>a[0]?60:b[0]<a[0]?-60:0),y1:a[1]+(b[1]<a[1]?-18:b[1]>a[1]?18:0)+off,x2:b[0]+(b[0]>a[0]?-62:b[0]<a[0]?62:0),y2:b[1]+(b[1]<a[1]?18:b[1]>a[1]?-20:0)+off,stroke:col,'stroke-width':done?3:1.5,'stroke-dasharray':s[0]==='desc'?'5 4':done?'':'3 4',opacity:done?1:.35,'marker-end':`url(#ah-${s[0]})`}))});
+  for(const [k,[x,y,label]] of Object.entries(ZC_NODES)){if(k==='user'&&zcMode==='sf'||k==='user'&&zcMode==='sg'){}
+    const hasData=steps.slice(0,zcStep).some(s=>s[2]===k||(s[0]==='sw'&&k==='user'&&zcMode==='mmap'&&zcStep>1&&false));
+    const dimUser=k==='user'&&(zcMode==='sf'||zcMode==='sg');
+    svg.appendChild(el('rect',{x:x-60,y:y-18,width:120,height:36,rx:8,fill:hasData?css('--accent-soft'):css('--surface'),stroke:hasData?css('--accent'):line,'stroke-width':hasData?2:1,opacity:dimUser?.4:1}));
+    svg.appendChild(el('text',{x,y:y+5,'text-anchor':'middle','font-size':13,'font-weight':600,fill:ink,opacity:dimUser?.5:1},label+(dimUser?' (unused)':'')));}
+  $('#zcSteps').innerHTML=steps.map((s,i)=>`<li class="${i<zcStep?'on':''}"><span class="pill ${s[0]==='dma'?'p-dma':s[0]==='cpu'?'p-wait':s[0]==='sw'?'p-io':''}">${s[0]==='sw'?'mode switch':s[0]==='dma'?'DMA copy':s[0]==='cpu'?'CPU copy':'no copy'}</span> ${s[s.length-1]}</li>`).join('');
+  const cnt=t=>steps.filter(s=>s[0]===t).length;
+  $('#zcStat').innerHTML=`<div><small>CPU copies</small><strong style="color:var(--wait)">${cnt('cpu')}</strong></div><div><small>DMA copies</small><strong style="color:var(--dma)">${cnt('dma')}</strong></div><div><small>User↔kernel switches</small><strong style="color:var(--io)">${cnt('sw')}</strong></div><div><small>Step</small><strong>${zcStep} / ${steps.length}</strong></div>`;}
+seg('#zcMode',d=>{clearInterval(zcTimer);zcMode=d.m;zcStep=0;zcDraw()});
+$('#zcNext').onclick=()=>{zcStep=Math.min(ZC[zcMode].length,zcStep+1);zcDraw()};$('#zcPrev').onclick=()=>{zcStep=Math.max(0,zcStep-1);zcDraw()};
+$('#zcAll').onclick=()=>{clearInterval(zcTimer);zcStep=0;zcDraw();zcTimer=setInterval(()=>{zcStep++;zcDraw();if(zcStep>=ZC[zcMode].length)clearInterval(zcTimer)},800)};
+
+/* ---------- 7. five models ---------- */
+const MD={
+ block:{app:[[0,80,'b','blocked in read()'],[80,100,'w','process data']],ev:[[0,'read()'],[80,'data returned']],
+   t:'<b>Blocking.</b> The thread sleeps through both phases. Simplest code, but each waiting connection costs a whole thread.'},
+ nb:{app:[[0,10,'w',''],[12,22,'w',''],[24,34,'w',''],[36,46,'w',''],[48,58,'w',''],[60,80,'b','read()'],[80,100,'w','process']],ev:[[0,'EAGAIN'],[12,'EAGAIN'],[24,'EAGAIN'],[36,'EAGAIN'],[48,'EAGAIN'],[60,'read() ok']],
+   t:'<b>Non-blocking.</b> <code>read()</code> returns <code>EAGAIN</code> immediately while there is no data. The app keeps asking, which wastes CPU on syscalls, and still blocks during the copy.'},
+ mux:{app:[[0,60,'b','blocked in epoll_wait() on N fds'],[60,80,'b','read()'],[80,100,'w','process']],ev:[[0,'epoll_wait()'],[60,'fd ready'],[80,'data']],
+   t:'<b>I/O multiplexing.</b> Still blocks, but on <i>many</i> fds at once, so one thread serves thousands of connections. Foundation of Nginx, Redis and Node.js.'},
+ sig:{app:[[0,60,'w','free: doing other work'],[60,80,'b','read()'],[80,100,'w','process']],ev:[[0,'sigaction(SIGIO)'],[60,'SIGIO!'],[80,'data']],
+   t:'<b>Signal-driven.</b> The kernel sends <code>SIGIO</code> when data is ready. Rarely used, because signals are awkward to handle and too coarse for TCP.'},
+ async:{app:[[0,100,'w','free the whole time: submit, then carry on']],ev:[[0,'submit (io_uring / IOCP)'],[80,'completion: data already in buffer']],
+   t:'<b>Asynchronous.</b> The kernel performs <i>both</i> phases, including the copy into your buffer, and then notifies you. This is the only truly async model.'}};
+let mdMode='block';
+function mdDraw(){const svg=$('#mdSvg');svg.innerHTML='';const m=MD[mdMode];const X=t=>110+t*6.2;const ink=css('--ink'),muted=css('--muted');
+  svg.appendChild(el('text',{x:8,y:62,'font-size':13,'font-weight':600,fill:ink},'Application'));
+  svg.appendChild(el('text',{x:8,y:142,'font-size':13,'font-weight':600,fill:ink},'Kernel'));
+  svg.appendChild(el('rect',{x:X(0),y:122,width:X(60)-X(0),height:30,rx:5,fill:css('--dma')}));svg.appendChild(el('text',{x:(X(0)+X(60))/2,y:142,'text-anchor':'middle','font-size':12,fill:'#fff','font-weight':600},'Phase 1: wait for data'));
+  svg.appendChild(el('rect',{x:X(60),y:122,width:X(80)-X(60),height:30,rx:5,fill:css('--io')}));svg.appendChild(el('text',{x:(X(60)+X(80))/2,y:142,'text-anchor':'middle','font-size':12,fill:'#fff','font-weight':600},'Phase 2: copy'));
+  m.app.forEach(([a,b,k,l])=>{svg.appendChild(el('rect',{x:X(a),y:42,width:X(b)-X(a)-1,height:30,rx:5,fill:k==='b'?css('--wait'):css('--work'),opacity:k==='b'?1:.85}));
+    if(l&&X(b)-X(a)>60)svg.appendChild(el('text',{x:(X(a)+X(b))/2,y:62,'text-anchor':'middle','font-size':11.5,fill:'#fff','font-weight':600},l));});
+  m.ev.forEach(([t,l],i)=>{svg.appendChild(el('line',{x1:X(t),y1:76,x2:X(t),y2:118,stroke:muted,'stroke-dasharray':'3 3'}));
+    svg.appendChild(el('text',{x:X(t)+3,y:i%2?30:18,'font-size':11,fill:muted},l));svg.appendChild(el('line',{x1:X(t),y1:i%2?33:21,x2:X(t),y2:42,stroke:muted}))});
+  svg.appendChild(el('text',{x:X(0),y:178,'font-size':11,fill:muted},'time →'));
+  $('#mdText').innerHTML=m.t;}
+seg('#mdMode',d=>{mdMode=d.m;mdDraw()});
+
+/* ---------- 8. epoll ---------- */
+const EPN=[100,500,1000,10000,50000,100000];let epReady=[];let epTimer=null;
+function epSetup(){clearInterval(epTimer);const N=EPN[+$('#epN').value],R=+$('#epR').value;$('#epNv').textContent=fmt(N);$('#epRv').textContent=R;
+  const g=$('#epGrid');g.innerHTML='';const show=400;epReady=new Set();while(epReady.size<Math.min(R,show))epReady.add(Math.floor(Math.random()*show));
+  for(let i=0;i<show;i++){const d=document.createElement('i');if(epReady.has(i))d.className='r';g.appendChild(d)}
+  const sel=N*1.0+N*0.2,ep=R*1.0;const mx=Math.max(sel,ep);
+  $('#epBars').innerHTML=`<p style="font-size:13px;color:var(--muted);margin:10px 0 6px">Grid shows the first 400 of ${fmt(N)} fds. Work per call, in fd checks plus copying the interest set:</p>
+  ${[['select / poll',sel,'var(--wait)',`O(n): scan ${fmt(N)} fds + copy set in/out`],['epoll_wait',ep,'var(--work)',`O(ready): hand back ${R} ready fds`]].map(([n,v,c,t])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:14px;flex-wrap:wrap;gap:8px"><b>${n}</b><span class="mono">${t}</span></div><div class="fill" style="height:14px;margin-top:4px"><i style="width:${Math.max(.6,v/mx*100)}%;background:${c}"></i></div></div>`).join('')}
+  <div class="stat"><div><small>Speed-up of epoll</small><strong>${fmt(Math.round(sel/ep))}×</strong></div><div><small>select() works?</small><strong style="color:${N>1024?'var(--wait)':'var(--work)'}">${N>1024?'No (FD_SETSIZE 1024)':'Yes'}</strong></div></div>`;}
+$('#epN').oninput=$('#epR').oninput=epSetup;
+$('#epScan').onclick=()=>{clearInterval(epTimer);const c=$$('#epGrid i');c.forEach(x=>x.classList.remove('s'));let i=0;epTimer=setInterval(()=>{if(i>0)c[i-1].classList.remove('s');if(i>=c.length){clearInterval(epTimer);return}c[i].classList.add('s');i++},6)};
+$('#epEpoll').onclick=()=>{clearInterval(epTimer);const c=$$('#epGrid i');c.forEach(x=>x.classList.remove('s'));const r=[...epReady];let i=0;epTimer=setInterval(()=>{if(i>=r.length){clearInterval(epTimer);setTimeout(()=>c.forEach(x=>x.classList.remove('s')),600);return}c[r[i]].classList.add('s');i++},120)};
+epSetup();
+// LT / ET
+let lt={buf:0},et={buf:0,edge:false};
+function ltLog(id,msg,cls){const l=$(id);l.insertAdjacentHTML('beforeend',`<div style="color:${cls||'inherit'}">${msg}</div>`);l.scrollTop=l.scrollHeight}
+function ltRender(){[['lt',lt],['et',et]].forEach(([k,s])=>{$('#'+k+'Fill').style.width=Math.min(100,s.buf/8*100)+'%';$('#'+k+'FillT').textContent=s.buf+' KB in recv buffer'})}
+$('#ltArrive').onclick=()=>{lt.buf+=2;et.buf+=2;et.edge=true;ltLog('#ltLog','📦 +2 KB arrived');ltLog('#etLog','📦 +2 KB arrived (edge!)');ltRender()};
+$('#ltRead').onclick=()=>{[['#ltLog',lt],['#etLog',et]].forEach(([id,s])=>{if(s.buf>0){s.buf--;ltLog(id,'📖 read 1 KB → '+s.buf+' KB left')}else ltLog(id,'📖 read → EAGAIN',css('--muted'))});ltRender()};
+$('#ltWait').onclick=()=>{ltLog('#ltLog',lt.buf>0?'⏳ epoll_wait → READY ✔':'⏳ epoll_wait → (sleeps)',lt.buf>0?css('--work'):css('--muted'));
+  if(et.edge){et.edge=false;ltLog('#etLog','⏳ epoll_wait → READY ✔',css('--work'))}else ltLog('#etLog',et.buf>0?`⏳ epoll_wait → (sleeps!) ${et.buf} KB stranded ⚠`:'⏳ epoll_wait → (sleeps)',et.buf>0?css('--wait'):css('--muted'))};
+$('#ltReset').onclick=()=>{lt={buf:0};et={buf:0,edge:false};$('#ltLog').innerHTML='';$('#etLog').innerHTML='';ltRender()};ltRender();
+
+/* ---------- 9. io_uring ---------- */
+const UR_N=8,OPS=['read','write','recv','send','accept','fsync','openat','timeout'];
+let ur;function urReset(){ur={sq:Array(UR_N).fill(null),sqH:0,sqT:0,fly:[],cq:Array(UR_N).fill(null),cqH:0,cqT:0,sys:0,done:0,id:1};urDraw()}
+function urSlots(arr,h,t,cls){return arr.map((v,i)=>`<div class="slot ${cls} ${v?'full':''}">${v?`<b>${v.op}</b><span style="color:var(--muted)">#${v.id}${v.res!=null?' → '+v.res:''}</span>`:'<span style="color:var(--muted)">·</span>'}${(h%UR_N)===i?`<span class="ptr" style="left:4px">head</span>`:''}${(t%UR_N)===i?`<span class="ptr" style="right:4px">tail</span>`:''}</div>`).join('')}
+function urDraw(){$('#urSQ').innerHTML=urSlots(ur.sq,ur.sqH,ur.sqT,'');$('#urCQ').innerHTML=urSlots(ur.cq,ur.cqH,ur.cqT,'cq');
+  $('#urFly').innerHTML=ur.fly.length?ur.fly.map(v=>`<div class="slot full" style="border-style:dashed"><b>${v.op}</b><span style="color:var(--muted)">#${v.id}</span></div>`).join(''):'<span style="color:var(--muted);font-size:13px;align-self:center">nothing in flight</span>';
+  const poll=$('#urPoll').checked;$('#urEnter').disabled=poll;
+  $('#urStat').innerHTML=`<div><small>Syscalls made</small><strong>${ur.sys}</strong></div><div><small>Ops completed</small><strong>${ur.done}</strong></div><div><small>Ops per syscall</small><strong>${ur.sys?(ur.done/ur.sys).toFixed(1):(ur.done?'∞':'–')}</strong></div>`;}
+function urConsume(){while(ur.sqH<ur.sqT){const i=ur.sqH%UR_N;ur.fly.push(ur.sq[i]);ur.sq[i]=null;ur.sqH++}}
+$('#urPrep').onclick=()=>{if(ur.sqT-ur.sqH>=UR_N)return;const op=OPS[Math.floor(Math.random()*OPS.length)];ur.sq[ur.sqT%UR_N]={op,id:ur.id++};ur.sqT++;if($('#urPoll').checked)setTimeout(()=>{urConsume();urDraw()},350);urDraw()};
+$('#urEnter').onclick=()=>{ur.sys++;urConsume();urDraw()};
+$('#urDone').onclick=()=>{while(ur.fly.length&&ur.cqT-ur.cqH<UR_N){const v=ur.fly.shift();v.res=v.op==='fsync'||v.op==='timeout'?0:v.op==='accept'||v.op==='openat'?'fd'+(5+v.id):4096;ur.cq[ur.cqT%UR_N]=v;ur.cqT++}urDraw()};
+$('#urReap').onclick=()=>{while(ur.cqH<ur.cqT){ur.cq[ur.cqH%UR_N]=null;ur.cqH++;ur.done++}urDraw()};
+$('#urReset').onclick=urReset;$('#urPoll').onchange=()=>{if($('#urPoll').checked){urConsume()}urDraw()};urReset();
+
+/* ---------- 10. arch ---------- */
+function arRender(){const N=Math.round(10**+$('#arN').value);$('#arNv').textContent=fmt(N);
+  const rows=[['Thread per connection',N*(1024+16),'var(--wait)',N>30000?'⚠ hits thread limits / scheduler thrash':''],['Goroutines (Go)',N*4,'var(--io)',''],['Event loop (epoll)',N*2,'var(--work)','']];
+  const mx=rows[0][1];const f=kb=>kb>=1048576?(kb/1048576).toFixed(1)+' GiB':kb>=1024?(kb/1024).toFixed(1)+' MiB':kb+' KiB';
+  $('#arRows').innerHTML=rows.map(([n,kb,c,w])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:14px"><b>${n}</b><span class="mono">${f(kb)} <span style="color:var(--wait)">${w}</span></span></div><div class="fill" style="height:14px;margin-top:4px"><i style="width:${Math.max(.4,kb/mx*100)}%;background:${c}"></i></div></div>`).join('');}
+$('#arN').oninput=arRender;arRender();
+
+/* ---------- 11. disk scheduling ---------- */
+let dsAlg='FCFS';
+function dsOrder(q,h,up,alg){const lo=q.filter(x=>x<h).sort((a,b)=>b-a),hi=q.filter(x=>x>=h).sort((a,b)=>a-b);
+  switch(alg){case 'FCFS':return {p:q.slice()};
+   case 'SSTF':{const r=q.slice(),o=[];let c=h;while(r.length){let bi=0;r.forEach((x,i)=>{if(Math.abs(x-c)<Math.abs(r[bi]-c))bi=i});c=r.splice(bi,1)[0];o.push(c)}return {p:o}}
+   case 'SCAN':return up?{p:hi.concat(lo.length?[199]:[],lo)}:{p:lo.concat(hi.length?[0]:[],hi)};
+   case 'LOOK':return up?{p:hi.concat(lo)}:{p:lo.concat(hi)};
+   case 'CSCAN':return up?{p:hi.concat(lo.length?[199,0]:[],lo.slice().reverse()),jump:hi.length+ (lo.length?1:0)}:{p:lo.concat(hi.length?[0,199]:[],hi.slice().reverse()),jump:lo.length+(hi.length?1:0)};
+   case 'CLOOK':return up?{p:hi.concat(lo.slice().reverse()),jump:lo.length?hi.length:-1}:{p:lo.concat(hi.slice().reverse()),jump:hi.length?lo.length:-1};}}
+function dsDraw(){const q=$('#dsQ').value.split(/[\s,]+/).map(Number).filter(x=>Number.isFinite(x)&&x>=0&&x<=199);let h=Math.max(0,Math.min(199,+$('#dsH').value||0));const up=$('#dsUp').checked;
+  const {p,jump}=dsOrder(q,h,up,dsAlg);const path=[h].concat(p);const svg=$('#dsSvg');svg.innerHTML='';
+  const H=Math.max(300,40+path.length*26);svg.setAttribute('viewBox',`0 0 760 ${H}`);
+  const X=c=>30+c*(700/199),Y=i=>34+i*((H-50)/Math.max(1,path.length-1));const muted=css('--muted'),line=css('--line');
+  [0,50,100,150,199].forEach(c=>{svg.appendChild(el('line',{x1:X(c),y1:22,x2:X(c),y2:H-8,stroke:line}));svg.appendChild(el('text',{x:X(c),y:14,'text-anchor':'middle','font-size':11,fill:muted},c))});
+  let total=0,jumpDist=0;const pts=[];
+  for(let i=0;i<path.length;i++){pts.push(X(path[i])+','+Y(i));if(i>0){const d=Math.abs(path[i]-path[i-1]);total+=d;if(jump!=null&&i-1===jump&&jump>=0&&(dsAlg==='CSCAN'||dsAlg==='CLOOK'))jumpDist=d;}}
+  for(let i=1;i<path.length;i++){const isJ=(dsAlg==='CSCAN'||dsAlg==='CLOOK')&&jump>=0&&i-1===jump;
+    const ln=el('line',{x1:X(path[i-1]),y1:Y(i-1),x2:X(path[i]),y2:Y(i),stroke:isJ?muted:css('--accent'),'stroke-width':2.5,'stroke-dasharray':isJ?'5 5':'','stroke-linecap':'round'});
+    ln.style.opacity=0;ln.style.transition='opacity .25s';ln.style.transitionDelay=(i*0.12)+'s';svg.appendChild(ln);requestAnimationFrame(()=>requestAnimationFrame(()=>ln.style.opacity=1));}
+  path.forEach((c,i)=>{const isReq=i>0&&q.includes(c);svg.appendChild(el('circle',{cx:X(c),cy:Y(i),r:i===0?7:5,fill:i===0?css('--io'):isReq?css('--accent'):css('--surface'),stroke:css('--accent'),'stroke-width':2}));
+    svg.appendChild(el('text',{x:X(c)+(X(c)>680?-10:10),y:Y(i)+4,'font-size':11,'text-anchor':X(c)>680?'end':'start',fill:css('--ink')},i===0?'head '+c:c))});
+  const all={};['FCFS','SSTF','SCAN','CSCAN','LOOK','CLOOK'].forEach(a=>{const r=dsOrder(q,h,up,a);const pp=[h].concat(r.p);let t=0;for(let i=1;i<pp.length;i++)t+=Math.abs(pp[i]-pp[i-1]);all[a]=t});
+  const best=Math.min(...Object.values(all));
+  $('#dsStat').innerHTML=`<div><small>${dsAlg} total movement</small><strong>${total} cyl</strong></div>${jumpDist?`<div><small>incl. return jump</small><strong>${jumpDist}</strong></div>`:''}<div style="flex:1;min-width:240px"><small>All algorithms (same queue)</small><div class="mono" style="font-size:13px">${Object.entries(all).map(([a,t])=>`<span style="margin-right:12px;${t===best?'color:var(--work);font-weight:600':''}">${a.replace('CSCAN','C-SCAN').replace('CLOOK','C-LOOK')} ${t}</span>`).join('')}</div></div>`;}
+seg('#dsAlg',d=>{dsAlg=d.a;dsDraw()});$('#dsQ').onchange=$('#dsH').onchange=$('#dsUp').onchange=dsDraw;
+$('#dsRand').onclick=()=>{$('#dsQ').value=Array.from({length:8},()=>Math.floor(Math.random()*200)).join(',');$('#dsH').value=Math.floor(Math.random()*200);dsDraw()};
+
+/* ---------- 12. durability ---------- */
+let duCrash='proc';
+seg('#duCrash',d=>{duCrash=d.c});
+$('#duSync').onchange=()=>{if($('#duSync').checked)$('#duFlush').checked=true};$('#duFlush').onchange=()=>{if(!$('#duFlush').checked)$('#duSync').checked=false};
+$('#duGo').onclick=()=>{const boxes=$$('#duPipe .box');boxes.forEach(b=>{b.classList.remove('has','lost','safe');b.querySelector('.data')?.remove()});$('#duVerdict').textContent='';
+  const fl=$('#duFlush').checked,sy=$('#duSync').checked,plp=$('#duPlp').checked;
+  const reach=!fl?0:!sy?1:plp?3:2; // where data ends up
+  let i=0;const step=()=>{boxes.forEach(b=>b.querySelector('.data')?.remove());boxes[i].insertAdjacentHTML('beforeend','<div class="data">"hello"</div>');boxes[i].classList.add('has');
+    if(i<reach){i++;setTimeout(step,550)}else setTimeout(crash,700)};
+  const crash=()=>{const survives= duCrash==='proc' ? reach>=1 : reach>=3;
+    // On power loss, volatile levels are wiped
+    boxes.forEach((b,j)=>{if(duCrash==='proc'&&j===0||duCrash==='power'&&j<3)b.classList.add('lost')});
+    boxes[reach].classList.remove('has');boxes[reach].classList.add(survives?'safe':'lost');
+    const why=!fl?'The bytes never left your process. A user-space buffer dies with the process.'
+      :duCrash==='proc'?(sy?'Safe, and it would survive power loss too.':'Safe! The page cache belongs to the kernel, not your process, so it is written back later. But a power loss now would lose it.')
+      :!sy?'Lost. Dirty pages in RAM vanish with power. write() success ≠ durable.'
+      :!plp?'Lost. fsync sent the data to the drive, but its volatile write cache ignored the flush (cheap consumer SSD or misconfigured RAID).':'Durable. fsync forced a cache flush (or FUA) and the drive committed to stable media.';
+    $('#duVerdict').innerHTML=(survives?'✅ ':'❌ ')+why;};
+  step();};
+
+/* ---------- 13. backpressure ---------- */
+const CAP=64;let bp={buf:0,run:false,hist:[],sent:0,blocked:0,eagain:0,t:0},bpTimer=null;
+function bpTick(){const P=+$('#bpP').value/10,C=+$('#bpC').value/10;bp.t++;
+  bp.buf=Math.max(0,bp.buf-C);const room=CAP-bp.buf;const put=Math.min(room,P);bp.buf+=put;bp.sent+=put;
+  if(put<P){if($('#bpNb').checked)bp.eagain++;else bp.blocked++}
+  bp.hist.push(bp.buf);if(bp.hist.length>200)bp.hist.shift();bpDraw(put<P);}
+function bpDraw(full){$('#bpFill').style.width=(bp.buf/CAP*100)+'%';$('#bpFill').style.background=bp.buf>=CAP-0.01?css('--wait'):bp.buf>CAP*.7?css('--io'):css('--dma');
+  $('#bpFillT').textContent=bp.buf.toFixed(0)+' / '+CAP+' units'+(full?($('#bpNb').checked?' · write() → EAGAIN':' · write() BLOCKED'):'');
+  const cv=$('#bpCanvas'),dpr=devicePixelRatio||1,w=cv.clientWidth,h=110;cv.width=w*dpr;cv.height=h*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);g.clearRect(0,0,w,h);
+  g.strokeStyle=css('--line');g.setLineDash([4,4]);g.beginPath();g.moveTo(0,8);g.lineTo(w,8);g.stroke();g.setLineDash([]);
+  g.fillStyle=css('--muted');g.font='11px '+css('--body');g.fillText('buffer full',4,20);
+  g.strokeStyle=css('--dma');g.lineWidth=2;g.beginPath();bp.hist.forEach((v,i)=>{const x=i/199*w,y=h-4-(v/CAP)*(h-12);i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke();
+  $('#bpStat').innerHTML=`<div><small>Throughput delivered</small><strong>${bp.t?(bp.sent/bp.t*10).toFixed(0):0} MB/s</strong></div><div><small>Ticks writer blocked</small><strong style="color:var(--wait)">${bp.blocked}</strong></div><div><small>EAGAIN returned</small><strong style="color:var(--io)">${bp.eagain}</strong></div>`;}
+$('#bpGo').onclick=()=>{bp.run=!bp.run;$('#bpGo').textContent=bp.run?'⏸ Pause':'▶ Start';clearInterval(bpTimer);if(bp.run)bpTimer=setInterval(bpTick,60)};
+$('#bpP').oninput=()=>$('#bpPv').textContent=$('#bpP').value;$('#bpC').oninput=()=>$('#bpCv').textContent=$('#bpC').value;
+
+/* ---------- 15. quiz ---------- */
+const QZ=[
+ ['A Node.js server calls fs.readFileSync() inside a request handler. What happens under load?',['Nothing; Node is async','Every other request stalls while the file is read','libuv moves it to the thread pool automatically','The OS turns it into DMA so the CPU is free'],1,'Sync APIs run on the event-loop thread. While it waits, no other callback can run. Use fs.promises, which goes through the libuv thread pool.'],
+ ['Which is the only truly asynchronous I/O model in POSIX terms?',['epoll with non-blocking sockets','Signal-driven I/O','io_uring / IOCP / aio','select()'],2,'Only these complete both phases, including the copy into your buffer, before notifying you. epoll only reports readiness, and you still do a synchronous read().'],
+ ['With EPOLLET (edge-triggered), you receive a readable event and read 1 KB of the 4 KB available. What next?',['epoll_wait reports it again immediately','You won\'t be notified again until NEW data arrives, so 3 KB is stranded','The kernel discards the remaining 3 KB','The socket is closed'],1,'Edge-triggered fires on state changes. Always loop read() until EAGAIN.'],
+ ['write() returned 5. Which is guaranteed?',['5 bytes are on disk','5 bytes were copied into the kernel (page cache / socket buffer)','The peer received 5 bytes','The bytes are in the drive cache'],1,'write() only hands bytes to the kernel. Durability needs fsync. Delivery needs an application-level ack.'],
+ ['Why does sendfile() speed up a static file server?',['It compresses the file','It avoids copying bytes through user space and cuts syscalls','It skips the page cache','It uses UDP'],1,'Data goes page cache → socket (or straight to the NIC with SG-DMA) without the round trip through a user buffer.'],
+ ['Why does select() fail for a server with 5,000 connections?',['It is O(1)','FD_SETSIZE is typically 1024, and it rescans the whole set each call','It only works with files','It requires root'],1,'select uses a fixed-size bitmask, and both select and poll are O(n) per call. epoll/kqueue fix both problems.'],
+ ['Which pattern converts random writes into sequential writes?',['B-tree in-place update','Append-only log (WAL / LSM-tree)','O_DIRECT','mmap'],1,'Appending to a log is sequential I/O. Random-access indexes are updated or compacted later. This is the reason behind WALs, LSM-trees and Kafka.'],
+ ['A producer writes to a socket faster than the peer reads. What does a well-behaved non-blocking app do on EAGAIN?',['Append to an unbounded in-memory queue','Retry in a tight loop','Stop producing and wait for a writable event','Close the connection'],2,'That is respecting backpressure. Unbounded queues turn slow consumers into OOM crashes, and busy retry burns CPU.'],
+ ['When is CPU polling better than interrupts?',['Never','When the device completes faster than interrupt + context switch overhead','For slow HDDs','For keyboards'],1,'For µs-scale devices such as NVMe and 100GbE NICs, spinning (io_poll, DPDK, SPDK) beats waking from an interrupt.'],
+ ['In Go, 10,000 goroutines block in conn.Read(). How many OS threads are blocked in read()?',['10,000','About GOMAXPROCS','Roughly zero: the netpoller parks goroutines and one epoll_wait watches all sockets','One per CPU socket'],2,'Network reads on Go use non-blocking fds plus the netpoller. Goroutines are parked, not threads. File I/O is different and does block threads.']];
+let qzAns=0,qzOk=0;
+$("#quizList").innerHTML=QZ.map(([q,o],i)=>`<div class="q card" data-i="${i}"><b>${i+1}. ${q}</b><div class="opts">${o.map((x,j)=>`<button data-j="${j}">${x}</button>`).join('')}</div><div class="why">${QZ[i][3]}</div></div>`).join('');
+$("#quizList").addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const q=b.closest('.q');if(q.classList.contains('done'))return;const i=+q.dataset.i,j=+b.dataset.j;
+  q.classList.add('done');q.querySelectorAll('button').forEach((x,k)=>{if(k===QZ[i][2])x.classList.add('ok');else if(k===j)x.classList.add('no')});qzAns++;if(j===QZ[i][2])qzOk++;$('#qzScore').textContent=qzOk+' / '+qzAns});
+
+/* ---------- redraw on theme / lesson change ---------- */
+function redrawAll(){zcDraw();mdDraw();dsDraw();bpDraw(false)}
+addEventListener('resize',()=>bpDraw(false));
+
+const start=lessons.findIndex(s=>'#'+s.id===location.hash);show(start>=0?start:0);
+addEventListener('load',()=>setTimeout(()=>window.scrollTo(0,0),0));
+})();
+</script>
+</body>
+</html>

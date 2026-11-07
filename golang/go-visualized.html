@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Go Visualized</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky lesson rail on the left, one lesson at a time on the right (rail becomes a chip strip on phones). */
+:root{
+  --bg:#eef2f5; --surface:#ffffff; --ink:#10202b; --muted:#566977; --line:#d6dee5;
+  --accent:#00718f; --accent-soft:#d9f0f7; --sand:#b9731a; --sand-soft:#fbeed7;
+  --good:#1b7f4b; --bad:#b3372c; --bad-soft:#fbe3e0; --good-soft:#dcf3e5;
+  --codebg:#0f1c26; --codefg:#d6e4ee; --kw:#f29e74; --ty:#6fd0e8; --st:#a8d98a; --cm:#6f8797; --nu:#e6c76a; --fn:#9ecbff;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a131a; --surface:#122029; --ink:#e5eef4; --muted:#92a6b4; --line:#223643;
+  --accent:#43c6ea; --accent-soft:#12394a; --sand:#e8a549; --sand-soft:#3a2b14;
+  --good:#5fd394; --bad:#ff8a7c; --bad-soft:#3d1f1c; --good-soft:#13362a; --codebg:#0a1319; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a131a; --surface:#122029; --ink:#e5eef4; --muted:#92a6b4; --line:#223643;
+  --accent:#43c6ea; --accent-soft:#12394a; --sand:#e8a549; --sand-soft:#3a2b14;
+  --good:#5fd394; --bad:#ff8a7c; --bad-soft:#3d1f1c; --good-soft:#13362a; --codebg:#0a1319; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px 8px;flex-wrap:wrap}
+.brand{font:700 26px/1 var(--display);letter-spacing:-.02em}
+.brand span{color:var(--accent)}
+.sub{color:var(--muted);font-size:14px}
+.prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.bar{width:140px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;align-items:start;padding-block:12px 48px}
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);max-height:100vh;overflow:auto;padding-block:8px}
+nav h4{margin:18px 0 6px;font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+nav h4:first-child{margin-top:0}
+nav a{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px}
+nav a:hover{background:var(--accent-soft)}
+nav a[aria-current="true"]{background:var(--accent);color:#fff;font-weight:600}
+:root[data-theme="dark"] nav a[aria-current="true"]{color:#06222c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav a[aria-current="true"]{color:#06222c}}
+nav a .dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--muted);flex:none}
+nav a.done .dot{background:var(--good);border-color:var(--good)}
+nav a:focus-visible,.btn:focus-visible,.chip:focus-visible,input:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{min-width:0}
+.lesson-head h1{font:700 clamp(28px,4vw,40px)/1.1 var(--display);letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+.lesson-head p{margin:0;color:var(--muted);max-width:62ch;font-size:16px}
+.kicker{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--sand);margin-bottom:10px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+.panel>.ph{padding:10px 16px;border-bottom:1px solid var(--line);font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel>.pb{padding:16px}
+pre.code{margin:0;background:var(--codebg);color:var(--codefg);font:13px/1.65 var(--mono);padding:16px;overflow-x:auto;border-radius:0 0 10px 10px;tab-size:4}
+.panel.codep>.ph{background:var(--codebg);color:var(--cm);border-radius:10px 10px 0 0;border-color:transparent}
+.panel.codep{border-color:transparent}
+.k{color:var(--kw)}.t{color:var(--ty)}.s{color:var(--st)}.c{color:var(--cm);font-style:italic}.n{color:var(--nu)}.f{color:var(--fn)}
+.btn{font:500 13px var(--body);padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#06222c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#06222c}}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:500 13px var(--mono);padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.out{font:13px/1.6 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:12px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:44px}
+.out .ok{color:var(--good)}.out .err{color:var(--bad)}.out .dim{color:var(--muted)}
+.lab{font-size:13px;color:var(--muted);margin:12px 0 6px;display:block}
+.lab b{color:var(--ink);font-family:var(--mono);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=text]{font:13px var(--mono);padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);width:110px;max-width:100%}
+.cells{display:flex;flex-wrap:wrap;gap:4px;margin-block:8px}
+.cell{width:46px;height:46px;border:1.5px solid var(--line);border-radius:6px;display:grid;place-items:center;font:500 14px var(--mono);position:relative;background:var(--surface)}
+.cell.full{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.cell.new{outline:2px solid var(--sand)}
+.cell small{position:absolute;bottom:-15px;font-size:9px;color:var(--muted)}
+.cells.idx{margin-bottom:22px}
+.tag{display:inline-block;font:600 11px var(--mono);padding:2px 8px;border-radius:4px;background:var(--sand-soft);color:var(--sand)}
+.tag.g{background:var(--good-soft);color:var(--good)}.tag.b{background:var(--bad-soft);color:var(--bad)}
+.points{margin:22px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.pt{border-left:3px solid var(--accent);padding:2px 0 2px 12px;font-size:14px}
+.pt b{display:block;font-family:var(--display);font-size:15px}
+.quiz{margin-top:22px}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{text-align:left;font:14px var(--mono);padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;white-space:pre-wrap}
+.opt:hover{border-color:var(--accent)}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.why{margin-top:10px;font-size:14px;color:var(--muted)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:26px}
+.box{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);min-width:0}
+.box.hot{border-color:var(--sand);background:var(--sand-soft)}
+.box h5{margin:0 0 6px;font:600 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mem{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px}
+.mem .box{font:13px var(--mono)}
+.mem .addr{font-size:10px;color:var(--muted);display:block}
+.pipe{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px;align-items:stretch}
+.slots{display:flex;gap:4px;flex-wrap:wrap}
+.slot{width:30px;height:30px;border:1.5px dashed var(--line);border-radius:5px;display:grid;place-items:center;font:12px var(--mono)}
+.slot.f{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.tl{position:relative;height:24px;background:var(--bg);border-radius:5px;margin-block:6px;border:1px solid var(--line);overflow:hidden}
+.tl i{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);border-right:3px solid var(--accent)}
+.tl i.win{background:var(--good-soft);border-color:var(--good)}
+.tl span{position:absolute;left:8px;top:2px;font:12px var(--mono)}
+table.cmd{width:100%;border-collapse:collapse;font-size:14px}
+table.cmd td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmd td:first-child{font-family:var(--mono);color:var(--accent);white-space:nowrap}
+.scroll{overflow-x:auto}
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  nav.rail{position:static;max-height:none;display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+  nav h4{display:none}
+  nav a{white-space:nowrap;border:1px solid var(--line);background:var(--surface);flex:none}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .prog .bar{width:90px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>html{color-scheme:light}body{margin:0}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="brand">Go<span>.</span>Visualized</div>
+      <div class="sub">Every core idea in Go, with something to click.</div>
+    </div>
+    <div class="prog"><span id="progtxt">0 of 0 lessons</span><div class="bar"><i id="progbar"></i></div></div>
+  </header>
+  <div class="grid">
+    <nav class="rail" id="rail" aria-label="Lessons"></nav>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- helpers ---------- */
+function h(tag,attrs,kids){var e=document.createElement(tag);attrs=attrs||{};
+  for(var k in attrs){var v=attrs[k];if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k==='text')e.textContent=v;else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?'':v);}
+  (kids||[]).forEach(function(c){if(c==null)return;e.appendChild(typeof c==='string'?document.createTextNode(c):c)});return e;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+var KW='break|case|chan|const|continue|default|defer|else|fallthrough|for|func|go|goto|if|import|interface|map|package|range|return|select|struct|switch|type|var';
+var TY='int|int8|int16|int32|int64|uint|uint8|uint32|uint64|float32|float64|string|bool|byte|rune|error|any|nil|true|false|iota|comparable';
+var RE=new RegExp('(\\/\\/.*$)|("(?:[^"\\\\]|\\\\.)*"|`[^`]*`)|\\b('+KW+')\\b|\\b('+TY+')\\b|\\b(\\d+(?:\\.\\d+)?)\\b|\\b([A-Za-z_]\\w*)(?=\\()','gm');
+function hl(src){var out='',last=0,m;RE.lastIndex=0;
+  while((m=RE.exec(src))){out+=esc(src.slice(last,m.index));
+    var cls=m[1]?'c':m[2]?'s':m[3]?'k':m[4]?'t':m[5]?'n':'f';
+    out+='<span class="'+cls+'">'+esc(m[0])+'</span>';last=RE.lastIndex;}
+  return out+esc(src.slice(last));}
+function slider(label,min,max,val,fn,id){var lab=h('label',{class:'lab',for:id});var b=h('b',{text:val});lab.append(label+' = ',b);
+  var inp=h('input',{type:'range',id:id,min:min,max:max,value:val});inp.addEventListener('input',function(){b.textContent=inp.value;fn(+inp.value)});
+  var w=h('div');w.append(lab,inp);return w;}
+function chips(list,cur,fn){var wrap=h('div',{class:'row'});
+  function draw(){wrap.innerHTML='';list.forEach(function(x){var c=h('button',{class:'chip','aria-pressed':String(x===cur),text:x,onclick:function(){cur=x;draw();fn(x)}});wrap.appendChild(c)})}
+  draw();return wrap;}
+function span(cls,t){return '<span class="'+cls+'">'+esc(t)+'</span>'}
+
+/* ---------- lessons ---------- */
+var L=[];
+function add(o){L.push(o)}
+
+add({id:'basics',group:'Foundations',title:'Types & zero values',tagline:'Every Go variable starts life with a usable value. Nothing is ever uninitialized.',
+code:'package main\n\nimport "fmt"\n\nfunc main() {\n\tvar n int          // 0\n\tvar s string       // ""\n\tvar ok bool        // false\n\tvar p *int         // nil\n\tvar xs []int       // nil, but len(xs) == 0\n\n\tname := "gopher"   // := declares and infers string\n\tconst Pi = 3.14159 // constants are untyped until used\n\n\txs = append(xs, 1) // append works on a nil slice\n\tfmt.Println(n, s, ok, p, xs, name)\n}',
+points:[['Static, inferred','The compiler knows every type. := lets you skip writing it.'],['Zero values','0, "", false, nil. No garbage memory and no "undefined".'],['Explicit conversion','int to float64 needs float64(x). There is no implicit widening.']],
+demo:function(r){
+  var T={'int':['0','8 bytes'],'float64':['0','8 bytes'],'bool':['false','1 byte'],'string':['""','16 bytes (ptr+len)'],'*int':['nil','8 bytes'],'[]int':['nil (len 0, cap 0)','24 bytes (ptr+len+cap)'],'map[string]int':['nil (reads ok, writes panic)','8 bytes'],'error':['nil','16 bytes (type+value)']};
+  var out=h('div',{class:'out'});
+  function show(t){out.innerHTML='var x '+span('t',t)+'\n\nzero value  → '+span('ok',T[t][0])+'\nsize on 64-bit → '+span('n',T[t][1])}
+  r.append(h('span',{class:'lab',text:'Pick a type, see what "var x T" gives you:'}),chips(Object.keys(T),'int',show),out);show('int');},
+quiz:{q:'What does this print?\n\nvar xs []int\nfmt.Println(xs == nil, len(xs))',o:['true 0','false 0','panic: nil slice','compile error'],a:0,why:'A nil slice has length 0 and compares equal to nil. You can read its length and append to it safely.'}});
+
+add({id:'control',group:'Foundations',title:'Control flow',tagline:'One loop keyword, a switch that does not fall through, and if with an init statement.',
+code:'// the only loop keyword is for\nfor i := 0; i < 5; i++ { }\n\nn := 0\nfor n < 5 { n++ }          // while-style\n\nfor i, v := range []string{"a", "b"} {\n\t_ = i; _ = v\n}\nfor i := range 5 { _ = i }  // Go 1.22: range over int\n\nswitch day := 3; day {\ncase 1, 7:\n\tfmt.Println("weekend")\ncase 2, 3, 4, 5, 6:\n\tfmt.Println("weekday")  // no fall through\ndefault:\n\tfmt.Println("?")\n}\n\nif v, err := parse(); err != nil {\n\treturn err\n} else {\n\tuse(v)\n}',
+points:[['for is everything','Classic, while, infinite (for {}), range, and range over an integer.'],['switch breaks by default','Use fallthrough only when you truly want to continue.'],['Scoped init','if/switch can declare a variable that lives only inside that statement.']],
+demo:function(r){
+  var mode='three-part',n=5,out=h('div',{class:'out'});
+  function go(){var a=[],i;
+    if(mode==='three-part'){for(i=0;i<n;i++)a.push(i)}
+    else if(mode==='while-style'){i=n;while(i>0){a.push(i);i--}}
+    else if(mode==='range slice'){['a','b','c','d','e','f','g','h'].slice(0,n).forEach(function(v,k){a.push(k+':'+v)})}
+    else {for(i=1;i<=n;i++){a.push(i%15===0?'FizzBuzz':i%3===0?'Fizz':i%5===0?'Buzz':i)}}
+    out.innerHTML=span('dim','// '+mode+', n='+n)+'\n'+a.join('  ')}
+  r.append(chips(['three-part','while-style','range slice','switch'],mode,function(m){mode=m;go()}),slider('n',1,15,n,function(v){n=v;go()},'ctl-n'),out);go();},
+quiz:{q:'In Go, what happens at the end of a matching switch case?',o:['It falls into the next case','It exits the switch','Compile error without break','It re-evaluates the tag'],a:1,why:'Each case ends the switch automatically. Write fallthrough explicitly if you want C-style behavior.'}});
+
+add({id:'functions',group:'Foundations',title:'Functions & closures',tagline:'Functions are values. They can return many results and capture variables from where they were written.',
+code:'func divmod(a, b int) (q, r int, err error) {\n\tif b == 0 {\n\t\terr = errors.New("divide by zero")\n\t\treturn\n\t}\n\treturn a / b, a % b, nil\n}\n\nfunc counter() func() int {\n\tn := 0                 // captured by the closure\n\treturn func() int {\n\t\tn++\n\t\treturn n\n\t}\n}\n\na, b := counter(), counter()\na(); a(); b()   // a is at 2, b is at 1\n\nfunc sum(xs ...int) int { /* variadic */ }',
+points:[['Multiple returns','The idiom is (value, error). Named results allow a bare return.'],['Closures','Each call to counter() makes a fresh n. The returned func keeps it alive.'],['First-class','Pass functions as arguments, store them in maps, return them.']],
+demo:function(r){
+  var s={a:0,b:0},out=h('div',{class:'out'});
+  function show(){out.innerHTML='a := counter()   b := counter()\n\na → n = '+span('n',s.a)+'\nb → n = '+span('n',s.b)+'\n\n'+span('dim','Each closure owns its own n.')}
+  r.append(h('div',{class:'row'},[h('button',{class:'btn pri',text:'a()',onclick:function(){s.a++;show()}}),h('button',{class:'btn pri',text:'b()',onclick:function(){s.b++;show()}}),h('button',{class:'btn',text:'reset',onclick:function(){s.a=s.b=0;show()}})]),out);show();},
+quiz:{q:'a, b := counter(), counter()\na(); a(); b()\nWhat does b() return on that last call?',o:['3','1','2','0'],a:1,why:'a and b each have their own captured n. b was called once, so it returns 1.'}});
+
+add({id:'pointers',group:'Foundations',title:'Pointers',tagline:'Go passes everything by value. A pointer is just a value that holds an address.',
+code:'x := 5\np := &x     // p holds the address of x\n*p = 10     // write through the pointer, x is now 10\ny := x      // y is a copy\ny++         // x is unchanged\n\nfunc inc(n int)   { n++ }   // changes a copy\nfunc incP(n *int) { *n++ }  // changes the original\n\nvar q *int\nfmt.Println(*q) // panic: nil pointer dereference',
+points:[['& and *','&x takes an address. *p follows it, for reading or writing.'],['No pointer math','Unlike C, you cannot add to a pointer. This keeps memory safe.'],['Escape analysis','The compiler decides stack or heap. You do not call free.']],
+demo:function(r){
+  var steps=[
+   {c:'x := 5',m:[['x','0x01','5']]},
+   {c:'p := &x',m:[['x','0x01','5'],['p','0x02','→ 0x01']]},
+   {c:'*p = 10',m:[['x','0x01','10'],['p','0x02','→ 0x01']],hot:0},
+   {c:'y := x',m:[['x','0x01','10'],['p','0x02','→ 0x01'],['y','0x03','10']],hot:2},
+   {c:'y++',m:[['x','0x01','10'],['p','0x02','→ 0x01'],['y','0x03','11']],hot:2}];
+  var i=0,cur=h('div',{class:'out'}),mem=h('div',{class:'mem'});
+  function draw(){var s=steps[i];cur.innerHTML=span('dim','step '+(i+1)+' of '+steps.length+'\n')+span('k','> ')+esc(s.c);
+    mem.innerHTML='';s.m.forEach(function(c,k){mem.appendChild(h('div',{class:'box'+(s.hot===k?' hot':'')},[h('span',{class:'addr',text:c[1]}),h('span',{html:c[0]+' = <b>'+esc(c[2])+'</b>'})]))})}
+  r.append(h('div',{class:'row'},[h('button',{class:'btn',text:'← back',onclick:function(){i=Math.max(0,i-1);draw()}}),h('button',{class:'btn pri',text:'step →',onclick:function(){i=Math.min(steps.length-1,i+1);draw()}})]),cur,mem);draw();},
+quiz:{q:'x := 1\np := &x\n*p = 7\nfmt.Println(x)',o:['1','7','an address','compile error'],a:1,why:'p points at x, so writing through *p changes x itself.'}});
+
+add({id:'slices',group:'Data',title:'Arrays & slices',tagline:'A slice is a small header (pointer, length, capacity) that views part of an array.',
+code:'arr := [3]int{1, 2, 3}      // array: fixed size, a value\n\ns := make([]int, 0, 2)      // len 0, cap 2\ns = append(s, 1, 2)         // fits in cap\ns = append(s, 3)            // cap exceeded: new array!\n\na := []int{1, 2, 3, 4}\nb := a[:2]                  // b shares a\'s memory\nb[0] = 99                   // a[0] is now 99 too\n\nb = append(b, 100)          // overwrites a[2] (cap allows)\n\nc := make([]int, len(a))\ncopy(c, a)                  // independent copy',
+points:[['Header, not data','Passing a slice copies 24 bytes. The elements are shared.'],['Growth','When append exceeds cap, Go allocates a bigger array (about 2x while small) and copies.'],['Aliasing','Two slices over one array can surprise you. copy() when you need independence.']],
+demo:function(r){
+  var st,out=h('div',{class:'out'}),cells=h('div');
+  function reset(){st={d:[],cap:2,len:0,gen:1,real:false,msg:''};st.d=[null,null];}
+  function newcap(c){return c===0?1:c<256?c*2:c+Math.floor((c+768)/4)}
+  function draw(){cells.innerHTML='';var w=h('div',{class:'cells idx'});
+    for(var i=0;i<st.cap;i++){var f=i<st.len;w.appendChild(h('div',{class:'cell'+(f?' full':'')+(f&&st.real&&i===st.len-1?' new':''),text:f?st.d[i]:''},[h('small',{text:i})]))}
+    cells.appendChild(w);
+    out.innerHTML='s := ...  '+span('n','len='+st.len)+'  '+span('t','cap='+st.cap)+'  '+span('dim','backing array #'+st.gen)+'\n'+(st.msg||span('dim','Press append.'))}
+  function app(){var v=st.len+1;st.real=false;st.msg='';
+    if(st.len===st.cap){var nc=newcap(st.cap),nd=st.d.slice(0,st.len);while(nd.length<nc)nd.push(null);st.d=nd;st.cap=nc;st.gen++;st.real=true;st.msg=span('err','cap exceeded → allocated new array, copied old values (old slices still point to #'+(st.gen-1)+')')}
+    else st.msg=span('ok','fits in capacity → same array reused');
+    st.d[st.len]=v*10;st.len++;draw()}
+  function share(){if(!st.len){st.msg=span('err','append something first');draw();return}
+    st.d[0]=99;st.real=false;st.msg=span('ok','b := s[:]; b[0] = 99  → s[0] changed too (shared memory)');draw()}
+  r.append(h('div',{class:'row'},[h('button',{class:'btn pri',text:'append(s, x)',onclick:app}),h('button',{class:'btn',text:'b := s; b[0] = 99',onclick:share}),h('button',{class:'btn',text:'reset',onclick:function(){reset();draw()}})]),cells,out);reset();draw();},
+quiz:{q:'a := []int{1,2,3,4}\nb := a[:2]\nb[0] = 99\nfmt.Println(a[0])',o:['1','99','0','panic'],a:1,why:'b is a view into the same backing array, so changing b[0] changes a[0].'}});
+
+add({id:'maps',group:'Data',title:'Maps',tagline:'Hash tables with O(1) average access. Reading a missing key is safe; the comma-ok form tells you if it existed.',
+code:'m := map[string]int{"go": 1, "rust": 2}\n\nm["zig"] = 3          // insert or update\nv := m["nope"]        // 0, no panic\nv, ok := m["nope"]    // 0, false\ndelete(m, "go")       // safe even if missing\n\nfor k, v := range m { // order is random on purpose\n\t_ = k; _ = v\n}\n\nvar nm map[string]int // nil map\n_ = nm["x"]           // fine\nnm["x"] = 1           // panic: assignment to nil map',
+points:[['Comma-ok','Use v, ok := m[k] when zero is a valid value.'],['Random order','Iteration order changes between runs. Sort the keys if you need order.'],['Not concurrent-safe','Guard with a mutex or use sync.Map.']],
+demo:function(r){
+  var m={go:1,rust:2},k=h('input',{type:'text',id:'mk',value:'go','aria-label':'key'}),v=h('input',{type:'text',id:'mv',value:'7','aria-label':'value'}),out=h('div',{class:'out'}),view=h('div',{class:'cells'});
+  function draw(){view.innerHTML='';var ks=Object.keys(m);if(!ks.length)view.appendChild(h('span',{class:'sub',text:'(empty map)'}));ks.forEach(function(x){view.appendChild(h('div',{class:'box'},[h('span',{html:esc('"'+x+'"')+' → <b>'+esc(m[x])+'</b>'})]))})}
+  function log(t){out.innerHTML=t;draw()}
+  r.append(h('div',{class:'row'},[h('span',{class:'sub',text:'key'}),k,h('span',{class:'sub',text:'value'}),v]),
+   h('div',{class:'row',style:'margin-top:10px'},[
+    h('button',{class:'btn pri',text:'m[k] = v',onclick:function(){m[k.value]=+v.value||0;log('m['+span('s','"'+k.value+'"')+'] = '+(+v.value||0))}}),
+    h('button',{class:'btn',text:'v, ok := m[k]',onclick:function(){var ok=Object.prototype.hasOwnProperty.call(m,k.value);log('v, ok := m["'+esc(k.value)+'"]\nv = '+span('n',ok?m[k.value]:0)+'   ok = '+span(ok?'ok':'err',ok))}}),
+    h('button',{class:'btn',text:'delete(m, k)',onclick:function(){delete m[k.value];log('delete(m, "'+esc(k.value)+'")')}})]),view,out);draw();out.innerHTML=span('dim','Try reading a key that does not exist.');},
+quiz:{q:'m := map[string]int{}\nx := m["missing"]\nWhat is x?',o:['panic','0','nil','compile error'],a:1,why:'Missing keys return the zero value of the element type. Use the comma-ok form to tell the difference.'}});
+
+add({id:'structs',group:'Data',title:'Structs & methods',tagline:'Go has no classes. You attach methods to types, and composition replaces inheritance.',
+code:'type Counter struct{ n int }\n\nfunc (c Counter) IncValue() { c.n++ }   // works on a copy\nfunc (c *Counter) IncPtr()  { c.n++ }   // works on the original\n\ntype Animal struct{ Name string }\nfunc (a Animal) Speak() string { return a.Name + " makes a sound" }\n\ntype Dog struct {\n\tAnimal            // embedding: Dog gets Speak()\n\tBreed string\n}\n\nd := Dog{Animal{"Rex"}, "Lab"}\nd.Speak()           // promoted method\n\n// exported if the name starts with a capital letter',
+points:[['Value vs pointer receiver','Use a pointer receiver when the method mutates or the struct is large.'],['Embedding','Promotes fields and methods. It is composition, not subclassing.'],['Capital = public','Visibility is set by the first letter of the name.']],
+demo:function(r){
+  var n=0,out=h('div',{class:'out'});
+  function show(m){out.innerHTML=(m||span('dim','Call a method.'))+'\n\nc.n = '+span('n',n)}
+  r.append(h('div',{class:'row'},[h('button',{class:'btn',text:'c.IncValue()',onclick:function(){show(span('err','receiver is a copy, original unchanged'))}}),h('button',{class:'btn pri',text:'c.IncPtr()',onclick:function(){n++;show(span('ok','receiver is *Counter, original updated'))}}),h('button',{class:'btn',text:'reset',onclick:function(){n=0;show()}})]),out);show();},
+quiz:{q:'func (c Counter) Inc() { c.n++ }\nvar x Counter; x.Inc()\nWhat is x.n?',o:['1','0','compile error','nil'],a:1,why:'A value receiver gets a copy. Switch to (c *Counter) to modify the original.'}});
+
+add({id:'interfaces',group:'Abstractions',title:'Interfaces',tagline:'A type satisfies an interface just by having the methods. No implements keyword.',
+code:'type Shape interface {\n\tArea() float64\n\tPerimeter() float64\n}\n\ntype Circle struct{ R float64 }\nfunc (c Circle) Area() float64      { return math.Pi * c.R * c.R }\nfunc (c Circle) Perimeter() float64 { return 2 * math.Pi * c.R }\n\ntype Triangle struct{ B, H float64 }\nfunc (t Triangle) Area() float64 { return t.B * t.H / 2 }\n// no Perimeter(), so Triangle is not a Shape\n\nvar s Shape = Circle{2}\nswitch v := s.(type) {      // type switch\ncase Circle: fmt.Println("circle", v.R)\n}\nif c, ok := s.(Circle); ok { _ = c } // assertion',
+points:[['Implicit','Satisfaction is checked at compile time by method set.'],['Small is better','io.Reader has one method. Accept interfaces, return structs.'],['any','interface{} (any) holds anything. Use type switches to get the value back.']],
+demo:function(r){
+  var kind='Circle',size=3,out=h('div',{class:'out'});
+  function go(){var c,a,p;
+    if(kind==='Circle'){a=Math.PI*size*size;p=2*Math.PI*size;out.innerHTML='var s Shape = Circle{R: '+size+'}\n\ns.Area()      = '+span('n',a.toFixed(2))+'\ns.Perimeter() = '+span('n',p.toFixed(2))+'\n'+span('ok','// dynamic type: main.Circle')}
+    else if(kind==='Rect'){out.innerHTML='var s Shape = Rect{W: '+size+', H: '+size*2+'}\n\ns.Area()      = '+span('n',size*size*2)+'\ns.Perimeter() = '+span('n',6*size)+'\n'+span('ok','// dynamic type: main.Rect')}
+    else out.innerHTML='var s Shape = Triangle{B: '+size+', H: '+size+'}\n\n'+span('err','compile error: Triangle does not implement Shape\n  (missing method Perimeter)')}
+  r.append(chips(['Circle','Rect','Triangle'],kind,function(k){kind=k;go()}),slider('size',1,10,size,function(v){size=v;go()},'if-sz'),out);go();},
+quiz:{q:'How does a type say it implements an interface?',o:['implements keyword','By having all the methods','By embedding the interface','By registering it at init'],a:1,why:'Go uses structural typing. If the method set matches, the type satisfies the interface automatically.'}});
+
+add({id:'generics',group:'Abstractions',title:'Generics',tagline:'Type parameters let one function work for many types, checked at compile time.',
+code:'type Number interface {\n\t~int | ~int64 | ~float64\n}\n\nfunc Sum[T Number](xs []T) T {\n\tvar total T\n\tfor _, x := range xs { total += x }\n\treturn total\n}\n\nfunc Map[T, U any](xs []T, f func(T) U) []U {\n\tout := make([]U, 0, len(xs))\n\tfor _, x := range xs { out = append(out, f(x)) }\n\treturn out\n}\n\nSum([]int{1, 2, 3})        // T inferred as int\nSum([]float64{1.5, 2.5})   // T inferred as float64\nSum([]string{"a"})         // compile error',
+points:[['Constraints','An interface lists the allowed types. comparable and any are built in.'],['Inference','Usually you do not write Sum[int](...). The compiler works it out.'],['Use sparingly','Reach for generics for containers and algorithms, not everything.']],
+demo:function(r){
+  var T={'[]int':['int',[1,2,3],6],'[]float64':['float64',[1.5,2.5],4],'[]string':['string',['a','b'],null],'[]bool':['bool',[true,false],null]};
+  var out=h('div',{class:'out'});
+  function go(t){var d=T[t];out.innerHTML='Sum('+t+'{'+d[1].join(', ')+'})\n\n'+(d[2]!=null?'T = '+span('t',d[0])+'\nresult = '+span('n',d[2]):span('err','compile error: '+d[0]+' does not satisfy Number\n  ('+d[0]+' missing in ~int | ~int64 | ~float64)'))}
+  r.append(h('span',{class:'lab',text:'Call Sum with a slice of:'}),chips(Object.keys(T),'[]int',go),out);go('[]int');},
+quiz:{q:'func Sum[T Number](xs []T) T\nWhat checks that T is allowed?',o:['A runtime panic','The compiler','A reflect call','The linker'],a:1,why:'Constraint violations are compile errors, so there is no runtime cost or surprise.'}});
+
+add({id:'errors',group:'Abstractions',title:'Errors',tagline:'Errors are ordinary values. Wrap them with %w so callers can still find the cause.',
+code:'var ErrNotFound = errors.New("not found")\n\nfunc repo() error { return ErrNotFound }\n\nfunc service() error {\n\tif err := repo(); err != nil {\n\t\treturn fmt.Errorf("service: %w", err) // keeps the chain\n\t}\n\treturn nil\n}\n\nerr := service()\nif errors.Is(err, ErrNotFound) { /* walks the chain */ }\n\nvar pe *fs.PathError\nif errors.As(err, &pe) { fmt.Println(pe.Path) }\n\n// %v instead of %w flattens to text and breaks Is/As',
+points:[['No exceptions','Functions return error. You check it right there.'],['%w','Wraps and preserves the original for errors.Is and errors.As.'],['Sentinel vs typed','Compare to a sentinel with Is. Extract details from a custom type with As.']],
+demo:function(r){
+  var w=[true,true,true],names=['handler','service','repo'],out=h('div',{class:'out'}),row=h('div',{class:'row'});
+  function draw(){row.innerHTML='';names.forEach(function(n,i){row.appendChild(h('button',{class:'chip','aria-pressed':'true',text:n+': '+(w[i]?'%w':'%v'),onclick:function(){w[i]=!w[i];draw()}}))});
+    var chain=[],ok=true,lines='';
+    names.forEach(function(n,i){lines+=(i?'  ':'')+(i?'↳ ':'')+n+': '+(ok?span('ok','linked'):span('err','unreachable'))+'\n';if(!w[i])ok=false});
+    lines+=(names.length?'  ↳ ':'')+'ErrNotFound\n';
+    out.innerHTML=lines+'\nerrors.Is(err, ErrNotFound) → '+(ok?span('ok','true'):span('err','false'))+'\n'+span('dim',ok?'every layer used %w':'a %v layer turned the chain into plain text')}
+  r.append(h('span',{class:'lab',text:'Click a layer to toggle how it wraps the error below it:'}),row,out);draw();},
+quiz:{q:'fmt.Errorf("db: %v", ErrNotFound)\nerrors.Is(thatErr, ErrNotFound) returns...',o:['true','false','panics','depends on Go version'],a:1,why:'%v only copies the message text. Only %w keeps the wrapped error for Is and As.'}});
+
+add({id:'defer',group:'Abstractions',title:'defer, panic, recover',tagline:'defer schedules cleanup. Deferred calls run last-in first-out, even when a panic unwinds the stack.',
+code:'func work() {\n\tdefer fmt.Println("defer 1")\n\tdefer fmt.Println("defer 2")\n\tdefer func() {\n\t\tif r := recover(); r != nil {\n\t\t\tfmt.Println("recovered:", r)\n\t\t}\n\t}()\n\tfmt.Println("working")\n\tpanic("boom")\n}\n\nf, _ := os.Open(path)\ndefer f.Close()   // idiomatic cleanup right after acquiring',
+points:[['LIFO','The last defer registered is the first to run.'],['Arguments evaluate now','defer fmt.Println(i) captures i at the defer statement.'],['recover','Only works inside a deferred function. Use for boundaries, not normal flow.']],
+demo:function(r){
+  var pan=true,rec=true,out=h('div',{class:'out'});
+  function go(){var a=['working'];if(pan)a.push(span('err','panic("boom")'));
+    var d=rec?['recover func','defer 2','defer 1']:['defer 2','defer 1'];
+    d.forEach(function(x){a.push(x==='recover func'?(pan?span('ok','deferred: recovered "boom"'):span('dim','deferred: recover() = nil')):'deferred: '+x)});
+    if(pan&&!rec)a.push(span('err','panic: boom\ngoroutine 1 [running]  → program exits'));
+    else a.push(span('ok','work() returns normally'));out.innerHTML=a.join('\n')}
+  function tog(lbl,get,set){return h('button',{class:'chip','aria-pressed':String(get()),text:lbl,onclick:function(e){set(!get());e.target.setAttribute('aria-pressed',String(get()));go()}})}
+  r.append(h('div',{class:'row'},[tog('panic("boom")',function(){return pan},function(v){pan=v}),tog('deferred recover()',function(){return rec},function(v){rec=v})]),out);go();},
+quiz:{q:'defer fmt.Print("a")\ndefer fmt.Print("b")\ndefer fmt.Print("c")',o:['abc','cba','random','compile error'],a:1,why:'Defers form a stack. The last one registered runs first, so the output is cba.'}});
+
+add({id:'goroutines',group:'Concurrency',title:'Goroutines & channels',tagline:'Goroutines are cheap threads managed by Go. Channels pass values between them and synchronize.',
+code:'ch := make(chan int, 3) // buffered, capacity 3\n\ngo func() {              // producer goroutine\n\tfor i := 1; i <= 10; i++ {\n\t\tch <- i              // blocks when buffer is full\n\t}\n\tclose(ch)\n}()\n\nfor v := range ch {      // blocks until a value arrives\n\tfmt.Println(v)\n}\n\n// unbuffered: make(chan int)\n// send and receive must meet at the same moment',
+points:[['Share by communicating','Pass data through channels instead of sharing memory with locks.'],['Block = sync','An unbuffered channel makes sender and receiver rendezvous.'],['Always close from sender','Closing signals "no more values" and ends range loops.']],
+demo:function(r){
+  var cap=2,ps=2,cs=3,t=0,buf=[],pend=null,next=1,got=[],timer=null,sentTot=0;
+  var pipe=h('div',{class:'pipe'}),log=h('div',{class:'out'});
+  function reset(){t=0;buf=[];pend=null;next=1;got=[];sentTot=0;draw('')}
+  function step(){t++;var msg='';
+    if(t%ps===0&&pend===null){pend=next++;}
+    var cr=t%cs===0;
+    if(cap>0){if(pend!==null&&buf.length<cap){buf.push(pend);msg+='send '+pend+' → buffer. ';pend=null;sentTot++}
+      if(cr&&buf.length){var v=buf.shift();got.push(v);msg+='recv '+v+'.'}}
+    else if(pend!==null&&cr){got.push(pend);msg+='handoff '+pend+' (both sides ready).';pend=null;sentTot++}
+    draw(msg)}
+  function draw(msg){pipe.innerHTML='';
+    pipe.appendChild(h('div',{class:'box'+(pend!==null?' hot':'')},[h('h5',{text:'sender goroutine'}),h('div',{html:pend!==null?span('err','blocked on ch <- '+pend):span('ok','running')})]));
+    var slots=h('div',{class:'slots'});if(cap===0)slots.appendChild(h('span',{class:'sub',text:'unbuffered: no storage'}));
+    for(var i=0;i<cap;i++)slots.appendChild(h('div',{class:'slot'+(i<buf.length?' f':''),text:i<buf.length?buf[i]:''}));
+    pipe.appendChild(h('div',{class:'box'},[h('h5',{text:'chan int  (cap '+cap+')'}),slots]));
+    pipe.appendChild(h('div',{class:'box'},[h('h5',{text:'receiver'}),h('div',{html:'got: '+span('n',got.slice(-6).join(' ')||'—')})]));
+    log.innerHTML=span('dim','tick '+t+'  ')+esc(msg||'')}
+  function run(){if(timer){clearInterval(timer);timer=null;btn.textContent='▶ run'}else{timer=setInterval(step,700);btn.textContent='❚❚ pause'}}
+  var btn=h('button',{class:'btn pri',text:'▶ run',onclick:run});
+  r.append(h('div',{class:'row'},[btn,h('button',{class:'btn',text:'step',onclick:step}),h('button',{class:'btn',text:'reset',onclick:reset})]),
+    slider('buffer capacity',0,5,cap,function(v){cap=v;reset()},'ch-cap'),slider('producer: 1 item every N ticks',1,5,ps,function(v){ps=v},'ch-p'),slider('consumer: 1 item every N ticks',1,5,cs,function(v){cs=v},'ch-c'),
+    h('div',{style:'margin-top:12px'},[pipe]),log);reset();
+  return function(){if(timer)clearInterval(timer)};},
+quiz:{q:'ch := make(chan int)\nch <- 1\nfmt.Println(<-ch)\n(all in main, no other goroutine)',o:['prints 1','deadlock','prints 0','compile error'],a:1,why:'An unbuffered send waits for a receiver, but the receiver is on the same goroutine after it. fatal error: all goroutines are asleep.'}});
+
+add({id:'sync',group:'Concurrency',title:'Mutex & data races',tagline:'When goroutines share memory, unsynchronized writes lose updates. Locks or atomics fix it.',
+code:'var (\n\tmu    sync.Mutex\n\tcount int\n\twg    sync.WaitGroup\n)\n\nfor i := 0; i < 100; i++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tfor j := 0; j < 1000; j++ {\n\t\t\tmu.Lock()\n\t\t\tcount++            // read-modify-write is not atomic\n\t\t\tmu.Unlock()\n\t\t}\n\t}()\n}\nwg.Wait()                  // block until all Done\n\n// find races with: go test -race ./...',
+points:[['count++ is 3 steps','Load, add, store. Another goroutine can interleave between them.'],['WaitGroup','Counts goroutines. Wait() blocks until the counter hits zero.'],['-race','The race detector finds unsynchronized access at runtime.']],
+demo:function(r){
+  var g=50,locked=false,out=h('div',{class:'out'});
+  function run(){var total=g*1000,res=locked?total:Math.max(total-Math.floor(total*(0.15+Math.random()*0.55)*Math.min(1,g/40)),1000);
+    out.innerHTML=g+' goroutines × 1000 increments\nexpected = '+span('n',total)+'\ncount    = '+span(res===total?'ok':'err',res)+(res===total?'  ✓':'  ✗ lost '+(total-res)+' updates')+'\n'+span('dim','simulation: real counts vary per run. Try go run -race.')}
+  r.append(h('div',{class:'row'},[h('button',{class:'chip','aria-pressed':'true',text:'no lock',id:'lk1',onclick:function(e){locked=false;e.target.setAttribute('aria-pressed','true');document.getElementById('lk2').setAttribute('aria-pressed','false');run()}}),h('button',{class:'chip','aria-pressed':'false',id:'lk2',text:'sync.Mutex',onclick:function(e){locked=true;e.target.setAttribute('aria-pressed','true');document.getElementById('lk1').setAttribute('aria-pressed','false');run()}}),h('button',{class:'btn pri',text:'run again',onclick:run})]),
+    slider('goroutines',2,100,g,function(v){g=v;run()},'sy-g'),out);run();},
+quiz:{q:'Which sync type waits until a group of goroutines finish?',o:['sync.Mutex','sync.Once','sync.WaitGroup','sync.Pool'],a:2,why:'WaitGroup tracks a counter: Add before starting, Done when finished, Wait to block.'}});
+
+add({id:'select',group:'Concurrency',title:'select & context',tagline:'select waits on several channels at once. Use it with timeouts and context for cancellation.',
+code:'ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)\ndefer cancel()\n\nselect {\ncase res := <-fast:\n\tfmt.Println("fast", res)\ncase res := <-slow:\n\tfmt.Println("slow", res)\ncase <-ctx.Done():\n\tfmt.Println("gave up:", ctx.Err()) // deadline exceeded\n}\n\n// with default, select never blocks:\nselect {\ncase v := <-ch: use(v)\ndefault: /* nothing ready */\n}',
+points:[['First ready wins','If several are ready, Go picks one at random.'],['context','Carries deadlines and cancel signals through your call tree.'],['Always cancel','defer cancel() releases timers and resources.']],
+demo:function(r){
+  var a=800,b=1500,to=1200,out=h('div',{class:'out'}),tls=h('div');
+  function go(){var items=[['<-fast',a],['<-slow',b],['<-ctx.Done()',to]],w=items.reduce(function(m,x){return x[1]<m[1]?x:m},items[0]),mx=Math.max(a,b,to)*1.05;
+    tls.innerHTML='';items.forEach(function(x){var t=h('div',{class:'tl'},[h('i',{class:x===w?'win':'',style:'width:'+(x[1]/mx*100)+'%'}),h('span',{text:x[0]+'  '+x[1]+'ms'})]);tls.appendChild(t)});
+    out.innerHTML='select picks → '+span('ok','case '+w[0])+' at '+w[1]+'ms\n'+(w[0]==='<-ctx.Done()'?span('err','ctx.Err() = context deadline exceeded'):span('dim','the other cases are ignored'))}
+  r.append(slider('fast replies after (ms)',100,3000,a,function(v){a=v;go()},'se-a'),slider('slow replies after (ms)',100,3000,b,function(v){b=v;go()},'se-b'),slider('context timeout (ms)',100,3000,to,function(v){to=v;go()},'se-t'),tls,out);go();},
+quiz:{q:'What does ctx.Done() return?',o:['A bool','A channel closed on cancel or timeout','The error','A cancel function'],a:1,why:'Done() is a channel that closes when the context ends. That is why it fits in a select case.'}});
+
+add({id:'scheduler',group:'Concurrency',title:'The scheduler (GMP)',tagline:'Go multiplexes many goroutines (G) onto few OS threads (M) through logical processors (P).',
+code:'// G = goroutine    (cheap, ~2 KB stack that grows)\n// M = machine      (OS thread)\n// P = processor    (run queue + context; count = GOMAXPROCS)\n\nruntime.GOMAXPROCS(0)      // read current P count\nruntime.NumGoroutine()     // how many G exist\n\n// Each P has a local queue of runnable Gs.\n// An idle P steals work from a busy P.\n// A G blocked in a syscall frees its P to run others.\n// Since Go 1.14, long-running Gs can be preempted.',
+points:[['Cheap','Starting 100,000 goroutines is normal. Threads would not survive that.'],['Work stealing','Idle Ps take half of a busy P\'s queue, so load balances itself.'],['Parallelism','At most GOMAXPROCS goroutines run at the same instant.']],
+demo:function(r){
+  var g=14,p=4,q,out=h('div',{class:'out'}),view=h('div',{class:'mem'});
+  function build(){q=[];for(var i=0;i<p;i++)q.push([]);
+    for(var j=1;j<=g;j++)q[j%3===0?0:(j-1)%p].push('G'+j)}
+  function draw(msg){view.innerHTML='';q.forEach(function(l,i){var s=h('div',{class:'slots'});l.forEach(function(x,k){s.appendChild(h('div',{class:'slot f',style:'width:36px',text:x}))});
+    view.appendChild(h('div',{class:'box'+(l.length===0?'':'')},[h('h5',{text:'P'+i+' → M'+i+(l.length?'  running '+l[0]:'  idle')}),s]))});
+    out.innerHTML=msg||span('dim','Queues start uneven. Press steal to rebalance.')}
+  function steal(){var mx=0,mn=0;q.forEach(function(l,i){if(l.length>q[mx].length)mx=i;if(l.length<q[mn].length)mn=i});
+    var n=Math.floor((q[mx].length-q[mn].length)/2);if(n<1){draw(span('ok','balanced, nothing to steal'));return}
+    var moved=q[mx].splice(q[mx].length-n,n);q[mn]=q[mn].concat(moved);draw('P'+mn+' stole '+span('n',moved.join(','))+' from P'+mx)}
+  function rb(){build();draw()}
+  r.append(slider('goroutines',1,30,g,function(v){g=v;rb()},'sc-g'),slider('GOMAXPROCS (P)',1,8,p,function(v){p=v;rb()},'sc-p'),
+    h('div',{class:'row',style:'margin-top:10px'},[h('button',{class:'btn pri',text:'steal work',onclick:steal}),h('button',{class:'btn',text:'reshuffle',onclick:rb})]),view,out);rb();},
+quiz:{q:'GOMAXPROCS=4 and you start 10,000 goroutines. How many run at the same instant?',o:['10,000','4','1','Depends on the OS'],a:1,why:'Only as many goroutines as Ps run in parallel. The rest wait in run queues.'}});
+
+add({id:'tooling',group:'Toolchain',title:'Modules, tests & tools',tagline:'One go command builds, tests, formats, vets, and manages dependencies.',
+code:'// go.mod\nmodule example.com/hello\n\ngo 1.22\n\nrequire github.com/google/uuid v1.6.0\n\n// math_test.go\nfunc TestAdd(t *testing.T) {\n\tcases := []struct{ a, b, want int }{\n\t\t{1, 2, 3}, {0, 0, 0}, {-1, 1, 0},\n\t}\n\tfor _, c := range cases {\n\t\tif got := Add(c.a, c.b); got != c.want {\n\t\t\tt.Errorf("Add(%d,%d)=%d want %d", c.a, c.b, got, c.want)\n\t\t}\n\t}\n}\n\nfunc BenchmarkAdd(b *testing.B) {\n\tfor i := 0; i < b.N; i++ { Add(1, 2) }\n}',
+points:[['Table-driven tests','A slice of cases and one loop is the standard Go style.'],['gofmt','One official format. No style debates.'],['Static binary','go build gives one self-contained executable. Cross compile with GOOS and GOARCH.']],
+demo:function(r){
+  var cmds=[['go mod init x','Create a module and go.mod'],['go mod tidy','Add missing and drop unused dependencies'],['go run .','Compile and run in one step'],['go build -o app','Produce a single binary'],['go test ./...','Run every test in the module'],['go test -race -bench .','Race detector plus benchmarks'],['go vet ./...','Catch suspicious code'],['gofmt -w .','Format all files'],['GOOS=linux GOARCH=arm64 go build','Cross compile']];
+  var t=h('table',{class:'cmd'});cmds.forEach(function(c){var b=h('button',{class:'btn',text:'copy',onclick:function(e){var el=e.target;try{navigator.clipboard.writeText(c[0]).then(function(){el.textContent='copied'},function(){el.textContent='select it'})}catch(x){el.textContent='select it'}setTimeout(function(){el.textContent='copy'},1200)}});
+    t.appendChild(h('tr',{},[h('td',{text:c[0]}),h('td',{text:c[1]}),h('td',{},[b])]))});
+  r.appendChild(h('div',{class:'scroll'},[t]));},
+quiz:{q:'Which command finds data races?',o:['go vet','go test -race','go fmt','go mod tidy'],a:1,why:'-race instruments memory access and reports unsynchronized reads and writes while tests run.'}});
+
+/* ---------- app ---------- */
+var done={};try{done=JSON.parse(localStorage.getItem('gov')||'{}')}catch(e){}
+function save(){try{localStorage.setItem('gov',JSON.stringify(done))}catch(e){}}
+var rail=document.getElementById('rail'),main=document.getElementById('main'),cleanup=null;
+function prog(){var n=L.filter(function(l){return done[l.id]}).length;document.getElementById('progtxt').textContent=n+' of '+L.length+' lessons';document.getElementById('progbar').style.width=(n/L.length*100)+'%'}
+function buildRail(){rail.innerHTML='';var g='';L.forEach(function(l){if(l.group!==g){g=l.group;rail.appendChild(h('h4',{text:g}))}
+  rail.appendChild(h('a',{href:'#'+l.id,'data-id':l.id,class:done[l.id]?'done':''},[h('span',{class:'dot'}),l.title]))})}
+function show(){var id=(location.hash||'').slice(1),i=L.findIndex(function(l){return l.id===id});if(i<0)i=0;var l=L[i];
+  if(cleanup){cleanup();cleanup=null}
+  rail.querySelectorAll('a').forEach(function(a){if(a.dataset.id===l.id)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});
+  main.innerHTML='';
+  main.appendChild(h('div',{class:'lesson-head'},[h('div',{class:'kicker',text:l.group+' · '+(i+1)+' / '+L.length}),h('h1',{text:l.title}),h('p',{text:l.tagline})]));
+  var cp=h('div',{class:'panel codep'},[h('div',{class:'ph',text:'main.go'}),h('pre',{class:'code',html:hl(l.code)})]);
+  var dp=h('div',{class:'panel'},[h('div',{class:'ph'},[h('span',{text:'Try it'}),h('span',{class:'tag',text:'interactive'})])]);var db=h('div',{class:'pb'});dp.appendChild(db);
+  main.appendChild(h('div',{class:'two'},[cp,dp]));
+  var c=l.demo(db);if(typeof c==='function')cleanup=c;
+  var pts=h('div',{class:'points'});l.points.forEach(function(p){pts.appendChild(h('div',{class:'pt'},[h('b',{text:p[0]}),p[1]]))});main.appendChild(pts);
+  var q=l.quiz,why=h('div',{class:'why',hidden:true}),opts=h('div',{class:'opts'}),answered=false;
+  q.o.forEach(function(o,k){var b=h('button',{class:'opt',text:o,onclick:function(){if(answered)return;answered=true;
+    opts.querySelectorAll('.opt').forEach(function(x,j){if(j===q.a)x.classList.add('right');else if(j===k)x.classList.add('wrong')});
+    why.hidden=false;why.textContent=(k===q.a?'Correct. ':'Not quite. ')+q.why;
+    if(k===q.a){done[l.id]=1;save();var a=rail.querySelector('[data-id="'+l.id+'"]');if(a)a.classList.add('done');prog()}}});opts.appendChild(b)});
+  main.appendChild(h('div',{class:'panel quiz'},[h('div',{class:'ph',text:'Check yourself'}),h('div',{class:'pb'},[h('pre',{class:'code',style:'border-radius:8px',html:hl(q.q)}),opts,why])]));
+  var pr=L[i-1],nx=L[i+1];
+  main.appendChild(h('div',{class:'pager'},[pr?h('a',{class:'btn',href:'#'+pr.id,text:'← '+pr.title,style:'text-decoration:none'}):h('span'),nx?h('a',{class:'btn pri',href:'#'+nx.id,text:nx.title+' →',style:'text-decoration:none'}):h('span')]));
+  window.scrollTo(0,0);}
+buildRail();prog();window.addEventListener('hashchange',show);show();
+})();
+</script>
+
+</body>
+</html>

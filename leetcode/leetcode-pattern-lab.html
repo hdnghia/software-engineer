@@ -1,0 +1,1775 @@
+<title>LeetCode Pattern Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: topic bar on top, a sticky problem index on the left, and a lab bench (live walkthrough + code) on the right */
+:root{
+  --bg:#F3F5F8; --panel:#FFFFFF; --ink:#141B26; --muted:#5A6577; --line:#D9E0E8; --soft:#EBEFF4;
+  --accent:#2B59D1; --accent-soft:#E4EAFB; --accent-ink:#FFFFFF;
+  --easy:#1D8657; --med:#A2670A; --hard:#C23550;
+  --cur-bg:#FFE2A0; --cur-line:#D99A16; --ok-bg:#CDEFD9; --ok-line:#2E9B62;
+  --bad-bg:#F9D3DA; --bad-line:#D04563; --win-bg:#DCE6FD; --win-line:#5A80E0;
+  --water:#8DB6EE; --cell:#FFFFFF; --cell-line:#C5CFDB; --barfill:#D3DBE6;
+  --i0:#BDE6DD; --i1:#E2D3F6; --i2:#FADDBE; --i3:#F5CDE1;
+  --code-bg:#111925; --code-fg:#DCE3EE; --code-kw:#93B3FF; --code-cm:#7F8DA3; --code-on:#25324A; --code-num:#56647A;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E131A; --panel:#151C26; --ink:#E5EAF1; --muted:#97A3B5; --line:#273243; --soft:#1C2533;
+  --accent:#7FA3FF; --accent-soft:#1D2A46; --accent-ink:#0E131A;
+  --easy:#4FC78C; --med:#E5B24E; --hard:#F27D93;
+  --cur-bg:#5A4414; --cur-line:#E5B24E; --ok-bg:#174A32; --ok-line:#4FC78C;
+  --bad-bg:#57202D; --bad-line:#F27D93; --win-bg:#203362; --win-line:#7FA3FF;
+  --water:#2F5D9C; --cell:#1A2330; --cell-line:#3A4860; --barfill:#2E3A4D;
+  --i0:#1D4C45; --i1:#3E305C; --i2:#5B4224; --i3:#58293F;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E131A; --panel:#151C26; --ink:#E5EAF1; --muted:#97A3B5; --line:#273243; --soft:#1C2533;
+  --accent:#7FA3FF; --accent-soft:#1D2A46; --accent-ink:#0E131A;
+  --easy:#4FC78C; --med:#E5B24E; --hard:#F27D93;
+  --cur-bg:#5A4414; --cur-line:#E5B24E; --ok-bg:#174A32; --ok-line:#4FC78C;
+  --bad-bg:#57202D; --bad-line:#F27D93; --win-bg:#203362; --win-line:#7FA3FF;
+  --water:#2F5D9C; --cell:#1A2330; --cell-line:#3A4860; --barfill:#2E3A4D;
+  --i0:#1D4C45; --i1:#3E305C; --i2:#5B4224; --i3:#58293F;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:18px 40px;align-items:flex-end;justify-content:space-between;padding-block:26px 20px}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,3.4vw,40px);letter-spacing:-.025em;line-height:1;margin:0;text-wrap:balance}
+.brand h1 b{color:var(--accent);font-weight:800}
+.brand p{margin:8px 0 0;color:var(--muted);max-width:62ch}
+.stats{display:grid;gap:8px;min-width:min(100%,300px)}
+.stats .big{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.stats .big strong{font:800 26px/1 var(--f-display)}
+.stats .big span{color:var(--muted);font-size:13px}
+.meter{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.dcounts{display:flex;gap:14px;font:12px var(--f-mono);color:var(--muted)}
+.dcounts b{font-weight:600}
+.dcounts .dE b{color:var(--easy)} .dcounts .dM b{color:var(--med)} .dcounts .dH b{color:var(--hard)}
+
+/* topic bar */
+.topics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.tchip{font-weight:600;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.tchip:hover{border-color:var(--accent)}
+.tchip span{font:12px var(--f-mono);color:var(--muted)}
+.tchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tchip.on span{color:inherit;opacity:.7}
+
+/* layout */
+.layout{display:grid;grid-template-columns:minmax(290px,350px) minmax(0,1fr);gap:24px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100dvh - 24px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.filters{padding:14px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.search{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.seg{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg .count{margin-left:auto;font:12px var(--f-mono);color:var(--muted)}
+#plist{overflow:auto;flex:1;min-height:0}
+.lhead{position:sticky;top:0;z-index:1;background:var(--panel);padding:12px 14px 7px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+.prow{display:grid;grid-template-columns:44px minmax(0,1fr) 16px 16px;gap:8px;align-items:center;width:100%;text-align:left;padding:8px 14px;border:0;border-bottom:1px solid var(--soft);background:none;cursor:pointer;font-size:14px}
+.prow:hover{background:var(--soft)}
+.prow.sel{background:var(--accent-soft)}
+.pn{font:12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.pt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd{font:700 11px var(--f-mono);text-align:center}
+.dE{color:var(--easy)} .dM{color:var(--med)} .dH{color:var(--hard)}
+.pc{color:var(--easy);font-weight:700;text-align:center}
+.none{padding:24px 16px;color:var(--muted)}
+
+/* detail */
+.detail{display:grid;gap:18px;min-width:0}
+.dhead{display:grid;gap:8px}
+.dmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dnum{font:600 14px var(--f-mono);color:var(--muted)}
+.pill{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;border:1px solid currentColor}
+.pill.plain{color:var(--muted)}
+.dhead h2{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.02em;line-height:1.1;margin:0;text-wrap:balance}
+.dactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ctl{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;padding:8px 13px;border:1px solid var(--line);background:var(--panel);border-radius:8px;cursor:pointer;text-decoration:none;color:var(--ink)}
+.ctl:hover:not(:disabled){border-color:var(--accent)}
+.ctl:disabled{opacity:.4;cursor:default}
+.ctl.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ctl.done{background:var(--ok-bg);border-color:var(--ok-line)}
+.facts{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:stretch}
+.insight{background:var(--accent-soft);border-radius:12px;padding:16px 20px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.insight p{margin:6px 0 0;font-size:17px;line-height:1.5;max-width:70ch}
+.cx{display:grid;grid-auto-flow:row;gap:10px;margin:0;align-content:center;padding:12px 18px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:200px}
+.cx div{display:flex;justify-content:space-between;gap:16px}
+.cx dt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.cx dd{margin:0;font:600 13px var(--f-mono);text-align:right}
+
+.bench{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1320px){.bench{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.lab{padding:18px 20px;display:grid;gap:14px;min-width:0}
+.labhead h3{margin:0;font:800 19px/1.2 var(--f-display);letter-spacing:-.01em}
+.note{margin:4px 0 0;color:var(--muted);font-size:13.5px;max-width:70ch}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.stage{display:grid;gap:12px;min-height:200px;align-content:start;padding:14px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+.blk{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.blabel{font:600 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;overflow-wrap:anywhere}
+.bbody{min-width:0;overflow-x:auto}
+.empty{font:12px var(--f-mono);color:var(--muted);font-style:italic}
+@media (max-width:560px){.blk{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+/* shared state colors */
+.cell,.lnode,.kv,.sitem,.tch,.grid td,.bar{transition:background-color .18s,border-color .18s}
+.cur{--c-bg:var(--cur-bg);--c-line:var(--cur-line)}
+.ok{--c-bg:var(--ok-bg);--c-line:var(--ok-line)}
+.bad{--c-bg:var(--bad-bg);--c-line:var(--bad-line)}
+.win{--c-bg:var(--win-bg);--c-line:var(--win-line)}
+.i0{--c-bg:var(--i0)} .i1{--c-bg:var(--i1)} .i2{--c-bg:var(--i2)} .i3{--c-bg:var(--i3)}
+.dim{opacity:.32}
+
+.arr{display:flex;gap:4px}
+.ac{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ptr{height:15px;font:600 11px/15px var(--f-mono);color:var(--accent);white-space:nowrap}
+.cell{min-width:38px;height:38px;padding:0 7px;display:grid;place-items:center;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));border-radius:6px;font:600 14px var(--f-mono);white-space:nowrap}
+.idx{font:11px var(--f-mono);color:var(--muted)}
+.bars{display:flex;gap:4px;align-items:flex-end}
+.bc{display:flex;flex-direction:column;align-items:center;gap:3px;width:30px;flex:none}
+.bw{height:118px;width:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.bar{width:100%;background:var(--c-bg,var(--barfill));border:1.5px solid var(--c-line,var(--cell-line));border-bottom:0;border-radius:4px 4px 0 0}
+.water{width:100%;background:var(--water);border-radius:2px 2px 0 0;opacity:.85}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.kv{display:inline-flex;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));border-radius:6px;overflow:hidden;font:13px var(--f-mono)}
+.kv .k{padding:4px 8px;font-weight:600}
+.kv .v{padding:4px 8px;border-left:1px solid var(--cell-line);color:var(--muted)}
+.stack{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.sitem{padding:6px 9px;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));border-radius:6px;font:600 13px var(--f-mono);white-space:nowrap}
+.send{font:11px var(--f-mono);color:var(--muted);padding:0 4px}
+.vars{display:flex;flex-wrap:wrap;gap:8px}
+.var{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;font:13px var(--f-mono);background:var(--panel)}
+.vk{padding:3px 8px;background:var(--soft);color:var(--muted)}
+.vv{padding:3px 8px;font-weight:600}
+.grid{border-collapse:separate;border-spacing:3px}
+.grid td{width:40px;height:38px;text-align:center;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));border-radius:5px;font:600 13px var(--f-mono);padding:0 4px}
+.grid th{font:600 12px var(--f-mono);color:var(--muted);padding:0 4px}
+.llist{display:flex;align-items:flex-end}
+.lc{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none}
+.lnode{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));font:600 14px var(--f-mono)}
+.lnull{width:30px;height:40px;display:grid;place-items:center;color:var(--muted);font:14px var(--f-mono)}
+.conn{height:40px;min-width:26px;display:grid;place-items:center;color:var(--muted);font-size:18px;flex:none;padding:0 2px}
+.conn.cut{color:var(--bad-line);font-size:11px}
+.conn.loop{font:600 12px var(--f-mono);color:var(--accent)}
+.trie{font-family:var(--f-mono);font-size:13px}
+.trow{display:flex;align-items:center;gap:6px;min-height:30px}
+.tbr{color:var(--muted)}
+.tch{min-width:28px;height:26px;padding:0 6px;display:grid;place-items:center;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell));border-radius:6px;font-weight:600}
+.tend{color:var(--ok-line);font-size:12px}
+.svgwrap{overflow-x:auto}
+.svgwrap svg{display:block;height:auto}
+.edge{stroke:var(--cell-line);stroke-width:1.5}
+.tn rect,.gn circle{fill:var(--c-bg,var(--cell));stroke:var(--c-line,var(--cell-line));stroke-width:1.5}
+.tn text,.gn text{fill:var(--ink);font:600 13px var(--f-mono);text-anchor:middle}
+.ann,.ga{fill:var(--accent);font:600 11px var(--f-mono);text-anchor:middle}
+.ge{stroke:var(--cell-line);stroke-width:2}
+.ge.on{stroke:var(--accent);stroke-width:3}
+.ge.bad{stroke:var(--bad-line);stroke-dasharray:5 4;stroke-width:2.5}
+.gw{fill:var(--muted);font:600 12px var(--f-mono);text-anchor:middle}
+.ahp{fill:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;border:1.5px solid var(--c-line,var(--cell-line));background:var(--c-bg,var(--cell))}
+.legend i.dim{opacity:.35}
+.msg{background:var(--accent-soft);border-radius:8px;padding:12px 16px;min-height:3.4em}
+.msg .stepno{display:block;font:600 11px var(--f-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.msg p{margin:0;font-size:15.5px}
+.controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.controls .spacer{flex:1}
+.controls label{font-size:12px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.controls select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.track{height:4px;background:var(--soft);border-radius:2px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--accent);width:0;transition:width .15s}
+.kbd{font:11px var(--f-mono);color:var(--muted)}
+
+.codecol{background:var(--code-bg);color:var(--code-fg);min-width:0;display:flex;flex-direction:column}
+.codehead{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #22304a;font-size:12px;color:var(--code-cm);font-family:var(--f-mono)}
+.code{font:13px/1.7 var(--f-mono);padding:12px 0 16px;overflow-x:auto;margin:0}
+.cl{display:flex;padding-right:16px;white-space:pre;min-width:max-content}
+.cl .ln{width:38px;flex:none;text-align:right;padding-right:14px;color:var(--code-num);user-select:none}
+.cl.on{background:var(--code-on);box-shadow:inset 3px 0 0 var(--cur-line)}
+.cl.on .ln{color:var(--code-fg)}
+.kw{color:var(--code-kw)} .cm{color:var(--code-cm);font-style:italic}
+
+.more{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:1000px){.more{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+.panel h4{margin:0 0 10px;font:800 16px var(--f-display)}
+.panel p{margin:0 0 10px;max-width:68ch}
+.sims{display:flex;flex-wrap:wrap;gap:6px}
+.sim{font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;text-align:left}
+.sim:hover{border-color:var(--accent)}
+.sim b{font:600 12px var(--f-mono);color:var(--muted);margin-right:4px}
+.signals{margin:0;padding-left:18px;display:grid;gap:4px}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;max-height:430px}
+  .facts{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>LeetCode <b>Pattern</b> Lab</h1>
+      <p>200 problems across 12 patterns. Pick a problem, read the one-line insight, then step through the pattern running on a real input while the matching line of code lights up.</p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="big"><strong id="stat-solved">0 / 200</strong><span>marked solved on this device</span></div>
+      <div class="meter"><i id="stat-bar"></i></div>
+      <div class="dcounts"><span class="dE">Easy <b id="stat-E"></b></span><span class="dM">Medium <b id="stat-M"></b></span><span class="dH">Hard <b id="stat-H"></b></span></div>
+    </div>
+  </header>
+
+  <nav class="topics" id="topics" aria-label="Topics"></nav>
+
+  <div class="layout">
+    <aside class="side" aria-label="Problem list">
+      <div class="filters">
+        <input id="q" class="search" type="search" placeholder="Search by name or number" autocomplete="off">
+        <div class="seg" id="diffs">
+          <button data-diff="all" class="on">All</button>
+          <button data-diff="E">Easy</button>
+          <button data-diff="M">Medium</button>
+          <button data-diff="H">Hard</button>
+          <span class="count" id="lcount"></span>
+        </div>
+      </div>
+      <div id="plist"></div>
+    </aside>
+
+    <main class="detail" id="detail">
+      <section class="dhead">
+        <div class="dmeta"><span class="dnum" id="d-num"></span><span class="pill" id="d-diff"></span><span class="pill plain" id="d-topic"></span></div>
+        <h2 id="d-title"></h2>
+        <div class="dactions">
+          <button class="ctl" id="d-solve" type="button"></button>
+          <a class="ctl" id="d-link" href="https://leetcode.com/problemset/" target="_blank" rel="noopener">Open on LeetCode ↗</a>
+        </div>
+      </section>
+
+      <section class="facts">
+        <div class="insight"><div class="eyebrow">Key insight</div><p id="d-insight"></p></div>
+        <dl class="cx">
+          <div><dt>Time</dt><dd id="d-time"></dd></div>
+          <div><dt>Space</dt><dd id="d-space"></dd></div>
+          <div><dt>Pattern</dt><dd id="d-pattern"></dd></div>
+        </dl>
+      </section>
+
+      <section class="bench" aria-label="Walkthrough">
+        <div class="lab">
+          <div class="labhead">
+            <div class="eyebrow">Walkthrough</div>
+            <h3 id="w-title"></h3>
+            <p class="note" id="w-note"></p>
+          </div>
+          <div class="stage" id="stage"></div>
+          <div class="legend">
+            <span><i class="cur"></i>current</span>
+            <span><i class="win"></i>in window / being compared</span>
+            <span><i class="ok"></i>done / answer</span>
+            <span><i class="bad"></i>rejected / removed</span>
+            <span><i class="dim"></i>ruled out</span>
+          </div>
+          <div class="msg" aria-live="polite"><span class="stepno" id="step"></span><p id="msg"></p></div>
+          <div class="track"><i id="trackbar"></i></div>
+          <div class="controls">
+            <button class="ctl" id="b-first" type="button" aria-label="First step">⏮</button>
+            <button class="ctl" id="b-prev" type="button">◀ Back</button>
+            <button class="ctl primary" id="b-play" type="button">▶ Play</button>
+            <button class="ctl" id="b-next" type="button">Next ▶</button>
+            <button class="ctl" id="b-last" type="button" aria-label="Last step">⏭</button>
+            <span class="spacer"></span>
+            <label for="speed">Speed
+              <select id="speed"><option value="1600">Slow</option><option value="950" selected>Normal</option><option value="450">Fast</option></select>
+            </label>
+          </div>
+          <div class="kbd">Keys: ← → step · Space play/pause</div>
+        </div>
+        <div class="codecol">
+          <div class="codehead"><span id="c-name">solution.py</span><span>Python</span></div>
+          <pre class="code" id="code"></pre>
+        </div>
+      </section>
+
+      <section class="more">
+        <div class="panel">
+          <h4>Same pattern, other problems</h4>
+          <div class="sims" id="sims"></div>
+        </div>
+        <div class="panel">
+          <h4 id="pr-title"></h4>
+          <p id="pr-when"></p>
+          <ul class="signals" id="pr-signals"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+/* ============ data: 12 topics, 200 problems ============
+   num | title | difficulty | walkthrough engine | key insight | time | space */
+const TOPICS = [
+{key:'arrays',name:'Arrays & Hashing',
+ when:'Reach for a hash map or set when you need fast lookups, counts, or to remember what you have already seen. Prefix sums turn subarray-sum questions into lookups.',
+ signals:['"Have I seen this before?" or duplicates','Pairs that add up to a target','Group or count things by a key','Sum of a contiguous subarray'],
+ data:`
+217|Contains Duplicate|E|hash_set|Keep a set of values seen so far. Meeting one again means there is a duplicate.|O(n)|O(n)
+242|Valid Anagram|E|hash_count|Count letters up for s and down for t. Every count must end at 0.|O(n)|O(1)
+1|Two Sum|E|hash_twosum|For each x, ask whether target − x is already in a value → index map.|O(n)|O(n)
+49|Group Anagrams|M|hash_count|Anagrams share a signature: the sorted word, or a 26-letter count tuple. Group words by it in a map.|O(n·k)|O(n·k)
+347|Top K Frequent Elements|M|hash_count|Count with a map, then drop numbers into buckets indexed by frequency and read from the top bucket down.|O(n)|O(n)
+238|Product of Array Except Self|M|prefix_prod|Each answer is (product of everything left) × (product of everything right). Two passes, no division.|O(n)|O(1)
+36|Valid Sudoku|M|hash_set|One set per row, per column and per 3×3 box. The box for (r, c) is (r // 3, c // 3).|O(1)|O(1)
+128|Longest Consecutive Sequence|M|consec|Only count a run from x when x − 1 is missing, so each number is walked once.|O(n)|O(n)
+560|Subarray Sum Equals K|M|prefix_sum|sum(i..j) = P[j] − P[i−1]. Count earlier prefix sums equal to prefix − k.|O(n)|O(n)
+169|Majority Element|E|hash_count|A count map works. Boyer–Moore needs O(1) space: same value +1, different −1, pick a new candidate at 0.|O(n)|O(1)
+205|Isomorphic Strings|E|hash_count|Map s → t and t → s at the same time. A conflict in either direction fails.|O(n)|O(1)
+383|Ransom Note|E|hash_count|Count the magazine's letters, then spend them on the note. Any count below 0 fails.|O(n)|O(1)
+290|Word Pattern|E|hash_count|Two maps (letter → word and word → letter) must stay consistent, exactly like Isomorphic Strings.|O(n)|O(n)
+448|Find All Numbers Disappeared in an Array|E|hash_set|Use the array as its own set: for each x, make index abs(x) − 1 negative. Indexes still positive are missing.|O(n)|O(1)
+41|First Missing Positive|H|hash_set|Value v belongs at index v − 1. Swap each value into place; the first slot holding the wrong value gives the answer.|O(n)|O(1)
+724|Find Pivot Index|E|prefix_sum|Index i is the pivot when leftSum equals total − leftSum − nums[i].|O(n)|O(1)
+303|Range Sum Query - Immutable|E|prefix_sum|Precompute P with P[0] = 0. Then sumRange(l, r) = P[r+1] − P[l].|O(1) per query|O(n)
+525|Contiguous Array|M|prefix_sum|Treat 0 as −1. Two equal prefix sums enclose a balanced subarray, so store each sum's first index.|O(n)|O(n)
+974|Subarray Sums Divisible by K|M|prefix_sum|Two prefixes with the same remainder mod k enclose a divisible subarray. Count remainders.|O(n)|O(k)
+380|Insert Delete GetRandom O(1)|M|hash_set|An array for random picks plus a map value → index. Delete by swapping with the last element, then pop.|O(1)|O(n)
+554|Brick Wall|M|hash_count|Count how many rows have an edge at each position. Cut where the most edges line up.|O(bricks)|O(width)
+53|Maximum Subarray|M|kadane|Kadane: at each x, either extend the running sum or restart at x. Track the best sum seen.|O(n)|O(1)`},
+{key:'twoptr',name:'Two Pointers',
+ when:'Use two indexes that move toward each other or at different speeds. Works when the input is sorted, when you compare from both ends, or when you compact an array in place.',
+ signals:['Sorted array plus a pair or triple sum','Palindromes','Remove or partition in place','O(1) extra space required'],
+ data:`
+125|Valid Palindrome|E|tp_palin|Skip non-alphanumerics and compare lowercase characters from both ends moving inward.|O(n)|O(1)
+167|Two Sum II - Input Array Is Sorted|M|tp_sorted|Sum too small: move left up. Too big: move right down. Sorted order makes each move safe.|O(n)|O(1)
+15|3Sum|M|tp_sorted|Sort. Fix nums[i], then run Two Sum II on the rest for −nums[i]. Skip equal neighbors to avoid duplicates.|O(n²)|O(1)
+11|Container With Most Water|M|tp_container|Start with the widest pair. Always move the shorter wall, because keeping it can never give more area.|O(n)|O(1)
+42|Trapping Rain Water|H|tp_trap|Water at i = min(maxLeft, maxRight) − h[i]. Advance the side with the smaller max, since that max is the limit.|O(n)|O(1)
+26|Remove Duplicates from Sorted Array|E|tp_write|A write pointer keeps the unique prefix. Copy nums[r] only when it differs from the last written value.|O(n)|O(1)
+27|Remove Element|E|tp_write|Read every element and write it forward only if it is not val.|O(n)|O(1)
+283|Move Zeroes|E|tp_write|Swap each non-zero into the write slot. Zeros drift to the end and the order of the rest is kept.|O(n)|O(1)
+88|Merge Sorted Array|E|tp_write|Fill nums1 from the back with the larger of the two tails, so nothing gets overwritten.|O(m+n)|O(1)
+344|Reverse String|E|tp_palin|Swap s[l] and s[r], then move both inward until they meet.|O(n)|O(1)
+977|Squares of a Sorted Array|E|tp_sorted|The largest square is at one of the two ends. Compare the ends and fill the result from the back.|O(n)|O(n)
+16|3Sum Closest|M|tp_sorted|Same scan as 3Sum, but keep the sum closest to target instead of collecting exact matches.|O(n²)|O(1)
+18|4Sum|M|tp_sorted|Two nested fixed indexes, then the two-pointer scan. Skip duplicates at every level.|O(n³)|O(1)
+75|Sort Colors|M|tp_write|Dutch flag with three pointers: 0s go before low, 2s go after high, 1s stay in the middle.|O(n)|O(1)`},
+{key:'stack',name:'Stack',
+ when:'Use a stack when the most recent unfinished item must be dealt with first. A monotonic stack answers "next greater / smaller" questions in one pass.',
+ signals:['Matching brackets or nested structure','Next greater or smaller element','Evaluating expressions','Undo or backtrack to the last state'],
+ data:`
+20|Valid Parentheses|E|stk_paren|Push openers. A closer must match the top of the stack. The stack must end empty.|O(n)|O(n)
+155|Min Stack|M|stk_paren|Push (value, current min) pairs, so every level of the stack knows its own minimum.|O(1)|O(n)
+150|Evaluate Reverse Polish Notation|M|stk_rpn|Numbers go on the stack. An operator pops two, applies itself, and pushes the result.|O(n)|O(n)
+22|Generate Parentheses|M|bt_subsets|Build strings left to right. Add '(' while open < n; add ')' while close < open.|O(4ⁿ/√n)|O(n)
+739|Daily Temperatures|M|stk_mono|Keep a decreasing stack of days still waiting. A warmer day pops and answers every colder day on top.|O(n)|O(n)
+853|Car Fleet|M|stk_mono|Sort by position, closest to the target first. A car that would arrive no later than the fleet ahead joins it.|O(n log n)|O(n)
+84|Largest Rectangle in Histogram|H|stk_mono|Keep an increasing stack. When a shorter bar arrives, each popped bar knows its right edge; the new top is its left edge.|O(n)|O(n)
+496|Next Greater Element I|E|stk_mono|Run a decreasing stack over nums2 and store each next-greater value in a map, then look up nums1.|O(n)|O(n)
+503|Next Greater Element II|M|stk_mono|The array is circular, so loop 2n times using i % n. Push indexes only during the first pass.|O(n)|O(n)
+232|Implement Queue using Stacks|E|stk_paren|Push onto an in-stack. To pop, refill the out-stack only when it is empty. Each item moves once.|O(1) amortized|O(n)
+71|Simplify Path|M|stk_rpn|Split on '/'. '..' pops, '.' and empty parts are ignored, names are pushed.|O(n)|O(n)
+394|Decode String|M|stk_rpn|On '[' push (current string, count). On ']' pop and set string = previous + count × current.|O(output)|O(n)
+735|Asteroid Collision|M|stk_mono|The stack holds survivors. A left-moving asteroid fights right-moving tops until it is destroyed or none remain.|O(n)|O(n)`},
+{key:'bsearch',name:'Binary Search',
+ when:'Use binary search when the search space is sorted, or when the answer is monotonic: once a value works, every larger (or smaller) value also works.',
+ signals:['Sorted input and O(log n) required','Smallest speed / capacity / size that works','Rotated sorted arrays','First or last position of a value'],
+ data:`
+704|Binary Search|E|bs_classic|Keep [lo, hi] as the only place the target can be, and halve it every step.|O(log n)|O(1)
+74|Search a 2D Matrix|M|bs_classic|Treat the matrix as one sorted array: index k is row k // cols, column k % cols.|O(log mn)|O(1)
+875|Koko Eating Bananas|M|bs_answer|Search over speeds. If speed k finishes in time, every faster speed does too, so find the first one that works.|O(n log m)|O(1)
+153|Find Minimum in Rotated Sorted Array|M|bs_rot|Compare mid with hi. nums[mid] > nums[hi] means the drop (and the minimum) is to the right.|O(log n)|O(1)
+33|Search in Rotated Sorted Array|M|bs_rot|One half around mid is always sorted. Check whether the target lies in that half; otherwise search the other half.|O(log n)|O(1)
+981|Time Based Key-Value Store|M|bs_classic|Values for each key arrive in time order, so binary search for the last timestamp ≤ t.|O(log n)|O(n)
+4|Median of Two Sorted Arrays|H|bs_classic|Binary search a cut in the smaller array so both left parts hold half the elements and every left value ≤ every right value.|O(log min(m,n))|O(1)
+35|Search Insert Position|E|bs_classic|Lower bound: when the loop ends, lo is the first index with nums[lo] ≥ target.|O(log n)|O(1)
+278|First Bad Version|E|bs_classic|Versions run good…good, bad…bad. Converge lo and hi on the first bad one.|O(log n)|O(1)
+69|Sqrt(x)|E|bs_answer|Find the largest m with m·m ≤ x. Candidates are monotonic, so binary search them.|O(log x)|O(1)
+34|Find First and Last Position of Element in Sorted Array|M|bs_classic|Run lower bound twice: once for target and once for target + 1. The range is [first, second − 1].|O(log n)|O(1)
+162|Find Peak Element|M|bs_classic|If nums[mid] < nums[mid+1], a peak exists to the right; otherwise it is at mid or to the left.|O(log n)|O(1)
+1011|Capacity To Ship Packages Within D Days|M|bs_answer|Search capacities between max(weight) and sum(weights). Simulate greedily to count the days each needs.|O(n log s)|O(1)
+410|Split Array Largest Sum|H|bs_answer|Same shape as shipping packages: guess the largest allowed sum and count how many pieces it forces.|O(n log s)|O(1)
+374|Guess Number Higher or Lower|E|bs_classic|The guess() result tells you which half to keep.|O(log n)|O(1)`},
+{key:'window',name:'Sliding Window',
+ when:'Use a window [L, R] over a contiguous range. Grow R to include more, shrink L when the window breaks a rule. Each index enters and leaves once, so it is O(n).',
+ signals:['Longest or shortest substring / subarray with a rule','Fixed-size window statistics','"At most k" distinct values or changes','Contiguous range only'],
+ data:`
+121|Best Time to Buy and Sell Stock|E|sw_stock|Track the cheapest price so far. Each day, selling today earns price − cheapest.|O(n)|O(1)
+3|Longest Substring Without Repeating Characters|M|sw_var|Expand right. When a letter repeats inside the window, jump the left edge past its last position.|O(n)|O(k)
+424|Longest Repeating Character Replacement|M|sw_var|The window is valid while length − (count of its most common letter) ≤ k. Shrink when it is not.|O(n)|O(26)
+567|Permutation in String|M|sw_fixed|Slide a window of len(s1) over s2 and compare its 26-letter counts with those of s1.|O(n)|O(26)
+76|Minimum Window Substring|H|sw_minsum|Expand until the window covers every needed letter, then shrink from the left while it still does.|O(n)|O(k)
+239|Sliding Window Maximum|H|sw_fixed|Keep a deque of indexes with decreasing values. The front is the window max; drop it when it leaves.|O(n)|O(k)
+643|Maximum Average Subarray I|E|sw_fixed|Fixed window of size k: add the element entering, subtract the one leaving.|O(n)|O(1)
+209|Minimum Size Subarray Sum|M|sw_minsum|Grow until sum ≥ target, then shrink from the left while it still holds, recording each length.|O(n)|O(1)
+1004|Max Consecutive Ones III|M|sw_var|The window may contain at most k zeros. Shrink from the left when it has more.|O(n)|O(1)
+904|Fruit Into Baskets|M|sw_var|Longest window with at most 2 distinct values. Count values in a map and shrink when there are 3.|O(n)|O(1)
+438|Find All Anagrams in a String|M|sw_fixed|Fixed window of len(p). Whenever the window counts equal p's counts, record the start.|O(n)|O(26)
+219|Contains Duplicate II|E|sw_fixed|Keep a set of the last k values. A value already in the set is a close duplicate.|O(n)|O(k)
+1838|Frequency of the Most Frequent Element|M|sw_minsum|Sort. The window is valid while nums[r] · length − sum ≤ k (the cost to raise everything to nums[r]).|O(n log n)|O(1)`},
+{key:'linked',name:'Linked List',
+ when:'Linked list problems are pointer rewiring. A dummy head removes edge cases; fast and slow pointers find middles and cycles without extra memory.',
+ signals:['Reverse all or part of a list','Find a cycle or the middle','Merge sorted lists','O(1) extra space'],
+ data:`
+206|Reverse Linked List|E|ll_reverse|Three pointers: save next, point curr back at prev, then step both forward.|O(n)|O(1)
+21|Merge Two Sorted Lists|E|ll_merge|Use a dummy head and a tail pointer. Always attach the smaller head.|O(m+n)|O(1)
+143|Reorder List|M|ll_fastslow|Find the middle with slow/fast, reverse the second half, then weave the two halves together.|O(n)|O(1)
+19|Remove Nth Node From End of List|M|ll_fastslow|Move fast n steps ahead, then move both. When fast reaches the end, slow sits just before the node to remove.|O(n)|O(1)
+138|Copy List with Random Pointer|M|ll_merge|Pass 1: map each old node to a new copy. Pass 2: wire next and random through the map.|O(n)|O(n)
+2|Add Two Numbers|M|ll_merge|Walk both lists together adding digits plus carry. Continue while either list or the carry remains.|O(max(m,n))|O(1)
+141|Linked List Cycle|E|ll_fastslow|Fast moves 2 steps, slow moves 1. If there is a loop, fast laps slow and they meet.|O(n)|O(1)
+287|Find the Duplicate Number|M|ll_fastslow|Treat i → nums[i] as a linked list. The duplicate is where its cycle starts (Floyd's algorithm).|O(n)|O(1)
+146|LRU Cache|M|ll_merge|A map from key to a node in a doubly linked list. Move used nodes to the front and evict from the back.|O(1)|O(capacity)
+23|Merge k Sorted Lists|H|heap_kth|Keep a min-heap of the k current heads. Pop the smallest, attach it, push its next.|O(N log k)|O(k)
+25|Reverse Nodes in k-Group|H|ll_reverse|Check that k nodes remain, reverse them like Reverse Linked List, then reconnect to the previous group.|O(n)|O(1)
+876|Middle of the Linked List|E|ll_fastslow|When fast reaches the end, slow is at the middle.|O(n)|O(1)
+234|Palindrome Linked List|E|ll_fastslow|Find the middle, reverse the second half, then compare the halves node by node.|O(n)|O(1)
+160|Intersection of Two Linked Lists|E|ll_fastslow|Two pointers; when one ends, restart it at the other head. Both travel a + b + c and meet at the join.|O(m+n)|O(1)
+83|Remove Duplicates from Sorted List|E|ll_merge|While curr.next has the same value, skip it with curr.next = curr.next.next.|O(n)|O(1)
+92|Reverse Linked List II|M|ll_reverse|Walk to the node before left, reverse exactly right − left + 1 nodes, then reconnect both ends.|O(n)|O(1)
+142|Linked List Cycle II|M|ll_fastslow|After slow and fast meet, restart one at the head. Moving both one step at a time, they meet at the cycle start.|O(n)|O(1)`},
+{key:'trees',name:'Trees',
+ when:'Most tree problems are DFS: solve the children, then combine at the parent. Use BFS with a queue when the question is about levels. In a BST, the ordering tells you which side to search.',
+ signals:['Depth, height, diameter or balance','Level-by-level output','BST ordering (search, validate, kth smallest)','Paths from root to leaf'],
+ data:`
+226|Invert Binary Tree|E|tree_dfs|Swap the two children of every node, recursively.|O(n)|O(h)
+104|Maximum Depth of Binary Tree|E|tree_dfs|depth(node) = 1 + max(depth(left), depth(right)). An empty tree has depth 0.|O(n)|O(h)
+543|Diameter of Binary Tree|E|tree_dfs|The longest path through a node is left height + right height. Return the height, track the best diameter.|O(n)|O(h)
+110|Balanced Binary Tree|E|tree_dfs|Return the height, or −1 as soon as any node's subtree heights differ by more than 1.|O(n)|O(h)
+100|Same Tree|E|tree_dfs|Both empty: true. One empty or values differ: false. Otherwise recurse on both sides.|O(n)|O(h)
+572|Subtree of Another Tree|E|tree_dfs|At every node of root, run Same Tree against subRoot.|O(m·n)|O(h)
+235|Lowest Common Ancestor of a Binary Search Tree|M|tree_bst|Both values smaller: go left. Both larger: go right. Otherwise this node splits them and is the LCA.|O(h)|O(1)
+102|Binary Tree Level Order Traversal|M|tree_bfs|BFS with a queue. Process len(queue) nodes at a time to collect exactly one level.|O(n)|O(n)
+199|Binary Tree Right Side View|M|tree_bfs|Level order traversal; the last node of each level is the one you see from the right.|O(n)|O(n)
+1448|Count Good Nodes in Binary Tree|M|tree_dfs|Pass down the largest value on the path so far. A node is good if it is ≥ that value.|O(n)|O(h)
+98|Validate Binary Search Tree|M|tree_bst|Pass down an allowed (low, high) range. Every node must sit strictly inside its range.|O(n)|O(h)
+230|Kth Smallest Element in a BST|M|tree_inorder|Inorder traversal of a BST visits values in sorted order. Stop at the kth visit.|O(h + k)|O(h)
+105|Construct Binary Tree from Preorder and Inorder Traversal|M|tree_dfs|preorder[0] is the root. Its position in inorder splits the left and right subtrees. Use a value → index map.|O(n)|O(n)
+124|Binary Tree Maximum Path Sum|H|tree_dfs|Each node returns its best downward path, dropping negative branches. Best path through it = val + left + right.|O(n)|O(h)
+297|Serialize and Deserialize Binary Tree|H|tree_bfs|Write values in BFS (or preorder) order with a marker for null, then read them back in the same order.|O(n)|O(n)
+94|Binary Tree Inorder Traversal|E|tree_inorder|Iterative version: push the left spine, pop and visit, then move to the right child.|O(n)|O(h)
+101|Symmetric Tree|E|tree_dfs|Compare left.left with right.right and left.right with right.left.|O(n)|O(h)
+112|Path Sum|E|tree_dfs|Subtract node values on the way down. At a leaf, check whether the remainder is 0.|O(n)|O(h)
+113|Path Sum II|M|tree_dfs|Path Sum with backtracking: append on entry, record at a matching leaf, pop on exit.|O(n²)|O(h)
+103|Binary Tree Zigzag Level Order Traversal|M|tree_bfs|Level order traversal, reversing every other level.|O(n)|O(n)
+236|Lowest Common Ancestor of a Binary Tree|M|tree_dfs|Return the node if it is p or q. If both sides return something, this node is the LCA.|O(n)|O(h)
+700|Search in a Binary Search Tree|E|tree_bst|Go left if val is smaller, right if larger. Each step discards a whole subtree.|O(h)|O(1)
+701|Insert into a Binary Search Tree|M|tree_bst|Search for val. The empty spot where the search ends is where the new node goes.|O(h)|O(1)
+637|Average of Levels in Binary Tree|E|tree_bfs|Level order traversal; average each level's values.|O(n)|O(n)`},
+{key:'tries',name:'Tries',
+ when:'A trie stores words letter by letter so words with a common prefix share nodes. Prefix queries cost O(length of the prefix), whatever the size of the dictionary.',
+ signals:['Prefix search or autocomplete','A dictionary of many words','Searching a grid for many words at once'],
+ data:`
+208|Implement Trie (Prefix Tree)|M|trie|Each node holds a map char → child and an end-of-word flag. Words with a common prefix share nodes.|O(L)|O(total chars)
+211|Design Add and Search Words Data Structure|M|trie|Same trie. On '.', try every child with DFS.|O(L) to O(26^L)|O(total chars)
+212|Word Search II|H|trie|Put all words in a trie, then DFS the board. Stop as soon as the current path is not a prefix in the trie.|O(cells·4^L)|O(total chars)
+14|Longest Common Prefix|E|trie|Walk down while the node has exactly one child and is not the end of a word. A column scan also works.|O(total chars)|O(total chars)
+648|Replace Words|M|trie|Insert the roots. For each word, walk the trie and stop at the first end-of-word node.|O(total chars)|O(total chars)
+1268|Search Suggestions System|M|trie|Walk the trie letter by letter and collect up to 3 words, in sorted order, below the current node.|O(total chars)|O(total chars)`},
+{key:'heap',name:'Heap / Priority Queue',
+ when:'A heap gives you the smallest (or largest) item of a changing collection in O(log n). A size-k heap keeps the top k items; two heaps keep a running median.',
+ signals:['k largest, k smallest, k closest','Merging k sorted sources','Running median','Always process the highest-priority item next'],
+ data:`
+703|Kth Largest Element in a Stream|E|heap_kth|Keep a min-heap of size k. Its top is the kth largest so far.|O(log k) per add|O(k)
+1046|Last Stone Weight|E|heap_kth|Use a max-heap (negate values in Python). Pop two, push the difference if it is not zero.|O(n log n)|O(n)
+973|K Closest Points to Origin|M|heap_kth|Max-heap of size k keyed on distance. Push each point; pop when the heap holds more than k.|O(n log k)|O(k)
+215|Kth Largest Element in an Array|M|heap_kth|Min-heap of size k: whatever survives is the top k, and the heap's top is the answer.|O(n log k)|O(k)
+621|Task Scheduler|M|heap_kth|Always run the most frequent available task (max-heap). Cooling tasks wait in a queue with their ready time.|O(n)|O(26)
+355|Design Twitter|M|heap_kth|Merge the followed users' recent tweets with a heap keyed on time, like Merge k Sorted Lists.|O(f log f)|O(users + tweets)
+295|Find Median from Data Stream|H|heap_median|A max-heap holds the smaller half and a min-heap the larger half. Keep their sizes balanced; the median sits at the tops.|O(log n)|O(n)
+502|IPO|H|heap_kth|Sort projects by capital. Push every affordable project's profit into a max-heap and take the best one, k times.|O(n log n)|O(n)
+767|Reorganize String|M|heap_kth|Place the most frequent letter that is not the one just placed. Use a max-heap of counts.|O(n log 26)|O(26)
+1834|Single-Threaded CPU|M|heap_kth|Sort tasks by enqueue time. Push the ones that have arrived into a heap keyed on (processing time, index).|O(n log n)|O(n)
+480|Sliding Window Median|H|heap_median|Two heaps as in Find Median, plus lazy deletion of elements that have left the window.|O(n log k)|O(k)
+451|Sort Characters By Frequency|M|heap_kth|Count letters, then pop from a max-heap of (count, letter) to build the string.|O(n log 26)|O(n)`},
+{key:'backtrack',name:'Backtracking',
+ when:'Backtracking builds a candidate one choice at a time, explores it, then undoes the choice and tries the next. Prune a branch as soon as it cannot lead to an answer.',
+ signals:['All subsets, permutations or combinations','Constraint puzzles (N-Queens, Sudoku)','Paths in a grid that spell something'],
+ data:`
+78|Subsets|M|bt_subsets|At each element, branch twice: take it or skip it. Every leaf is one subset.|O(n·2ⁿ)|O(n)
+39|Combination Sum|M|bt_comb|Pass a start index so combinations stay non-decreasing. Reuse is allowed, so recurse with i, not i + 1.|O(2^t)|O(t)
+46|Permutations|M|bt_perm|Pick any unused number for the next slot, recurse, then mark it unused again.|O(n·n!)|O(n)
+90|Subsets II|M|bt_subsets|Sort first. In the loop over choices, skip nums[i] when it equals nums[i−1] at the same level.|O(n·2ⁿ)|O(n)
+40|Combination Sum II|M|bt_comb|Sort, recurse with i + 1 (no reuse), and skip equal neighbors at the same level.|O(2ⁿ)|O(n)
+79|Word Search|M|gr_islands|DFS from each cell matching word[0]. Mark the cell used on the way in and restore it on the way out.|O(cells·3^L)|O(L)
+131|Palindrome Partitioning|M|bt_subsets|Choose the next cut: try every prefix that is a palindrome, then recurse on the rest.|O(n·2ⁿ)|O(n)
+17|Letter Combinations of a Phone Number|M|bt_perm|One level per digit, one branch per letter on that key.|O(4ⁿ·n)|O(n)
+51|N-Queens|H|bt_queens|Place one queen per row. Sets for columns, r − c diagonals and r + c diagonals make each safety check O(1).|O(n!)|O(n)
+52|N-Queens II|H|bt_queens|Same search as N-Queens; count solutions instead of building boards.|O(n!)|O(n)
+77|Combinations|M|bt_comb|Choose numbers in increasing order from start; stop when the path holds k numbers.|O(k·C(n,k))|O(k)
+47|Permutations II|M|bt_perm|Sort. Skip nums[i] if it equals nums[i−1] and nums[i−1] is unused, so equal values keep a fixed order.|O(n·n!)|O(n)
+216|Combination Sum III|M|bt_comb|Choose k numbers from 1..9 in increasing order that add up to n. Prune when the sum overshoots.|O(C(9,k))|O(k)
+93|Restore IP Addresses|M|bt_subsets|Four levels. At each, take 1–3 digits that form a valid part (0–255, no leading zero).|O(1)|O(1)
+37|Sudoku Solver|H|bt_queens|Fill the next empty cell with each digit its row, column and box allow; undo on failure.|O(9^empty)|O(81)
+698|Partition to K Equal Sum Subsets|M|bt_comb|Fill k buckets of size total / k. Sort descending to fail fast, and skip buckets with the same current sum.|O(k·2ⁿ)|O(n)`},
+{key:'graphs',name:'Graphs',
+ when:'A grid or a set of connections is a graph. Use DFS/BFS to explore, BFS for shortest paths when every edge costs 1, Dijkstra when edges have weights, topological sort for dependencies and union-find for connectivity.',
+ signals:['Islands or regions in a grid','Shortest path or fewest steps','Prerequisites and ordering','"Are these connected?" or redundant edges'],
+ data:`
+200|Number of Islands|M|gr_islands|Scan the grid. Each unvisited land cell starts a new island; flood fill it so it is counted once.|O(mn)|O(mn)
+695|Max Area of Island|M|gr_islands|Same flood fill, but return the number of cells visited and keep the max.|O(mn)|O(mn)
+133|Clone Graph|M|gr_bfs|BFS or DFS with a map old → copy. Create a copy the first time you see a node, then wire up neighbors.|O(V+E)|O(V)
+286|Walls and Gates|M|gr_rot|Multi-source BFS from every gate at once. The first time a room is reached gives its shortest distance.|O(mn)|O(mn)
+994|Rotting Oranges|M|gr_rot|Multi-source BFS from all rotten oranges. Each BFS level is one minute.|O(mn)|O(mn)
+417|Pacific Atlantic Water Flow|M|gr_islands|Reverse the flow: DFS uphill from each ocean's border. The answer is the cells reached from both.|O(mn)|O(mn)
+130|Surrounded Regions|M|gr_islands|Flood fill from border 'O's and mark them safe. Every other 'O' gets captured.|O(mn)|O(mn)
+207|Course Schedule|M|gr_topo|Kahn's algorithm. If you cannot take every course, there is a cycle.|O(V+E)|O(V+E)
+210|Course Schedule II|M|gr_topo|Same as Course Schedule; return the order in which courses leave the queue.|O(V+E)|O(V+E)
+261|Graph Valid Tree|M|gr_uf|A tree has exactly n − 1 edges and no cycle. Union-find catches the cycle.|O(E·α(n))|O(n)
+323|Number of Connected Components in an Undirected Graph|M|gr_uf|Start with n groups. Each successful union merges two groups, so subtract 1.|O(E·α(n))|O(n)
+684|Redundant Connection|M|gr_uf|Add edges one by one. The first edge whose ends already share a root is the answer.|O(E·α(n))|O(n)
+127|Word Ladder|H|gr_bfs|BFS over words, where neighbors differ by one letter. Wildcard patterns like h*t find neighbors fast.|O(n·L²)|O(n·L)
+743|Network Delay Time|M|gr_dijkstra|Dijkstra from k. The answer is the largest shortest distance, or −1 if a node is unreachable.|O(E log V)|O(V+E)
+1584|Min Cost to Connect All Points|M|gr_uf|Kruskal: sort edges by distance and union the ones that join two different groups.|O(n² log n)|O(n²)
+787|Cheapest Flights Within K Stops|M|gr_dijkstra|Bellman–Ford for k + 1 rounds, relaxing edges from a copy of the previous round's prices.|O(k·E)|O(V)
+332|Reconstruct Itinerary|H|gr_bfs|Hierholzer: DFS taking the smallest ticket first; add an airport to the route after all its tickets are used, then reverse.|O(E log E)|O(E)
+778|Swim in Rising Water|H|gr_dijkstra|Dijkstra where a path costs the highest cell on it. Always expand the lowest such cost first.|O(n² log n)|O(n²)
+269|Alien Dictionary|H|gr_topo|Compare neighboring words; the first differing letter gives an edge. Topologically sort the letters.|O(total chars)|O(26²)
+1091|Shortest Path in Binary Matrix|M|gr_rot|BFS from the top-left with 8 directions. The level that reaches the bottom-right is the answer.|O(n²)|O(n²)
+547|Number of Provinces|M|gr_uf|Union every pair of connected cities, then count the distinct roots.|O(n²·α(n))|O(n)
+785|Is Graph Bipartite?|M|gr_bfs|BFS coloring: give each neighbor the opposite color. A neighbor with the same color breaks it.|O(V+E)|O(V)`},
+{key:'dp',name:'Dynamic Programming',
+ when:'DP fits when the answer for a big input is built from answers to smaller, overlapping inputs. Define what dp[i] (or dp[i][j]) means, write how it comes from smaller cells, then fill the table in order.',
+ signals:['Count the number of ways','Minimum or maximum cost','Longest subsequence or common subsequence','Can you reach / partition / form something'],
+ data:`
+70|Climbing Stairs|E|dp_1d|To reach step i you came from i − 1 or i − 2, so ways(i) = ways(i−1) + ways(i−2).|O(n)|O(1)
+746|Min Cost Climbing Stairs|E|dp_1d|Cost to reach i = min(dp[i−1] + cost[i−1], dp[i−2] + cost[i−2]).|O(n)|O(1)
+198|House Robber|M|dp_rob|For each house: skip it (keep dp[i−1]) or rob it (dp[i−2] + its value). Take the larger.|O(n)|O(1)
+213|House Robber II|M|dp_rob|The houses form a circle, so run House Robber twice: without the first house and without the last.|O(n)|O(1)
+5|Longest Palindromic Substring|M|dp_lcs|Expand around each of the 2n − 1 centers. The table version: dp[i][j] = s[i] == s[j] and dp[i+1][j−1].|O(n²)|O(1)
+647|Palindromic Substrings|M|dp_lcs|Expand around every center and count each successful expansion.|O(n²)|O(1)
+91|Decode Ways|M|dp_1d|dp[i] = dp[i−1] if the last digit is 1–9, plus dp[i−2] if the last two digits are 10–26.|O(n)|O(1)
+322|Coin Change|M|dp_coin|dp[a] = fewest coins for amount a = min over coins c of dp[a − c] + 1.|O(amount·coins)|O(amount)
+152|Maximum Product Subarray|M|kadane|Track both the max and the min product ending here, because a negative number swaps them.|O(n)|O(1)
+139|Word Break|M|dp_1d|dp[i] is true if some word w ends at i and dp[i − len(w)] is true.|O(n·words·L)|O(n)
+300|Longest Increasing Subsequence|M|dp_lis|dp[i] = 1 + max dp[j] over j < i with nums[j] < nums[i]. Patience sorting does it in O(n log n).|O(n²)|O(n)
+416|Partition Equal Subset Sum|M|dp_coin|Can some subset reach total / 2? 0/1 knapsack over sums; loop sums downward so each number is used once.|O(n·sum)|O(sum)
+62|Unique Paths|M|dp_grid|Paths into a cell = paths from above + paths from the left.|O(mn)|O(n)
+1143|Longest Common Subsequence|M|dp_lcs|Letters match: diagonal + 1. Otherwise take the better of dropping a letter from either string.|O(mn)|O(mn)
+309|Best Time to Buy and Sell Stock with Cooldown|M|dp_rob|Three states per day: holding, just sold, resting. Each comes from yesterday's states.|O(n)|O(1)
+518|Coin Change II|M|dp_coin|Count combinations: loop coins on the outside so each combination is counted once. dp[a] += dp[a − c].|O(amount·coins)|O(amount)
+494|Target Sum|M|dp_coin|Choose which numbers are positive: sum(P) = (total + target) / 2. Count subsets reaching it (0/1 knapsack).|O(n·sum)|O(sum)
+97|Interleaving String|M|dp_lcs|dp[i][j]: can s1[:i] and s2[:j] form s3[:i+j]? Come from above if s1 supplies the letter, from the left if s2 does.|O(mn)|O(n)
+329|Longest Increasing Path in a Matrix|H|dp_grid|DFS from each cell with memo: 1 + the best neighbor with a larger value. Values strictly increase, so there are no cycles.|O(mn)|O(mn)
+115|Distinct Subsequences|H|dp_lcs|dp[i][j] = dp[i−1][j] + (dp[i−1][j−1] if s[i−1] == t[j−1] else 0).|O(mn)|O(n)
+72|Edit Distance|M|dp_lcs|Match: take the diagonal. Otherwise 1 + min(insert = left, delete = up, replace = diagonal).|O(mn)|O(mn)
+312|Burst Balloons|H|dp_lcs|Interval DP: pick the balloon burst last in (l, r). dp[l][r] = max(dp[l][k] + dp[k][r] + v[l]·v[k]·v[r]).|O(n³)|O(n²)
+10|Regular Expression Matching|H|dp_lcs|dp[i][j] for s[:i], p[:j]. A '*' either matches zero copies (dp[i][j−2]) or one more (dp[i−1][j] if the letter matches).|O(mn)|O(mn)
+64|Minimum Path Sum|M|dp_grid|dp[r][c] = grid[r][c] + min(above, left).|O(mn)|O(n)
+63|Unique Paths II|M|dp_grid|Same as Unique Paths, but obstacle cells have 0 ways.|O(mn)|O(n)
+279|Perfect Squares|M|dp_coin|Coin Change where the coins are 1, 4, 9, 16, …|O(n√n)|O(n)`}
+];
+
+/* ============ walkthrough engines ============ */
+const ENG = {};
+function def(key, name, problem, code, run){ ENG[key] = {key, name, problem, code: code.replace(/^\n/, '').replace(/\s+$/, '').split('\n'), run}; }
+const fr = (ln, msg, ...b) => ({ln, msg, b: b.flat()});
+const A = (label, v, o = {}) => ({t:'arr', label, v:[...v], ...o, hi:{...(o.hi||{})}, ptr:{...(o.ptr||{})}, fill:o.fill?[...o.fill]:null});
+const M = (label, m, hk) => ({t:'map', label, e:(m instanceof Map ? [...m.entries()] : Object.entries(m)).map(([k,v]) => [k,v]), hk});
+const S = (label, v, o = {}) => ({t:'stack', label, v:[...v], ...o});
+const V = o => ({t:'vars', label:'state', o:{...o}});
+const G = (label, g, cls, o = {}) => ({t:'grid', label, g:g.map(r => [...r]), cls:{...cls}, ...o});
+const T = (label, v, hi = {}, o = {}) => ({t:'tree', label, v:[...v], hi:{...hi}, ...o});
+const L = (label, v, o = {}) => ({t:'list', label, v:[...v], ...o, next:o.next?[...o.next]:[], hi:{...(o.hi||{})}, ptr:{...(o.ptr||{})}});
+function rangeCls(a, b, c){ const o = {}; for (let i = a; i <= b; i++) o[i] = c; return o; }
+const allCls = (n, c) => rangeCls(0, n - 1, c);
+function ptrs(...pairs){ const o = {}; pairs.forEach(([i, l]) => { if (i == null) return; o[i] = o[i] ? o[i] + '/' + l : l; }); return o; }
+const chain = n => Array.from({length:n}, (_, i) => i + 1 < n ? i + 1 : null);
+const fmt = x => x === Infinity ? '∞' : x;
+const D4 = [[1,0],[-1,0],[0,1],[0,-1]];
+
+/* ---- Arrays & Hashing ---- */
+def('hash_twosum','Complement lookup',1,`
+def twoSum(nums, target):
+    seen = {}                       # value -> index
+    for i, x in enumerate(nums):
+        need = target - x
+        if need in seen:
+            return [seen[need], i]
+        seen[x] = i`, () => {
+  const nums=[3,8,4,11,6], t=10, seen=new Map(), f=[];
+  f.push(fr(2,`Target is ${t}. Start with an empty map from value to index.`, A('nums',nums), M('seen',seen)));
+  for (let i=0;i<nums.length;i++){ const x=nums[i], need=t-x;
+    f.push(fr(4,`i = ${i}: x = ${x}. We need ${t} − ${x} = ${need}. Has it been seen?`, A('nums',nums,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'},ptr:{[i]:'i'}}), M('seen',seen), V({x,need})));
+    if (seen.has(need)){ const j=seen.get(need);
+      f.push(fr(6,`Yes. ${need} sits at index ${j}, so the answer is [${j}, ${i}]. One pass, no nested loop.`, A('nums',nums,{hi:{[i]:'ok',[j]:'ok'}}), M('seen',seen,need), V({return:`[${j}, ${i}]`}))); return f; }
+    seen.set(x,i);
+    f.push(fr(7,`No. Remember ${x} → ${i} so a later number can pair with it.`, A('nums',nums,{hi:{...rangeCls(0,i,'win')},ptr:{[i]:'i'}}), M('seen',seen,x)));
+  } return f; });
+
+def('hash_set','Seen-set scan',217,`
+def containsDuplicate(nums):
+    seen = set()
+    for x in nums:
+        if x in seen:
+            return True
+        seen.add(x)
+    return False`, () => {
+  const nums=[4,1,7,3,1,9], seen=[], f=[];
+  f.push(fr(2,'Create an empty set to remember every value we pass.', A('nums',nums), A('seen',seen,{idx:false})));
+  for (let i=0;i<nums.length;i++){ const x=nums[i];
+    f.push(fr(4,`nums[${i}] = ${x}. Is it already in the set? Set lookups are O(1).`, A('nums',nums,{hi:{[i]:'cur'},ptr:{[i]:'x'}}), A('seen',seen,{idx:false})));
+    if (seen.includes(x)){ const j=seen.indexOf(x);
+      f.push(fr(5,`Yes. ${x} was seen earlier, so there is a duplicate.`, A('nums',nums,{hi:{[i]:'bad',[nums.indexOf(x)]:'bad'}}), A('seen',seen,{idx:false,hi:{[j]:'bad'}}), V({return:'True'}))); return f; }
+    seen.push(x);
+    f.push(fr(6,`No. Add ${x} to the set and keep going.`, A('nums',nums,{hi:{[i]:'ok'}}), A('seen',seen,{idx:false,hi:{[seen.length-1]:'ok'}})));
+  } return f; });
+
+def('hash_count','Frequency count',242,`
+def isAnagram(s, t):
+    if len(s) != len(t): return False
+    count = {}
+    for c in s:
+        count[c] = count.get(c, 0) + 1
+    for c in t:
+        count[c] = count.get(c, 0) - 1
+        if count[c] < 0: return False
+    return True`, () => {
+  const s=[...'race'], t=[...'care'], cnt=new Map(), f=[];
+  f.push(fr(2,'s = "race", t = "care". Same length, so keep going.', A('s',s), A('t',t), M('count',cnt)));
+  s.forEach((c,i)=>{ cnt.set(c,(cnt.get(c)||0)+1);
+    f.push(fr(5,`s[${i}] = '${c}': count['${c}'] goes up to ${cnt.get(c)}.`, A('s',s,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'}}), A('t',t), M('count',cnt,c))); });
+  t.forEach((c,i)=>{ cnt.set(c,(cnt.get(c)||0)-1);
+    f.push(fr(7,`t[${i}] = '${c}': count['${c}'] goes down to ${cnt.get(c)}. Never below 0.`, A('s',s,{hi:allCls(s.length,'win')}), A('t',t,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'}}), M('count',cnt,c))); });
+  f.push(fr(9,'Every count is back to 0: same letters in the same amounts. It is an anagram.', A('s',s,{hi:allCls(4,'ok')}), A('t',t,{hi:allCls(4,'ok')}), M('count',cnt), V({return:'True'})));
+  return f; });
+
+def('prefix_prod','Prefix × suffix products',238,`
+def productExceptSelf(nums):
+    n = len(nums); res = [1] * n
+    left = 1
+    for i in range(n):
+        res[i] = left; left *= nums[i]      # product of everything left
+    right = 1
+    for i in range(n - 1, -1, -1):
+        res[i] *= right; right *= nums[i]   # times everything right
+    return res`, () => {
+  const nums=[1,2,3,4], n=4, res=Array(n).fill(1), f=[]; let left=1, right=1;
+  f.push(fr(3,'Pass 1 (left to right) stores the product of everything to the LEFT of each index.', A('nums',nums), A('res',res), V({left})));
+  for (let i=0;i<n;i++){ res[i]=left; const nl=left*nums[i];
+    f.push(fr(5,`res[${i}] = left = ${left}. Then left × ${nums[i]} = ${nl}.`, A('nums',nums,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'},ptr:{[i]:'i'}}), A('res',res,{hi:{[i]:'cur'}}), V({left:nl}))); left=nl; }
+  f.push(fr(6,'Pass 2 (right to left) multiplies in the product of everything to the RIGHT.', A('nums',nums), A('res',res), V({right})));
+  for (let i=n-1;i>=0;i--){ res[i]*=right; const nr=right*nums[i];
+    f.push(fr(8,`res[${i}] × right (${right}) = ${res[i]}. Then right × ${nums[i]} = ${nr}.`, A('nums',nums,{hi:{...rangeCls(i+1,n-1,'win'),[i]:'cur'},ptr:{[i]:'i'}}), A('res',res,{hi:{...rangeCls(i+1,n-1,'ok'),[i]:'ok'}}), V({right:nr}))); right=nr; }
+  f.push(fr(9,`Done: [${res}]. Each slot is left-product × right-product, with no division.`, A('nums',nums), A('res',res,{hi:allCls(n,'ok')})));
+  return f; });
+
+def('prefix_sum','Prefix sums + map',560,`
+def subarraySum(nums, k):
+    count = {0: 1}                  # prefix sum -> times seen
+    prefix = ans = 0
+    for x in nums:
+        prefix += x
+        ans += count.get(prefix - k, 0)
+        count[prefix] = count.get(prefix, 0) + 1
+    return ans`, () => {
+  const nums=[1,2,1,2,1], k=3, cnt=new Map([[0,1]]), f=[]; let p=0, ans=0;
+  f.push(fr(2,`k = ${k}. Seed the map with prefix 0 seen once (the empty prefix before index 0).`, A('nums',nums), M('count',cnt), V({prefix:p, ans})));
+  nums.forEach((x,i)=>{ p+=x; const need=p-k, got=cnt.get(need)||0; ans+=got;
+    f.push(fr(6,`prefix = ${p}. A subarray ending here sums to ${k} if an earlier prefix equals ${p} − ${k} = ${need}. Seen ${got} time(s), so ans = ${ans}.`, A('nums',nums,{hi:rangeCls(0,i,'win'),ptr:{[i]:'i'}}), M('count',cnt,got?need:undefined), V({prefix:p, need, ans})));
+    cnt.set(p,(cnt.get(p)||0)+1);
+    f.push(fr(7,`Record prefix ${p} for later indexes.`, A('nums',nums,{hi:rangeCls(0,i,'win'),ptr:{[i]:'i'}}), M('count',cnt,p), V({prefix:p, ans})));
+  });
+  f.push(fr(8,`${ans} subarrays sum to ${k}: [1,2], [2,1], [1,2], [2,1].`, A('nums',nums), M('count',cnt), V({return:ans})));
+  return f; });
+
+def('consec','Run starts in a set',128,`
+def longestConsecutive(nums):
+    s = set(nums); best = 0
+    for x in s:
+        if x - 1 in s: continue     # not the start of a run
+        y = x
+        while y + 1 in s: y += 1
+        best = max(best, y - x + 1)
+    return best`, () => {
+  const nums=[100,4,200,1,3,2], s=new Set(nums), f=[]; let best=0;
+  f.push(fr(2,'Put every number in a set so "is x + 1 here?" is O(1).', A('nums',nums), A('set',[...s],{idx:false}), V({best})));
+  nums.forEach((x,i)=>{
+    if (s.has(x-1)){ f.push(fr(4,`${x}: ${x-1} is in the set, so ${x} is in the middle of a run. Skip it.`, A('nums',nums,{hi:{[i]:'dim'},ptr:{[i]:'x'}}), V({best}))); return; }
+    let y=x; const run=[x]; while (s.has(y+1)){ y++; run.push(y); }
+    best=Math.max(best,y-x+1);
+    const hi={}; nums.forEach((v,j)=>{ if (v>=x && v<=y) hi[j]='ok'; }); hi[i]='cur';
+    f.push(fr(7,`${x} starts a run. Count up: ${run.join(' → ')} (length ${run.length}). best = ${best}.`, A('nums',nums,{hi,ptr:{[i]:'x'}}), A('run',run,{idx:false,hi:allCls(run.length,'ok')}), V({best})));
+  });
+  f.push(fr(8,`Longest run: ${best}. Every number is walked at most twice, so this is O(n).`, A('nums',nums), V({return:best})));
+  return f; });
+
+def('kadane',"Kadane's running sum",53,`
+def maxSubArray(nums):
+    cur = best = nums[0]
+    for x in nums[1:]:
+        cur = max(x, cur + x)       # extend, or restart at x
+        best = max(best, cur)
+    return best`, () => {
+  const nums=[-2,1,-3,4,-1,2,1,-5,4], f=[]; let cur=nums[0], best=cur, st=0, bs=0, be=0;
+  f.push(fr(2,`cur and best start at nums[0] = ${cur}.`, A('nums',nums,{hi:{0:'win'}}), V({cur,best})));
+  for (let i=1;i<nums.length;i++){ const x=nums[i]; let why;
+    if (x > cur + x){ cur=x; st=i; why=`Restart at ${x}: the old running sum was negative and only hurts.`; }
+    else { cur=cur+x; why=`Extend the run: cur = ${cur}.`; }
+    if (cur>best){ best=cur; bs=st; be=i; }
+    f.push(fr(4,`nums[${i}] = ${x}. ${why} best = ${best}.`, A('nums',nums,{hi:{...rangeCls(st,i,'win'),[i]:'cur'},ptr:{[i]:'i'}}), V({cur,best})));
+  }
+  f.push(fr(6,`Max subarray sum = ${best}, from index ${bs} to ${be}.`, A('nums',nums,{hi:rangeCls(bs,be,'ok')}), V({return:best})));
+  return f; });
+
+/* ---- Two Pointers ---- */
+def('tp_palin','Converging pointers',125,`
+def isPalindrome(s):
+    l, r = 0, len(s) - 1
+    while l < r:
+        if s[l] != s[r]:
+            return False
+        l += 1; r -= 1
+    return True`, () => {
+  const s=[...'racecar'], f=[], done={}; let l=0, r=s.length-1;
+  f.push(fr(2,'One pointer at each end.', A('s',s,{ptr:ptrs([l,'L'],[r,'R'])})));
+  while (l<r){
+    f.push(fr(4,`Compare s[${l}] = '${s[l]}' with s[${r}] = '${s[r]}'.`, A('s',s,{hi:{...done,[l]:'cur',[r]:'cur'},ptr:ptrs([l,'L'],[r,'R'])})));
+    done[l]='ok'; done[r]='ok'; l++; r--;
+    f.push(fr(6,'They match. Move both pointers one step inward.', A('s',s,{hi:{...done},ptr:ptrs([l,'L'],[r,'R'])})));
+  }
+  f.push(fr(7,'The pointers met in the middle without a mismatch: it is a palindrome.', A('s',s,{hi:allCls(s.length,'ok')}), V({return:'True'})));
+  return f; });
+
+def('tp_sorted','Sorted pair search',167,`
+def twoSum(numbers, target):
+    l, r = 0, len(numbers) - 1
+    while l < r:
+        s = numbers[l] + numbers[r]
+        if s == target: return [l, r]
+        if s < target: l += 1       # need a bigger sum
+        else: r -= 1                # need a smaller sum`, () => {
+  const a=[1,3,4,5,7,10,11], t=9, f=[]; let l=0, r=a.length-1;
+  f.push(fr(2,`The array is sorted and the target is ${t}. Start at both ends.`, A('numbers',a,{ptr:ptrs([l,'L'],[r,'R'])})));
+  while (l<r){ const s=a[l]+a[r];
+    const hi={...rangeCls(0,l-1,'dim'),...rangeCls(r+1,a.length-1,'dim'),[l]:'cur',[r]:'cur'};
+    if (s===t){ f.push(fr(5,`${a[l]} + ${a[r]} = ${t}. Found the pair.`, A('numbers',a,{hi:{...hi,[l]:'ok',[r]:'ok'},ptr:ptrs([l,'L'],[r,'R'])}), V({sum:s, return:`[${l}, ${r}]`}))); return f; }
+    if (s<t){ f.push(fr(6,`${a[l]} + ${a[r]} = ${s} < ${t}. Too small. ${a[l]} cannot work with anything (r is already the biggest), so move L right.`, A('numbers',a,{hi,ptr:ptrs([l,'L'],[r,'R'])}), V({sum:s}))); l++; }
+    else { f.push(fr(7,`${a[l]} + ${a[r]} = ${s} > ${t}. Too big. ${a[r]} is too large even with the smallest, so move R left.`, A('numbers',a,{hi,ptr:ptrs([l,'L'],[r,'R'])}), V({sum:s}))); r--; }
+  } return f; });
+
+def('tp_container','Shrink the shorter wall',11,`
+def maxArea(h):
+    l, r, best = 0, len(h) - 1, 0
+    while l < r:
+        area = min(h[l], h[r]) * (r - l)
+        best = max(best, area)
+        if h[l] < h[r]: l += 1      # move the shorter wall
+        else: r -= 1
+    return best`, () => {
+  const h=[1,8,6,2,5,4,8,3,7], f=[]; let l=0, r=h.length-1, best=0, bl=0, br=0;
+  f.push(fr(2,'Start with the widest container: one wall at each end.', A('height',h,{bars:true,ptr:ptrs([l,'L'],[r,'R'])}), V({best})));
+  while (l<r){ const area=Math.min(h[l],h[r])*(r-l); if (area>best){ best=area; bl=l; br=r; }
+    const side=h[l]<h[r]?'L':'R';
+    f.push(fr(4,`Width ${r-l} × shorter wall ${Math.min(h[l],h[r])} = ${area}. best = ${best}. Move ${side}: the shorter wall limits every narrower container it is part of.`, A('height',h,{bars:true,hi:{...rangeCls(l,r,'win'),[l]:'cur',[r]:'cur'},ptr:ptrs([l,'L'],[r,'R'])}), V({area,best})));
+    if (h[l]<h[r]) l++; else r--;
+  }
+  f.push(fr(8,`Best area = ${best}, between index ${bl} and ${br}.`, A('height',h,{bars:true,hi:{...rangeCls(bl,br,'win'),[bl]:'ok',[br]:'ok'}}), V({return:best})));
+  return f; });
+
+def('tp_trap','Left/right max water',42,`
+def trap(h):
+    l, r = 0, len(h) - 1
+    lmax = rmax = water = 0
+    while l < r:
+        if h[l] < h[r]:
+            lmax = max(lmax, h[l]); water += lmax - h[l]; l += 1
+        else:
+            rmax = max(rmax, h[r]); water += rmax - h[r]; r -= 1
+    return water`, () => {
+  const h=[0,1,0,2,1,0,1,3,2,1,2,1], n=h.length, w=Array(n).fill(0), f=[]; let l=0, r=n-1, lm=0, rm=0, water=0;
+  f.push(fr(3,'Water above a bar = (the lower of the tallest walls on each side) − bar height. The blue fill is water.', A('height',h,{bars:true,fill:w,ptr:ptrs([l,'L'],[r,'R'])}), V({lmax:lm,rmax:rm,water})));
+  while (l<r){
+    if (h[l]<h[r]){ lm=Math.max(lm,h[l]); w[l]=lm-h[l]; water+=w[l];
+      f.push(fr(6,`h[L] = ${h[l]} < h[R] = ${h[r]}: the right side has a taller wall, so the left max decides. lmax = ${lm}, add ${w[l]}.`, A('height',h,{bars:true,fill:w,hi:{[l]:'cur'},ptr:ptrs([l,'L'],[r,'R'])}), V({lmax:lm,rmax:rm,water}))); l++; }
+    else { rm=Math.max(rm,h[r]); w[r]=rm-h[r]; water+=w[r];
+      f.push(fr(8,`h[R] = ${h[r]} ≤ h[L] = ${h[l]}: the right max decides. rmax = ${rm}, add ${w[r]}.`, A('height',h,{bars:true,fill:w,hi:{[r]:'cur'},ptr:ptrs([l,'L'],[r,'R'])}), V({lmax:lm,rmax:rm,water}))); r--; }
+  }
+  f.push(fr(9,`Total trapped water = ${water}.`, A('height',h,{bars:true,fill:w}), V({return:water})));
+  return f; });
+
+def('tp_write','Read/write pointers',283,`
+def moveZeroes(nums):
+    w = 0                           # next slot for a non-zero
+    for r in range(len(nums)):
+        if nums[r] != 0:
+            nums[w], nums[r] = nums[r], nums[w]
+            w += 1`, () => {
+  const a=[0,1,0,3,12], f=[]; let w=0;
+  f.push(fr(2,'r reads every element. w marks where the next non-zero should be written.', A('nums',a,{ptr:ptrs([w,'w'])})));
+  for (let r=0;r<a.length;r++){
+    if (a[r]!==0){ const msg=`nums[${r}] = ${a[r]} is non-zero. Swap it into slot w = ${w}, then move w right.`; [a[w],a[r]]=[a[r],a[w]];
+      f.push(fr(5,msg, A('nums',a,{hi:{...rangeCls(0,w,'ok'),[r]:r===w?'ok':'cur'},ptr:ptrs([w,'w'],[r,'r'])}))); w++; }
+    else f.push(fr(4,`nums[${r}] = 0. Skip it; w stays at ${w}.`, A('nums',a,{hi:{...rangeCls(0,w-1,'ok'),[r]:'bad'},ptr:ptrs([w,'w'],[r,'r'])})));
+  }
+  f.push(fr(6,'Non-zeros sit at the front in their original order, zeros at the back.', A('nums',a,{hi:rangeCls(0,w-1,'ok')})));
+  return f; });
+
+/* ---- Stack ---- */
+def('stk_paren','Matching stack',20,`
+def isValid(s):
+    pairs = {')': '(', ']': '[', '}': '{'}
+    stack = []
+    for c in s:
+        if c in pairs:
+            if not stack or stack.pop() != pairs[c]:
+                return False
+        else:
+            stack.append(c)
+    return not stack`, () => {
+  const s=[...'([]{})'], pairs={')':'(',']':'[','}':'{'}, st=[], f=[];
+  f.push(fr(3,'Walk the string. Openers wait on the stack; a closer must match the most recent opener.', A('s',s), S('stack',st)));
+  s.forEach((c,i)=>{
+    if (pairs[c]){ const top=st.pop();
+      f.push(fr(6,`'${c}' closes. Pop the top '${top}': it matches '${pairs[c]}'.`, A('s',s,{hi:{...rangeCls(0,i-1,'win'),[i]:'ok'},ptr:{[i]:'c'}}), S('stack',st))); }
+    else { st.push(c);
+      f.push(fr(9,`'${c}' opens. Push it.`, A('s',s,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'},ptr:{[i]:'c'}}), S('stack',st,{top:true}))); }
+  });
+  f.push(fr(10,'The stack is empty at the end, so every bracket closed in the right order.', A('s',s,{hi:allCls(s.length,'ok')}), S('stack',st), V({return:'True'})));
+  return f; });
+
+def('stk_mono','Monotonic stack',739,`
+def dailyTemperatures(t):
+    res = [0] * len(t)
+    stack = []                      # indexes; temps on it decrease
+    for i, x in enumerate(t):
+        while stack and t[stack[-1]] < x:
+            j = stack.pop()
+            res[j] = i - j          # day j waited i - j days
+        stack.append(i)
+    return res`, () => {
+  const t=[73,74,75,71,69,72,76,73], res=Array(t.length).fill(0), st=[], f=[];
+  const sv=()=>st.map(j=>`d${j}:${t[j]}`);
+  f.push(fr(3,'The stack holds days still waiting for a warmer day. Temperatures on it only go down.', A('temps',t,{bars:true,base:64}), S('stack',sv()), A('res',res)));
+  t.forEach((x,i)=>{
+    while (st.length && t[st[st.length-1]]<x){ const j=st.pop(); res[j]=i-j;
+      f.push(fr(7,`Day ${i} (${x}) is warmer than day ${j} (${t[j]}). Pop day ${j}: it waited ${i} − ${j} = ${res[j]} day(s).`, A('temps',t,{bars:true,base:64,hi:{[i]:'cur',[j]:'ok'}}), S('stack',sv()), A('res',res,{hi:{[j]:'ok'}}))); }
+    st.push(i);
+    f.push(fr(8,`Push day ${i} (${x}). It waits for something warmer.`, A('temps',t,{bars:true,base:64,hi:{[i]:'cur'}}), S('stack',sv(),{top:true}), A('res',res)));
+  });
+  f.push(fr(9,'Days left on the stack never got a warmer day, so they keep 0.', A('temps',t,{bars:true,base:64}), S('stack',sv()), A('res',res,{hi:allCls(t.length,'ok')})));
+  return f; });
+
+def('stk_rpn','Evaluation stack',150,`
+def evalRPN(tokens):
+    stack = []
+    for tok in tokens:
+        if tok in "+-*/":
+            b, a = stack.pop(), stack.pop()
+            stack.append(apply(a, tok, b))
+        else:
+            stack.append(int(tok))
+    return stack[0]`, () => {
+  const tk=['2','1','+','3','*'], st=[], f=[];
+  f.push(fr(2,'Tokens are in postfix order: ((2 + 1) × 3). Numbers wait on the stack until an operator uses them.', A('tokens',tk), S('stack',st)));
+  tk.forEach((x,i)=>{
+    if ('+-*/'.includes(x)){ const b=st.pop(), a=st.pop(); const v = x==='+'?a+b : x==='-'?a-b : x==='*'?a*b : Math.trunc(a/b); st.push(v);
+      f.push(fr(6,`'${x}': pop ${b} and ${a}, compute ${a} ${x} ${b} = ${v}, push the result.`, A('tokens',tk,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'}}), S('stack',st,{top:true}))); }
+    else { st.push(+x);
+      f.push(fr(8,`${x} is a number. Push it.`, A('tokens',tk,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'}}), S('stack',st,{top:true}))); }
+  });
+  f.push(fr(9,`One value is left on the stack: ${st[0]}.`, A('tokens',tk,{hi:allCls(tk.length,'ok')}), S('stack',st), V({return:st[0]})));
+  return f; });
+
+/* ---- Binary Search ---- */
+def('bs_classic','Classic binary search',704,`
+def search(nums, target):
+    lo, hi = 0, len(nums) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if nums[mid] == target: return mid
+        if nums[mid] < target: lo = mid + 1
+        else: hi = mid - 1
+    return -1`, () => {
+  const a=[-1,0,3,5,9,12,15,20], t=15, f=[]; let lo=0, hi=a.length-1;
+  const view=(m,extra={})=>A('nums',a,{hi:{...rangeCls(0,lo-1,'dim'),...rangeCls(hi+1,a.length-1,'dim'),...extra},ptr:ptrs([lo,'lo'],[hi,'hi'],...(m!=null?[[m,'mid']]:[]))});
+  f.push(fr(2,`Search for ${t}. If it exists, it is somewhere in [lo, hi]. Faded cells are ruled out.`, view(null), V({lo,hi})));
+  while (lo<=hi){ const m=(lo+hi)>>1;
+    if (a[m]===t){ f.push(fr(5,`nums[${m}] = ${a[m]}. Found ${t} at index ${m}.`, view(m,{[m]:'ok'}), V({lo,hi,mid:m,return:m}))); return f; }
+    if (a[m]<t){ f.push(fr(6,`nums[${m}] = ${a[m]} < ${t}. Everything at or left of mid is too small. lo = ${m+1}.`, view(m,{[m]:'cur'}), V({lo,hi,mid:m}))); lo=m+1; }
+    else { f.push(fr(7,`nums[${m}] = ${a[m]} > ${t}. Everything at or right of mid is too big. hi = ${m-1}.`, view(m,{[m]:'cur'}), V({lo,hi,mid:m}))); hi=m-1; }
+  } return f; });
+
+def('bs_answer','Binary search on the answer',875,`
+def minEatingSpeed(piles, h):
+    lo, hi = 1, max(piles)
+    while lo < hi:
+        k = (lo + hi) // 2
+        hours = sum(ceil(p / k) for p in piles)
+        if hours <= h: hi = k       # fast enough: try slower
+        else: lo = k + 1            # too slow: go faster
+    return lo`, () => {
+  const piles=[3,6,7,11], h=8, sp=Array.from({length:11},(_,i)=>i+1), f=[]; let lo=1, hi=11;
+  const view=(k,extra={})=>A('speed k',sp,{idx:false,hi:{...rangeCls(0,lo-2,'dim'),...rangeCls(hi,10,'dim'),...extra},ptr:ptrs([lo-1,'lo'],[hi-1,'hi'],...(k?[[k-1,'k']]:[]))});
+  f.push(fr(2,`We search the ANSWER, not the array. Speed is between 1 and max(piles) = 11. Koko has ${h} hours.`, A('piles',piles), view(0), V({lo,hi})));
+  while (lo<hi){ const k=(lo+hi)>>1, parts=piles.map(p=>Math.ceil(p/k)), hrs=parts.reduce((s,x)=>s+x,0);
+    if (hrs<=h){ f.push(fr(6,`k = ${k}: needs ${parts.join(' + ')} = ${hrs} h ≤ ${h}. Fast enough, so try slower: hi = ${k}.`, A('piles',piles), view(k,{[k-1]:'ok'}), V({lo,hi,k,hours:hrs}))); hi=k; }
+    else { f.push(fr(7,`k = ${k}: needs ${parts.join(' + ')} = ${hrs} h > ${h}. Too slow, so go faster: lo = ${k+1}.`, A('piles',piles), view(k,{[k-1]:'bad'}), V({lo,hi,k,hours:hrs}))); lo=k+1; }
+  }
+  f.push(fr(8,`lo = hi = ${lo}: the slowest speed that still finishes in ${h} hours.`, A('piles',piles), A('speed k',sp,{idx:false,hi:{...rangeCls(0,lo-2,'dim'),...rangeCls(lo,10,'dim'),[lo-1]:'ok'}}), V({return:lo})));
+  return f; });
+
+def('bs_rot','Rotated array search',153,`
+def findMin(nums):
+    lo, hi = 0, len(nums) - 1
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if nums[mid] > nums[hi]: lo = mid + 1   # drop is right of mid
+        else: hi = mid                           # mid may be the min
+    return nums[lo]`, () => {
+  const a=[4,5,6,7,0,1,2], f=[]; let lo=0, hi=a.length-1;
+  const view=(m,extra={})=>A('nums',a,{bars:true,hi:{...rangeCls(0,lo-1,'dim'),...rangeCls(hi+1,a.length-1,'dim'),...extra},ptr:ptrs([lo,'lo'],[hi,'hi'],...(m!=null?[[m,'mid']]:[]))});
+  f.push(fr(2,'A sorted array was rotated, so it rises, drops once, then rises again. The minimum is right after the drop.', view(null), V({lo,hi})));
+  while (lo<hi){ const m=(lo+hi)>>1;
+    if (a[m]>a[hi]){ f.push(fr(5,`nums[mid] = ${a[m]} > nums[hi] = ${a[hi]}. The drop is between mid and hi. lo = ${m+1}.`, view(m,{[m]:'cur',[hi]:'win'}), V({lo,hi,mid:m}))); lo=m+1; }
+    else { f.push(fr(6,`nums[mid] = ${a[m]} ≤ nums[hi] = ${a[hi]}. mid..hi is sorted, so the minimum is at mid or to its left. hi = ${m}.`, view(m,{[m]:'cur',[hi]:'win'}), V({lo,hi,mid:m}))); hi=m; }
+  }
+  f.push(fr(7,`lo = hi = ${lo}. Minimum = ${a[lo]}.`, view(null,{[lo]:'ok'}), V({return:a[lo]})));
+  return f; });
+
+/* ---- Sliding Window ---- */
+def('sw_stock','Running minimum',121,`
+def maxProfit(prices):
+    buy, best = prices[0], 0
+    for p in prices[1:]:
+        if p < buy: buy = p         # cheaper day to buy
+        best = max(best, p - buy)   # or sell today
+    return best`, () => {
+  const p=[7,1,5,3,6,4], f=[]; let buy=p[0], bi=0, best=0, bb=0, bs=0;
+  f.push(fr(2,`Buy on day 0 at ${buy} for now. Profit so far: 0.`, A('prices',p,{bars:true,ptr:ptrs([0,'buy'])}), V({buy,best})));
+  for (let i=1;i<p.length;i++){ let msg, ln=5;
+    if (p[i]<buy){ buy=p[i]; bi=i; msg=`${p[i]} is the cheapest so far. Buy here instead.`; ln=4; }
+    else msg=`Selling today earns ${p[i]} − ${buy} = ${p[i]-buy}.`;
+    if (p[i]-buy>best){ best=p[i]-buy; bb=bi; bs=i; }
+    f.push(fr(ln,`Day ${i}, price ${p[i]}. ${msg} best = ${best}.`, A('prices',p,{bars:true,hi:{...rangeCls(bi,i,'win'),[i]:'cur'},ptr:ptrs([bi,'buy'],[i,'day'])}), V({buy,best})));
+  }
+  f.push(fr(6,`Buy on day ${bb} at ${p[bb]}, sell on day ${bs} at ${p[bs]}. Profit ${best}.`, A('prices',p,{bars:true,hi:{[bb]:'ok',[bs]:'ok'}}), V({return:best})));
+  return f; });
+
+def('sw_var','Variable window (grow, jump)',3,`
+def lengthOfLongestSubstring(s):
+    last = {}; l = best = 0
+    for r, c in enumerate(s):
+        if c in last and last[c] >= l:
+            l = last[c] + 1         # jump past the repeat
+        last[c] = r
+        best = max(best, r - l + 1)
+    return best`, () => {
+  const s=[...'abcabcbb'], last=new Map(), f=[]; let l=0, best=0, bl=0;
+  f.push(fr(2,'Grow the window to the right. If a letter repeats inside it, jump the left edge just past the earlier copy.', A('s',s), M('last seen',last), V({l,best})));
+  s.forEach((c,r)=>{ let msg=`Add '${c}'.`, ln=6;
+    if (last.has(c) && last.get(c)>=l){ const old=l; l=last.get(c)+1; msg=`'${c}' is already in the window at index ${last.get(c)}. Move L from ${old} to ${l}.`; ln=5; }
+    last.set(c,r); if (r-l+1>best){ best=r-l+1; bl=l; }
+    f.push(fr(ln,`${msg} Window "${s.slice(l,r+1).join('')}", length ${r-l+1}. best = ${best}.`, A('s',s,{hi:{...rangeCls(0,l-1,'dim'),...rangeCls(l,r,'win'),[r]:'cur'},ptr:ptrs([l,'L'],[r,'R'])}), M('last seen',last,c), V({l,best})));
+  });
+  f.push(fr(8,`Longest window without repeats: "${s.slice(bl,bl+best).join('')}", length ${best}.`, A('s',s,{hi:rangeCls(bl,bl+best-1,'ok')}), V({return:best})));
+  return f; });
+
+def('sw_fixed','Fixed-size window',643,`
+def maxSumWindow(nums, k):
+    window = sum(nums[:k]); best = window
+    for r in range(k, len(nums)):
+        window += nums[r] - nums[r - k]     # one in, one out
+        best = max(best, window)
+    return best`, () => {
+  const a=[2,1,5,1,3,2], k=3, f=[]; let w=a.slice(0,k).reduce((x,y)=>x+y,0), best=w, bi=0;
+  f.push(fr(2,`First window of size ${k}: ${a.slice(0,k).join(' + ')} = ${w}.`, A('nums',a,{hi:rangeCls(0,k-1,'win'),ptr:ptrs([0,'L'],[k-1,'R'])}), V({window:w,best})));
+  for (let r=k;r<a.length;r++){ w+=a[r]-a[r-k]; if (w>best){ best=w; bi=r-k+1; }
+    f.push(fr(4,`Slide right: ${a[r]} comes in, ${a[r-k]} leaves. window = ${w}. best = ${best}. No need to re-add the whole window.`, A('nums',a,{hi:{...rangeCls(r-k+1,r,'win'),[r]:'cur',[r-k]:'bad'},ptr:ptrs([r-k+1,'L'],[r,'R'])}), V({window:w,best})));
+  }
+  f.push(fr(6,`Best window sum = ${best}.`, A('nums',a,{hi:rangeCls(bi,bi+k-1,'ok')}), V({return:best})));
+  return f; });
+
+def('sw_minsum','Grow then shrink window',209,`
+def minSubArrayLen(target, nums):
+    l = total = 0; best = inf
+    for r, x in enumerate(nums):
+        total += x                  # expand right
+        while total >= target:
+            best = min(best, r - l + 1)
+            total -= nums[l]; l += 1    # shrink left
+    return 0 if best == inf else best`, () => {
+  const a=[2,3,1,2,4,3], t=7, f=[]; let l=0, tot=0, best=Infinity, bl=0, br=-1;
+  f.push(fr(2,`Find the shortest window whose sum is at least ${t}.`, A('nums',a), V({total:0,best:'∞'})));
+  a.forEach((x,r)=>{ tot+=x;
+    f.push(fr(4,`Expand: add ${x}. total = ${tot}${tot>=t?` ≥ ${t}`:` < ${t}, keep growing`}.`, A('nums',a,{hi:{...rangeCls(0,l-1,'dim'),...rangeCls(l,r,'win'),[r]:'cur'},ptr:ptrs([l,'L'],[r,'R'])}), V({total:tot,best:fmt(best)})));
+    while (tot>=t){ if (r-l+1<best){ best=r-l+1; bl=l; br=r; }
+      f.push(fr(7,`Length ${r-l+1} works (best = ${best}). Try something shorter: drop ${a[l]} from the left.`, A('nums',a,{hi:{...rangeCls(0,l-1,'dim'),...rangeCls(l,r,'ok'),[l]:'bad'},ptr:ptrs([l,'L'],[r,'R'])}), V({total:tot,best})));
+      tot-=a[l]; l++; }
+  });
+  f.push(fr(8,`Shortest length = ${best}: [${a.slice(bl,br+1)}].`, A('nums',a,{hi:rangeCls(bl,br,'ok')}), V({return:best})));
+  return f; });
+
+/* ---- Linked List ---- */
+def('ll_reverse','Pointer reversal',206,`
+def reverseList(head):
+    prev, curr = None, head
+    while curr:
+        nxt = curr.next             # remember the rest
+        curr.next = prev            # flip the arrow
+        prev, curr = curr, nxt      # step forward
+    return prev`, () => {
+  const v=[1,2,3,4,5], n=5, nx=chain(n), f=[]; let prev=-1, cur=0;
+  const view=(o={})=>L('list',v,{next:nx,leftNull:true,ptr:ptrs([prev,'prev'],[cur,'curr'],...(o.nxt!=null?[[o.nxt,'nxt']]:[])),hi:o.hi||{}});
+  f.push(fr(2,'prev starts at None (∅), curr at the head. Arrows show each node\'s next pointer.', view()));
+  while (cur<n){ const nxt=cur+1;
+    f.push(fr(4,`Save nxt = ${nxt<n?v[nxt]:'None'} first, or the rest of the list would be lost.`, view({nxt,hi:{...rangeCls(0,cur-1,'ok'),[cur]:'cur'}})));
+    nx[cur] = prev>=0 ? prev : null;
+    f.push(fr(5,`Flip: ${v[cur]}.next now points back to ${prev>=0?v[prev]:'None'}. The ╳ shows the cut link.`, view({nxt,hi:{...rangeCls(0,cur-1,'ok'),[cur]:'cur'}})));
+    prev=cur; cur=nxt;
+    f.push(fr(6,`Step forward: prev = ${v[prev]}, curr = ${cur<n?v[cur]:'None'}.`, view({hi:rangeCls(0,prev,'ok')})));
+  }
+  f.push(fr(7,'curr is None. prev is the new head: 5 → 4 → 3 → 2 → 1.', view({hi:allCls(n,'ok')})));
+  return f; });
+
+def('ll_fastslow','Fast and slow pointers',141,`
+def hasCycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next            # 1 step
+        fast = fast.next.next       # 2 steps
+        if slow is fast:
+            return True
+    return False`, () => {
+  const v=[1,2,3,4,5,6], nx=[1,2,3,4,5,2], f=[]; let s=0, fa=0;
+  const view=(hi={})=>L('list',v,{next:nx,cycleTo:2,ptr:ptrs([s,'slow'],[fa,'fast']),hi});
+  f.push(fr(2,'Both pointers start at the head. The tail (6) links back to 3, which makes a loop.', view()));
+  for (let step=0; step<10; step++){ s=nx[s]; fa=nx[nx[fa]];
+    if (s===fa){ f.push(fr(7,`slow moves to ${v[s]}, fast jumps to ${v[fa]}. They meet. Fast could only catch slow by going around a loop, so there is a cycle.`, view({[s]:'ok'}), V({return:'True'}))); return f; }
+    f.push(fr(5,`slow moves 1 step to ${v[s]}. fast moves 2 steps to ${v[fa]}. Inside the loop, fast gains 1 node every step.`, view({[s]:'cur',[fa]:'win'})));
+  } return f; });
+
+def('ll_merge','Dummy head merge',21,`
+def mergeTwoLists(a, b):
+    dummy = tail = ListNode()
+    while a and b:
+        if a.val <= b.val: tail.next, a = a, a.next
+        else: tail.next, b = b, b.next
+        tail = tail.next
+    tail.next = a or b              # attach whatever is left
+    return dummy.next`, () => {
+  const a=[1,3,5], b=[2,3,6], out=[], f=[]; let i=0, j=0;
+  const view=(m)=>[L('a',a,{next:chain(a.length),ptr:i<a.length?{[i]:'a'}:{},hi:rangeCls(0,i-1,'dim')}), L('b',b,{next:chain(b.length),ptr:j<b.length?{[j]:'b'}:{},hi:rangeCls(0,j-1,'dim')}), L('merged',out,{next:chain(out.length),hi:m!=null?{...allCls(out.length,'ok'),[m]:'cur'}:allCls(out.length,'ok'),ptr:out.length?{[out.length-1]:'tail'}:{}})];
+  f.push(fr(2,'A dummy node in front of the result means we never special-case the first node.', ...view()));
+  while (i<a.length && j<b.length){
+    if (a[i]<=b[j]){ out.push(a[i]); i++; f.push(fr(4,`${a[i-1]} ≤ ${b[j]}: attach ${a[i-1]} from list a.`, ...view(out.length-1))); }
+    else { out.push(b[j]); j++; f.push(fr(5,`${b[j-1]} < ${a[i]}: attach ${b[j-1]} from list b.`, ...view(out.length-1))); }
+  }
+  const rest=i<a.length?a.slice(i):b.slice(j); const from=i<a.length?'a':'b'; out.push(...rest); i=a.length; j=b.length;
+  f.push(fr(7,`List ${from==='a'?'b':'a'} is used up. Attach the rest of ${from} (${rest.join(', ')}) in one step.`, ...view()));
+  return f; });
+
+/* ---- Trees ---- */
+const TREE1=[1,2,3,4,5,null,6,null,null,7];
+const BST=[8,3,10,1,6,null,14,null,null,4,7,null,null,13];
+const okNode=(t,i)=>i<t.length && t[i]!=null;
+
+def('tree_dfs','Post-order DFS',104,`
+def maxDepth(root):
+    if not root:
+        return 0
+    left = maxDepth(root.left)
+    right = maxDepth(root.right)
+    return 1 + max(left, right)`, () => {
+  const t=TREE1, f=[], st=[], ann={}, done={};
+  const view=()=>{ const hi={...done}; st.forEach(i=>hi[i]='win'); if (st.length) hi[st[st.length-1]]='cur';
+    return [T('tree',t,hi,{ann:{...ann}}), S('call stack',st.map(i=>`maxDepth(${t[i]})`),{top:true})]; };
+  function go(i){ if (!okNode(t,i)) return 0; st.push(i);
+    f.push(fr(4,`Enter node ${t[i]}. Before it can answer, it asks its left subtree.`, ...view()));
+    const lv=go(2*i+1);
+    f.push(fr(5,`Left of ${t[i]} returned ${lv}. Now ask the right subtree.`, ...view()));
+    const rv=go(2*i+2); const d=1+Math.max(lv,rv); ann[i]='d'+d; done[i]='ok';
+    f.push(fr(6,`Node ${t[i]} returns 1 + max(${lv}, ${rv}) = ${d} to its parent.`, ...view()));
+    st.pop(); return d; }
+  f.push(fr(1,'Depth of a tree = 1 + the deeper of its two subtrees. Answers flow up from the leaves (post-order).', ...view()));
+  const d=go(0);
+  f.push(fr(6,`The root returns ${d}: the longest path 1 → 2 → 5 → 7.`, ...view(), V({return:d})));
+  return f; });
+
+def('tree_bfs','Level-order BFS',102,`
+def levelOrder(root):
+    res, q = [], deque([root])
+    while q:
+        level = []
+        for _ in range(len(q)):          # exactly one level
+            node = q.popleft(); level.append(node.val)
+            if node.left: q.append(node.left)
+            if node.right: q.append(node.right)
+        res.append(level)
+    return res`, () => {
+  const t=TREE1, f=[], res=[], hi={}; let q=[0];
+  const view=()=>[T('tree',t,{...hi}), A('queue',q.map(i=>t[i]),{idx:false,hi:{0:'win'}}), V({result:JSON.stringify(res)})];
+  f.push(fr(2,'Put the root in the queue.', ...view()));
+  while (q.length){ const size=q.length, level=[]; q.forEach(i=>hi[i]='win');
+    f.push(fr(5,`The queue holds exactly one level: ${size} node(s). Process that many.`, ...view()));
+    for (let k=0;k<size;k++){ const i=q.shift(); level.push(t[i]); hi[i]='cur';
+      const kids=[2*i+1,2*i+2].filter(c=>okNode(t,c)); q.push(...kids);
+      f.push(fr(6,`Pop ${t[i]} into this level${kids.length?`, queue its children ${kids.map(c=>t[c]).join(', ')}`:' (no children)'}.`, ...view())); hi[i]='ok'; }
+    res.push(level);
+    f.push(fr(9,`Level done: [${level}].`, ...view()));
+  } return f; });
+
+def('tree_bst','BST guided search',700,`
+def searchBST(root, val):
+    node = root
+    while node:
+        if val == node.val: return node
+        node = node.left if val < node.val else node.right
+    return None`, () => {
+  const t=BST, val=7, f=[], hi={}; let i=0;
+  const sub=(r,c)=>{ const st=[r]; while (st.length){ const x=st.pop(); if (!okNode(t,x)) continue; hi[x]=c; st.push(2*x+1,2*x+2); } };
+  f.push(fr(2,`Search for ${val}. In a BST everything on the left is smaller and everything on the right is larger.`, T('tree',t,{0:'cur'})));
+  while (okNode(t,i)){
+    if (t[i]===val){ hi[i]='ok'; f.push(fr(4,`Found ${val} after visiting one node per level: O(height).`, T('tree',t,{...hi}))); return f; }
+    const goLeft=val<t[i];
+    sub(goLeft?2*i+2:2*i+1,'dim'); hi[i]='win';
+    f.push(fr(5,`${val} ${goLeft?'<':'>'} ${t[i]}, so go ${goLeft?'left':'right'}. The whole ${goLeft?'right':'left'} subtree is skipped.`, T('tree',t,{...hi,[i]:'cur'})));
+    i=goLeft?2*i+1:2*i+2;
+  } return f; });
+
+def('tree_inorder','Iterative inorder',94,`
+def inorder(root):
+    res, stack, node = [], [], root
+    while node or stack:
+        while node:                   # walk the left spine
+            stack.append(node); node = node.left
+        node = stack.pop()
+        res.append(node.val)          # visit
+        node = node.right
+    return res`, () => {
+  const t=BST, f=[], st=[], res=[], hi={}; let node=0;
+  const view=()=>[T('tree',t,{...hi}), S('stack',st.map(i=>t[i]),{top:true}), A('output',res,{idx:false,hi:allCls(res.length,'ok')})];
+  f.push(fr(2,'Inorder = left subtree, node, right subtree. On a BST that visits values in sorted order.', ...view()));
+  while (okNode(t,node) || st.length){
+    const pushed=[]; while (okNode(t,node)){ st.push(node); hi[node]='win'; pushed.push(t[node]); node=2*node+1; }
+    if (pushed.length) f.push(fr(5,`Walk left as far as possible, pushing ${pushed.join(', ')}.`, ...view()));
+    node=st.pop(); res.push(t[node]); hi[node]='ok';
+    f.push(fr(7,`Pop ${t[node]} and visit it. Output: ${res.join(', ')}. Then move to its right child.`, ...view()));
+    node=2*node+2;
+  }
+  f.push(fr(9,'Stack empty and no node left. The output is sorted. For "kth smallest", stop at the kth visit.', ...view()));
+  return f; });
+
+/* ---- Tries ---- */
+def('trie','Trie insert and search',208,`
+class Trie:
+    def __init__(self): self.root = {}
+    def insert(self, word):
+        node = self.root
+        for c in word:
+            node = node.setdefault(c, {})
+        node['$'] = True            # marks end of a word
+    def search(self, word):
+        node = self.root
+        for c in word:
+            if c not in node: return False
+            node = node[c]
+        return '$' in node`, () => {
+  const root={}, f=[], words=['cat','car','cart','dog'];
+  const view=(path,cls)=>({t:'trie',label:'trie',root:JSON.parse(JSON.stringify(root)),path,cls});
+  words.forEach(w=>{ let node=root;
+    [...w].forEach((c,k)=>{ const existed=!!node[c]; node=node[c]=node[c]||{};
+      f.push(fr(6,`insert("${w}"), letter '${c}': ${existed?'the node already exists, so reuse it. Shared prefix, no extra memory.':'no node yet, create it.'}`, view(w.slice(0,k+1),existed?'win':'cur'))); });
+    node.$=true;
+    f.push(fr(7,`Mark the last node as the end of "${w}" (●).`, view(w,'ok')));
+  });
+  ['car','ca','cow'].forEach(w=>{ let node=root, k=0, ok=true;
+    for (;k<w.length;k++){ if (!node[w[k]]){ ok=false; break; } node=node[w[k]]; }
+    if (!ok) f.push(fr(11,`search("${w}"): after "${w.slice(0,k)}" there is no '${w[k]}' child. Not found.`, view(w.slice(0,k),'bad')));
+    else f.push(fr(13,`search("${w}"): the path exists ${node.$?'and ends a word. Found.':`but no word ends there, so "${w}" is only a prefix. startsWith would return True.`}`, view(w,node.$?'ok':'bad')));
+  });
+  return f; });
+
+/* ---- Heap ---- */
+function hpush(h,x){ h.push(x); let i=h.length-1; while (i>0){ const p=(i-1)>>1; if (h[p]<=h[i]) break; [h[p],h[i]]=[h[i],h[p]]; i=p; } }
+function hpop(h){ const top=h[0], last=h.pop(); if (h.length){ h[0]=last; let i=0; for(;;){ const l=2*i+1, r=l+1; let m=i; if (l<h.length && h[l]<h[m]) m=l; if (r<h.length && h[r]<h[m]) m=r; if (m===i) break; [h[m],h[i]]=[h[i],h[m]]; i=m; } } return top; }
+
+def('heap_kth','Size-k min-heap',215,`
+def findKthLargest(nums, k):
+    heap = []                     # min-heap of the k largest so far
+    for x in nums:
+        heappush(heap, x)
+        if len(heap) > k:
+            heappop(heap)         # drop the smallest
+    return heap[0]`, () => {
+  const nums=[3,2,1,5,6,4], k=3, h=[], f=[];
+  const view=(i,hi={})=>[A('nums',nums,{hi:i>=0?{...rangeCls(0,i-1,'dim'),[i]:'cur'}:{}}), T('min-heap (k = 3)',h,hi), A('heap array',h,{hi})];
+  f.push(fr(2,`Keep only the ${k} largest values seen so far in a min-heap. Its smallest item (the top) is the kth largest.`, A('nums',nums), A('heap array',h)));
+  nums.forEach((x,i)=>{ hpush(h,x);
+    f.push(fr(4,`Push ${x}. It bubbles up while it is smaller than its parent.`, ...view(i,{[h.indexOf(x)]:'cur'})));
+    if (h.length>k){ const m=hpop(h);
+      f.push(fr(6,`The heap holds ${k+1} items. Pop the smallest (${m}): it cannot be among the ${k} largest.`, ...view(i,{0:'win'}))); }
+  });
+  f.push(fr(7,`The heap holds the 3 largest: ${[...h].sort((a,b)=>a-b).join(', ')}. Its top, ${h[0]}, is the 3rd largest.`, ...view(-1,{0:'ok'}), V({return:h[0]})));
+  return f; });
+
+def('heap_median','Two heaps',295,`
+low, high = [], []      # low: max-heap (negated), high: min-heap
+def addNum(x):
+    heappush(low, -x)
+    heappush(high, -heappop(low))     # largest of low moves up
+    if len(high) > len(low):
+        heappush(low, -heappop(high))
+def findMedian():
+    if len(low) > len(high): return -low[0]
+    return (-low[0] + high[0]) / 2`, () => {
+  const s=[5,15,1,3,8], low=[], high=[], f=[];
+  const srt=a=>a.sort((x,y)=>x-y);
+  f.push(fr(1,'low holds the smaller half (we need its max), high holds the larger half (we need its min).', A('stream',s), A('low (max on right)',low,{idx:false}), A('high (min on left)',high,{idx:false})));
+  s.forEach((x,i)=>{ low.push(x); srt(low); const m=low.pop(); high.push(m); srt(high);
+    let msg=`Add ${x} to low, then move low's largest (${m}) to high so every low value ≤ every high value.`, ln=4;
+    if (high.length>low.length){ const mm=high.shift(); low.push(mm); srt(low); msg+=` high got bigger than low, so move its smallest (${mm}) back.`; ln=6; }
+    const med = low.length>high.length ? low[low.length-1] : (low[low.length-1]+high[0])/2;
+    f.push(fr(ln,`${msg} Median = ${med}.`, A('stream',s,{hi:{...rangeCls(0,i-1,'win'),[i]:'cur'}}), A('low (max on right)',low,{idx:false,hi:{[low.length-1]:'ok'}}), A('high (min on left)',high,{idx:false,hi:high.length?{0:'ok'}:{}}), V({median:med})));
+  });
+  return f; });
+
+/* ---- Backtracking ---- */
+def('bt_subsets','Take / skip decision tree',78,`
+def subsets(nums):
+    res, path = [], []
+    def dfs(i):
+        if i == len(nums):
+            res.append(path[:]); return
+        path.append(nums[i]); dfs(i + 1)    # take nums[i]
+        path.pop(); dfs(i + 1)              # skip nums[i]
+    dfs(0)
+    return res`, () => {
+  const nums=[1,2,3], f=[], lab=[], res=[], hi={};
+  (function build(i,d,path){ lab[i]=`{${path.join(',')}}`; if (d<3){ build(2*i+1,d+1,[...path,nums[d]]); build(2*i+2,d+1,path); } })(0,0,[]);
+  const view=()=>[T('decision tree',lab,{...hi},{pill:true}), A('results',res,{idx:false,hi:allCls(res.length,'ok')})];
+  (function dfs(i,d,path){ hi[i]='cur';
+    if (d===3){ res.push(`{${path.join(',')}}`); f.push(fr(5,`Reached a leaf. Record ${lab[i]}.`, ...view())); hi[i]='ok'; return; }
+    f.push(fr(6,`At ${lab[i]}. Left branch: take ${nums[d]}.`, ...view())); hi[i]='win';
+    dfs(2*i+1,d+1,[...path,nums[d]]);
+    hi[i]='cur'; f.push(fr(7,`Back at ${lab[i]}. Undo ${nums[d]}, then right branch: skip it.`, ...view())); hi[i]='win';
+    dfs(2*i+2,d+1,path); hi[i]='ok';
+  })(0,0,[]);
+  f.push(fr(9,`All ${res.length} subsets found: 3 elements, 2 choices each, 2³ leaves.`, ...view()));
+  return f; });
+
+def('bt_comb','Combination search with pruning',39,`
+def combinationSum(cands, target):
+    cands.sort(); res, path = [], []
+    def dfs(start, remain):
+        if remain == 0:
+            res.append(path[:]); return
+        for i in range(start, len(cands)):
+            if cands[i] > remain: break      # sorted, so prune
+            path.append(cands[i])
+            dfs(i, remain - cands[i])        # i, not i+1: reuse allowed
+            path.pop()
+    dfs(0, target)
+    return res`, () => {
+  const c=[2,3,6,7], target=7, f=[], path=[], res=[];
+  const view=(hi={},rem)=>[A('candidates',c,{hi}), A('path',path,{idx:false}), A('results',res.map(r=>`[${r}]`),{idx:false,hi:allCls(res.length,'ok')}), V({remain:rem})];
+  f.push(fr(2,`Find combinations of [${c}] that add up to ${target}. Each number can be reused.`, ...view({},target)));
+  (function dfs(st,rem){
+    if (rem===0){ res.push([...path]); f.push(fr(5,`remain is 0. Save [${path}].`, ...view({},rem))); return; }
+    for (let i=st;i<c.length;i++){
+      if (c[i]>rem){ f.push(fr(7,`${c[i]} > remain ${rem}. Every later candidate is bigger too, so stop this loop.`, ...view({[i]:'bad',...rangeCls(i+1,c.length-1,'dim')},rem))); break; }
+      path.push(c[i]);
+      f.push(fr(8,`Choose ${c[i]}. path = [${path}], remain = ${rem-c[i]}.`, ...view({...rangeCls(0,st-1,'dim'),[i]:'cur'},rem-c[i])));
+      dfs(i,rem-c[i]); path.pop();
+      f.push(fr(10,`Undo ${c[i]}; back to remain ${rem} and try the next candidate.`, ...view({...rangeCls(0,st-1,'dim')},rem)));
+    }
+  })(0,target);
+  f.push(fr(12,`Done: ${res.map(r=>`[${r}]`).join(' and ')}.`, ...view({},0)));
+  return f; });
+
+def('bt_perm','Choose, explore, unchoose',46,`
+def permute(nums):
+    res, path, used = [], [], [False] * len(nums)
+    def dfs():
+        if len(path) == len(nums):
+            res.append(path[:]); return
+        for i, x in enumerate(nums):
+            if used[i]: continue
+            used[i] = True; path.append(x)
+            dfs()
+            used[i] = False; path.pop()
+    dfs()
+    return res`, () => {
+  const n=[1,2,3], used=[false,false,false], path=[], res=[], f=[];
+  const view=(hi={})=>{ const h={}; used.forEach((u,i)=>{ if (u) h[i]='dim'; }); return [A('nums',n,{hi:{...h,...hi}}), A('path',path,{idx:false}), A('results',res.map(r=>r.join('')),{idx:false,hi:allCls(res.length,'ok')})]; };
+  f.push(fr(2,'Fill one slot at a time with any unused number. Faded numbers are already in the path.', ...view()));
+  (function dfs(){
+    if (path.length===n.length){ res.push([...path]); f.push(fr(5,`The path is full. Save [${path}].`, ...view())); return; }
+    for (let i=0;i<n.length;i++){ if (used[i]) continue;
+      used[i]=true; path.push(n[i]);
+      f.push(fr(8,`Use ${n[i]}. path = [${path}].`, ...view({[i]:'cur'})));
+      dfs(); used[i]=false; path.pop();
+      f.push(fr(10,`Undo ${n[i]} so other branches can use it.`, ...view()));
+    }
+  })();
+  f.push(fr(12,`${res.length} permutations = 3!.`, ...view()));
+  return f; });
+
+def('bt_queens','Constraint placement',51,`
+def solveNQueens(n):
+    cols, d1, d2, queens = set(), set(), set(), []
+    def place(r):
+        if r == n:
+            return True                       # every row has a queen
+        for c in range(n):
+            if c in cols or r - c in d1 or r + c in d2: continue
+            cols.add(c); d1.add(r - c); d2.add(r + c); queens.append(c)
+            if place(r + 1): return True
+            cols.remove(c); d1.remove(r - c); d2.remove(r + c); queens.pop()
+    place(0)
+    return queens`, () => {
+  const n=4, cols=new Set(), d1=new Set(), d2=new Set(), q=[], f=[]; let done=false;
+  const view=(r,c,cls)=>{ const g=Array.from({length:n},()=>Array(n).fill('')), cl={};
+    for (let rr=0;rr<n;rr++) for (let cc=0;cc<n;cc++) if (cols.has(cc)||d1.has(rr-cc)||d2.has(rr+cc)) cl[rr+','+cc]='dim';
+    q.forEach((cc,rr)=>{ g[rr][cc]='Q'; cl[rr+','+cc]='ok'; });
+    if (r!=null){ cl[r+','+c]=cls; if (cls!=='bad') g[r][c]='Q'; else g[r][c]='×'; }
+    return G('board',g,cl,{rowLabels:['r0','r1','r2','r3'],colLabels:['c0','c1','c2','c3']}); };
+  f.push(fr(2,'Place one queen per row. Faded cells are attacked by a column or a diagonal.', view()));
+  (function place(r){
+    if (r===n){ done=true; f.push(fr(5,`Every row has a queen: columns [${q}]. Solution found.`, view())); return; }
+    for (let c=0;c<n && !done;c++){
+      if (cols.has(c)||d1.has(r-c)||d2.has(r+c)){ f.push(fr(7,`Row ${r}, column ${c} is attacked. Skip it.`, view(r,c,'bad'))); continue; }
+      cols.add(c); d1.add(r-c); d2.add(r+c); q.push(c);
+      f.push(fr(8,`Place a queen at row ${r}, column ${c}.`, view(r,c,'cur')));
+      place(r+1); if (done) return;
+      cols.delete(c); d1.delete(r-c); d2.delete(r+c); q.pop();
+      f.push(fr(10,`Row ${r+1} has no safe cell. Remove the queen at (${r}, ${c}) and try the next column.`, view()));
+    }
+  })(0);
+  return f; });
+
+/* ---- Graphs ---- */
+def('gr_islands','Grid flood fill',200,`
+def numIslands(grid):
+    count = 0
+    for r in range(R):
+        for c in range(C):
+            if grid[r][c] == '1':
+                count += 1
+                sink(r, c)              # flood the whole island
+    return count
+
+def sink(r, c):
+    if not (0 <= r < R and 0 <= c < C) or grid[r][c] != '1': return
+    grid[r][c] = '0'                    # mark visited
+    for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        sink(r + dr, c + dc)`, () => {
+  const g=[[1,1,0,0,0],[1,1,0,1,0],[0,0,1,0,0],[0,0,0,1,1]], R=4, C=5, id={}, f=[]; let count=0;
+  const view=(cur)=>{ const cl={}; for (const k in id) cl[k]='i'+((id[k]-1)%4); g.forEach((row,r)=>row.forEach((v,c)=>{ if (!v) cl[r+','+c]='dim'; })); if (cur) cl[cur]='cur';
+    return G('grid',g.map((row,r)=>row.map((v,c)=>id[r+','+c]?'#'+id[r+','+c]:String(v))),cl); };
+  f.push(fr(3,'Scan every cell. Land (1) that has not been visited starts a new island. Each island gets its own color.', view(), V({count})));
+  const sink=(r,c)=>{ const k=r+','+c; if (r<0||c<0||r>=R||c>=C||g[r][c]!==1||id[k]) return; id[k]=count;
+    f.push(fr(12,`Visit (${r}, ${c}), mark it as part of island #${count}, then spread up, down, left and right.`, view(k), V({count})));
+    D4.forEach(([dr,dc])=>sink(r+dr,c+dc)); };
+  for (let r=0;r<R;r++) for (let c=0;c<C;c++) if (g[r][c]===1 && !id[r+','+c]){ count++;
+    f.push(fr(6,`Unvisited land at (${r}, ${c}). That is island #${count}. Flood it so it is never counted again.`, view(r+','+c), V({count}))); sink(r,c); }
+  f.push(fr(8,`Scan finished: ${count} islands. Each cell was visited once, O(rows × cols).`, view(), V({return:count})));
+  return f; });
+
+def('gr_rot','Multi-source BFS',994,`
+def orangesRotting(grid):
+    q = deque(all rotten cells); fresh = number of 1s
+    minutes = 0
+    while q and fresh:
+        for _ in range(len(q)):          # one BFS level = one minute
+            r, c = q.popleft()
+            for nr, nc in neighbors(r, c):
+                if grid[nr][nc] == 1:
+                    grid[nr][nc] = 2; fresh -= 1
+                    q.append((nr, nc))
+        minutes += 1
+    return minutes if fresh == 0 else -1`, () => {
+  const g=[[2,1,1],[1,1,0],[0,1,1]], f=[], tm={}; let q=[], fresh=0, min=0;
+  g.forEach((row,r)=>row.forEach((v,c)=>{ if (v===2){ q.push([r,c]); tm[r+','+c]=0; } if (v===1) fresh++; }));
+  const view=(newly=[])=>{ const cl={}; g.forEach((row,r)=>row.forEach((v,c)=>{ cl[r+','+c]= v===2?'bad': v===1?'ok':'dim'; })); newly.forEach(k=>cl[k]='cur');
+    return G('grid',g.map((row,r)=>row.map((v,c)=> v===2?`t${tm[r+','+c]}`: v===1?'F':'')),cl); };
+  f.push(fr(2,`Every rotten orange (t0) starts in the queue together. F = fresh. ${fresh} fresh oranges.`, view(), V({minutes:0,fresh})));
+  while (q.length && fresh){ const nq=[], newly=[];
+    for (const [r,c] of q) for (const [dr,dc] of D4){ const nr=r+dr, nc=c+dc;
+      if (nr>=0 && nc>=0 && nr<3 && nc<3 && g[nr][nc]===1){ g[nr][nc]=2; fresh--; tm[nr+','+nc]=min+1; nq.push([nr,nc]); newly.push(nr+','+nc); } }
+    min++; q=nq;
+    f.push(fr(9,`Minute ${min}: ${newly.length} fresh orange(s) next to rotten ones turn rotten. Fresh left: ${fresh}.`, view(newly), V({minutes:min,fresh})));
+  }
+  f.push(fr(12,`No fresh oranges remain after ${min} minutes. Each label t shows the minute that cell rotted, which is its BFS distance.`, view(), V({return:min})));
+  return f; });
+
+const GR1={nodes:[[0,40,90],[1,140,35],[2,140,145],[3,260,35],[4,260,145],[5,370,90]], edges:[[0,1],[0,2],[1,3],[2,3],[2,4],[3,5],[4,5]]};
+def('gr_bfs','Graph BFS',null,`
+def bfs(graph, start):
+    dist = {start: 0}
+    q = deque([start])
+    while q:
+        u = q.popleft()
+        for v in graph[u]:
+            if v not in dist:
+                dist[v] = dist[u] + 1
+                q.append(v)
+    return dist`, () => {
+  const adj={}; GR1.nodes.forEach(([i])=>adj[i]=[]); GR1.edges.forEach(([a,b])=>{ adj[a].push(b); adj[b].push(a); });
+  const dist={0:0}, f=[]; let q=[0];
+  const view=(hi={},eh=[])=>{ const h={}; Object.keys(dist).forEach(k=>h[k]='ok'); q.forEach(k=>h[k]='win');
+    const ann={}; for (const k in dist) ann[k]='d='+dist[k];
+    return [{t:'graph',label:'graph',...GR1,hi:{...h,...hi},ann,eh}, A('queue',q,{idx:false})]; };
+  f.push(fr(3,'Start at node 0 with distance 0. BFS explores in rings: every distance-1 node, then distance-2, and so on.', ...view()));
+  while (q.length){ const u=q.shift(); const found=[];
+    for (const v of adj[u]) if (!(v in dist)){ dist[v]=dist[u]+1; q.push(v); found.push(v); }
+    f.push(fr(8,`Pop ${u} (d=${dist[u]}). ${found.length?`New neighbors ${found.join(', ')} get distance ${dist[u]+1} and join the queue.`:'Its neighbors were all seen already.'}`, ...view({[u]:'cur'},found.map(v=>[u,v]))));
+  }
+  f.push(fr(10,'Every node reached. With unweighted edges, the first visit is always along a shortest path.', ...view()));
+  return f; });
+
+const GR2={nodes:[[0,40,90],[1,140,35],[2,140,140],[3,250,90],[4,370,40],[5,260,155]], edges:[[0,1],[0,2],[1,3],[2,3],[3,4],[2,5]], directed:true};
+def('gr_topo',"Kahn's topological sort",207,`
+def topoSort(n, edges):
+    indeg = [0] * n; adj = [[] for _ in range(n)]
+    for u, v in edges: adj[u].append(v); indeg[v] += 1
+    q = deque(i for i in range(n) if indeg[i] == 0)
+    order = []
+    while q:
+        u = q.popleft(); order.append(u)
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0: q.append(v)
+    return order if len(order) == n else []   # [] means a cycle`, () => {
+  const n=6, adj=Array.from({length:n},()=>[]), indeg=Array(n).fill(0), f=[], order=[];
+  GR2.edges.forEach(([u,v])=>{ adj[u].push(v); indeg[v]++; });
+  let q=[]; for (let i=0;i<n;i++) if (!indeg[i]) q.push(i);
+  const view=(hi={},eh=[])=>{ const h={}; order.forEach(k=>h[k]='ok'); q.forEach(k=>h[k]='win'); const ann={}; indeg.forEach((d,i)=>{ if (!order.includes(i)) ann[i]='in='+d; });
+    return [{t:'graph',label:'courses',...GR2,hi:{...h,...hi},ann,eh}, A('queue',q,{idx:false}), A('order',order,{idx:false,hi:allCls(order.length,'ok')})]; };
+  f.push(fr(4,'An arrow u → v means take u before v. "in" counts unmet prerequisites. Courses with 0 can start now.', ...view()));
+  while (q.length){ const u=q.shift(); order.push(u); const parts=[], freed=[];
+    for (const v of adj[u]){ indeg[v]--; parts.push(`${v} (now ${indeg[v]})`); if (!indeg[v]){ q.push(v); freed.push(v); } }
+    f.push(fr(9,`Take course ${u}. ${parts.length?`It unlocks ${parts.join(', ')}.`:'Nothing depends on it.'}${freed.length?` Ready: ${freed.join(', ')}.`:''}`, ...view({[u]:'cur'},adj[u].map(v=>[u,v]))));
+  }
+  f.push(fr(11,`All ${n} courses ordered: ${order.join(' → ')}. If a cycle existed, some course would never reach 0 and the order would be short.`, ...view()));
+  return f; });
+
+const GRU={nodes:[[0,50,45],[1,150,45],[2,100,145],[3,250,45],[4,350,45],[5,300,145]]};
+def('gr_uf','Union-find',684,`
+parent = list(range(n))
+def find(x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]   # path halving
+        x = parent[x]
+    return x
+def union(a, b):
+    ra, rb = find(a), find(b)
+    if ra == rb: return False           # same group: cycle
+    parent[rb] = ra
+    return True`, () => {
+  const n=6, E=[[0,1],[1,2],[3,4],[2,0],[4,5]], par=[0,1,2,3,4,5], f=[], added=[];
+  const find=x=>{ while (par[x]!==x){ par[x]=par[par[x]]; x=par[x]; } return x; };
+  const rootOf=x=>{ while (par[x]!==x) x=par[x]; return x; };
+  const comp=()=>{ const roots=[], cl={}; for (let i=0;i<n;i++){ const r=rootOf(i); const size=par.filter((_,j)=>rootOf(j)===r).length; if (size>1){ if (!roots.includes(r)) roots.push(r); cl[i]='i'+(roots.indexOf(r)%4); } } return cl; };
+  const view=(eh=[],bad=null,extra={})=>[{t:'graph',label:'groups',nodes:GRU.nodes,edges:bad?[...added,bad]:[...added],bad,hi:{...comp(),...extra},eh}, A('parent',par)];
+  f.push(fr(1,'Every node starts in its own group: parent[i] = i. Edges arrive one at a time.', ...view()));
+  E.forEach(([a,b])=>{ const ra=find(a), rb=find(b);
+    if (ra===rb){ f.push(fr(9,`Edge ${a}–${b}: find(${a}) and find(${b}) are both ${ra}. They are already connected, so this edge closes a cycle. It is the redundant one.`, ...view([],[a,b],{[a]:'bad',[b]:'bad'}))); }
+    else { par[rb]=ra; added.push([a,b]);
+      f.push(fr(10,`Edge ${a}–${b}: roots ${ra} and ${rb} differ. Join the groups with parent[${rb}] = ${ra}.`, ...view([[a,b]],null,{[a]:'cur',[b]:'cur'}))); }
+  });
+  return f; });
+
+const GRD={nodes:[[0,40,90],[1,170,35],[2,170,145],[3,290,90],[4,385,90]], edges:[[0,1,4],[0,2,1],[2,1,2],[1,3,1],[2,3,5],[3,4,3]], directed:true};
+def('gr_dijkstra',"Dijkstra's shortest paths",743,`
+def dijkstra(graph, src):
+    dist = {src: 0}; pq = [(0, src)]
+    while pq:
+        d, u = heappop(pq)
+        if d > dist[u]: continue          # stale entry
+        for v, w in graph[u]:
+            nd = d + w
+            if nd < dist.get(v, inf):
+                dist[v] = nd
+                heappush(pq, (nd, v))
+    return dist`, () => {
+  const adj={}; GRD.nodes.forEach(([i])=>adj[i]=[]); GRD.edges.forEach(([a,b,w])=>adj[a].push([b,w]));
+  const dist={0:0}, done=new Set(), f=[]; let pq=[[0,0]];
+  const view=(hi={},eh=[])=>{ const h={}; done.forEach(k=>h[k]='ok'); const ann={}; GRD.nodes.forEach(([i])=>ann[i]= i in dist ? 'd='+dist[i] : 'd=∞');
+    return [{t:'graph',label:'graph',...GRD,hi:{...h,...hi},ann,eh}, A('heap (dist, node)',[...pq].sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(([d,u])=>`(${d},${u})`),{idx:false,hi:{0:'win'}})]; };
+  f.push(fr(2,'dist[0] = 0, everything else ∞. The heap always hands back the closest node not yet settled.', ...view()));
+  while (pq.length){ pq.sort((a,b)=>a[0]-b[0]||a[1]-b[1]); const [d,u]=pq.shift();
+    if (d>dist[u]){ f.push(fr(5,`Pop (${d}, ${u}). We already reached ${u} with ${dist[u]}, so this entry is stale. Skip it.`, ...view({[u]:'dim'}))); continue; }
+    done.add(u); const upd=[], eh=[];
+    for (const [v,w] of adj[u]){ const nd=d+w; if (nd<(v in dist?dist[v]:Infinity)){ dist[v]=nd; pq.push([nd,v]); upd.push(`${v} → ${nd}`); eh.push([u,v]); } }
+    f.push(fr(9,`Settle ${u} at distance ${d}; it can never get shorter. ${upd.length?`Shorter paths found: ${upd.join(', ')}.`:'No neighbor improves.'}`, ...view({[u]:'cur'},eh)));
+  }
+  f.push(fr(11,`Shortest distances from 0: ${Object.entries(dist).map(([k,v])=>`${k}=${v}`).join(', ')}. Note 0 → 2 → 1 (3) beats the direct 0 → 1 (4).`, ...view()));
+  return f; });
+
+/* ---- Dynamic Programming ---- */
+def('dp_1d','Ways to reach step i',70,`
+def climbStairs(n):
+    dp = [0] * (n + 1)
+    dp[0] = dp[1] = 1
+    for i in range(2, n + 1):
+        dp[i] = dp[i - 1] + dp[i - 2]   # last move was 1 or 2 steps
+    return dp[n]`, () => {
+  const n=6, dp=Array(n+1).fill(null); dp[0]=dp[1]=1; const f=[];
+  const d=()=>dp.map(x=>x==null?'':x);
+  f.push(fr(3,'dp[i] = number of ways to stand on step i. There is 1 way to be at step 0 and 1 way to reach step 1.', A('dp',d(),{hi:{0:'ok',1:'ok'}})));
+  for (let i=2;i<=n;i++){ dp[i]=dp[i-1]+dp[i-2];
+    f.push(fr(5,`dp[${i}] = dp[${i-1}] + dp[${i-2}] = ${dp[i-1]} + ${dp[i-2]} = ${dp[i]}. The last move was either 1 step or 2 steps.`, A('dp',d(),{hi:{...rangeCls(0,i-3,'ok'),[i-1]:'win',[i-2]:'win',[i]:'cur'}})));
+  }
+  f.push(fr(6,`${dp[n]} ways to climb ${n} steps. Each cell used only the two before it, so two variables would be enough.`, A('dp',d(),{hi:{...allCls(n,'ok'),[n]:'cur'}}), V({return:dp[n]})));
+  return f; });
+
+def('dp_rob','Take or skip DP',198,`
+def rob(nums):
+    dp = [0] * (len(nums) + 1)      # dp[i]: best from first i houses
+    dp[1] = nums[0]
+    for i in range(2, len(nums) + 1):
+        skip = dp[i - 1]
+        take = dp[i - 2] + nums[i - 1]
+        dp[i] = max(skip, take)
+    return dp[-1]`, () => {
+  const nums=[2,7,9,3,1], n=nums.length, dp=Array(n+1).fill(null); dp[0]=0; dp[1]=nums[0]; const f=[];
+  const d=()=>dp.map(x=>x==null?'':x);
+  f.push(fr(3,`dp[i] = most money from the first i houses (no two adjacent). dp[0] = 0, dp[1] = ${nums[0]}.`, A('houses',nums,{hi:{0:'ok'}}), A('dp',d(),{hi:{0:'ok',1:'ok'}})));
+  for (let i=2;i<=n;i++){ const skip=dp[i-1], take=dp[i-2]+nums[i-1]; dp[i]=Math.max(skip,take);
+    f.push(fr(7,`House ${i-1} (${nums[i-1]}). Skip it: ${skip}. Rob it: dp[${i-2}] + ${nums[i-1]} = ${take}. dp[${i}] = ${dp[i]}.`, A('houses',nums,{hi:{[i-1]:'cur',[i-2]:'bad'}}), A('dp',d(),{hi:{[i-1]:'win',[i-2]:'win',[i]:'cur'}})));
+  }
+  f.push(fr(8,`Best total = ${dp[n]} (houses 0, 2 and 4: 2 + 9 + 1).`, A('houses',nums,{hi:{0:'ok',2:'ok',4:'ok'}}), A('dp',d(),{hi:{[n]:'ok'}}), V({return:dp[n]})));
+  return f; });
+
+def('dp_coin','Unbounded knapsack table',322,`
+def coinChange(coins, amount):
+    dp = [0] + [inf] * amount       # dp[a]: fewest coins for a
+    for a in range(1, amount + 1):
+        for c in coins:
+            if c <= a:
+                dp[a] = min(dp[a], dp[a - c] + 1)
+    return dp[amount] if dp[amount] != inf else -1`, () => {
+  const coins=[1,2,5], amt=11, dp=[0,...Array(amt).fill(Infinity)], f=[];
+  f.push(fr(2,'dp[a] = fewest coins that make amount a. dp[0] = 0; everything else starts at ∞.', A('coins',coins,{idx:false}), A('dp',dp.map(fmt))));
+  for (let a=1;a<=amt;a++){ const opts=[]; let bc=null;
+    coins.forEach(c=>{ if (c<=a){ opts.push(`coin ${c}: dp[${a-c}] + 1 = ${fmt(dp[a-c]+1)}`); if (dp[a-c]+1<dp[a]){ dp[a]=dp[a-c]+1; bc=c; } } });
+    f.push(fr(6,`a = ${a}. Try each coin as the last one: ${opts.join('; ')}. Best = ${dp[a]}.`, A('coins',coins,{idx:false,hi:{[coins.indexOf(bc)]:'cur'}}), A('dp',dp.map(fmt),{hi:{...rangeCls(0,a-1,'ok'),[a-bc]:'win',[a]:'cur'}})));
+  }
+  f.push(fr(7,`dp[${amt}] = ${dp[amt]} coins (5 + 5 + 1).`, A('coins',coins,{idx:false}), A('dp',dp.map(fmt),{hi:{[amt]:'ok'}}), V({return:dp[amt]})));
+  return f; });
+
+def('dp_lis','LIS table',300,`
+def lengthOfLIS(nums):
+    dp = [1] * len(nums)            # dp[i]: LIS ending at i
+    for i in range(len(nums)):
+        for j in range(i):
+            if nums[j] < nums[i]:
+                dp[i] = max(dp[i], dp[j] + 1)
+    return max(dp)`, () => {
+  const nums=[10,9,2,5,3,7,101,18], dp=Array(nums.length).fill(1), f=[];
+  f.push(fr(2,'dp[i] = length of the longest increasing subsequence that ends exactly at index i. Each starts at 1 (the number alone).', A('nums',nums), A('dp',dp)));
+  for (let i=1;i<nums.length;i++){ const hi={}; let best=-1;
+    for (let j=0;j<i;j++) if (nums[j]<nums[i]){ hi[j]='win'; if (dp[j]+1>dp[i]){ dp[i]=dp[j]+1; best=j; } }
+    const smaller=Object.keys(hi).map(k=>nums[k]);
+    if (best>=0) hi[best]='ok'; hi[i]='cur';
+    f.push(fr(6, best>=0 ? `${nums[i]}: earlier smaller values are ${smaller.join(', ')}. Extend the longest one (${nums[best]}, length ${dp[best]}): dp[${i}] = ${dp[i]}.` : `${nums[i]}: nothing smaller comes before it. dp stays 1.`, A('nums',nums,{hi}), A('dp',dp,{hi})));
+  }
+  const m=Math.max(...dp);
+  f.push(fr(7,`max(dp) = ${m}. One such subsequence: 2, 3, 7, 18.`, A('nums',nums,{hi:{2:'ok',4:'ok',5:'ok',7:'ok'}}), A('dp',dp,{hi:{[dp.indexOf(m)]:'ok'}}), V({return:m})));
+  return f; });
+
+def('dp_lcs','Two-string DP table',1143,`
+def longestCommonSubsequence(a, b):
+    dp = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
+    for i in range(1, len(a) + 1):
+        for j in range(1, len(b) + 1):
+            if a[i - 1] == b[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1     # match: diagonal + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    return dp[-1][-1]`, () => {
+  const a='ace', b='abcde', R=a.length+1, C=b.length+1, dp=Array.from({length:R},()=>Array(C).fill(0)), f=[], seen={};
+  const view=cl=>G('dp table',dp,{...seen,...cl},{rowLabels:['∅',...a],colLabels:['∅',...b]});
+  f.push(fr(2,`Rows are prefixes of "${a}", columns prefixes of "${b}". Cell (i, j) = LCS of the first i and first j letters. Row and column 0 are empty strings, so 0.`, view({})));
+  for (let i=1;i<R;i++) for (let j=1;j<C;j++){
+    if (a[i-1]===b[j-1]){ dp[i][j]=dp[i-1][j-1]+1;
+      f.push(fr(6,`'${a[i-1]}' = '${b[j-1]}'. Use this match: diagonal ${dp[i-1][j-1]} + 1 = ${dp[i][j]}.`, view({[`${i-1},${j-1}`]:'win',[`${i},${j}`]:'ok'}))); seen[`${i},${j}`]='ok'; }
+    else { dp[i][j]=Math.max(dp[i-1][j],dp[i][j-1]);
+      f.push(fr(8,`'${a[i-1]}' ≠ '${b[j-1]}'. Drop a letter from one string: max(up ${dp[i-1][j]}, left ${dp[i][j-1]}) = ${dp[i][j]}.`, view({[`${i-1},${j}`]:'win',[`${i},${j-1}`]:'win',[`${i},${j}`]:'cur'}))); }
+  }
+  f.push(fr(9,`The bottom-right cell is ${dp[R-1][C-1]}. Green cells are the matches; following them gives "ace".`, view({[`${R-1},${C-1}`]:'cur'}), V({return:dp[R-1][C-1]})));
+  return f; });
+
+def('dp_grid','Grid path DP',62,`
+def uniquePaths(m, n):
+    dp = [[1] * n for _ in range(m)]   # first row and column: 1 way
+    for r in range(1, m):
+        for c in range(1, n):
+            dp[r][c] = dp[r - 1][c] + dp[r][c - 1]   # from above + from left
+    return dp[-1][-1]`, () => {
+  const m=3, n=4, g=Array.from({length:m},(_,r)=>Array.from({length:n},(_,c)=>r===0||c===0?1:'')), f=[], base={};
+  for (let r=0;r<m;r++) for (let c=0;c<n;c++) if (!r||!c) base[r+','+c]='ok';
+  f.push(fr(2,'The robot moves only right or down. Cells in the first row or first column have exactly 1 path.', G('dp',g,base)));
+  for (let r=1;r<m;r++) for (let c=1;c<n;c++){ g[r][c]=g[r-1][c]+g[r][c-1];
+    f.push(fr(5,`(${r}, ${c}) = from above ${g[r-1][c]} + from the left ${g[r][c-1]} = ${g[r][c]}.`, G('dp',g,{...base,[(r-1)+','+c]:'win',[r+','+(c-1)]:'win',[r+','+c]:'cur'}))); base[r+','+c]='ok'; }
+  f.push(fr(6,`${g[m-1][n-1]} unique paths to the bottom-right corner.`, G('dp',g,{...base,[(m-1)+','+(n-1)]:'cur'}), V({return:g[m-1][n-1]})));
+  return f; });
+</script>
+
+<script>
+(function(){
+const DIFF={E:'Easy',M:'Medium',H:'Hard'};
+const PROBLEMS=[], byNum=new Map();
+TOPICS.forEach(t=>{ t.items=[]; t.data.trim().split('\n').forEach(line=>{ const [num,title,d,eng,insight,time,space]=line.split('|').map(s=>s.trim());
+  const p={num:+num,title,d,eng,insight,time,space,topic:t.key}; PROBLEMS.push(p); t.items.push(p); byNum.set(p.num,p); }); });
+const topicOf=k=>TOPICS.find(t=>t.key===k);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+const KEY='lc-pattern-lab-solved';
+let solved=new Set(); try{ const raw=localStorage.getItem(KEY); if (raw) solved=new Set(JSON.parse(raw)); }catch(e){}
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify([...solved])); }catch(e){} };
+let topic=null, diff='all', query='', cur=null, frames=[], fi=0, timer=null;
+const slug=t=>t.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').replace(/-+/g,'-');
+
+/* ---------- block renderers ---------- */
+function rArr(b){ const hi=b.hi, p=b.ptr, showIdx=b.idx!==false, hasP=Object.keys(p).length>0;
+  if (!b.v.length) return '<span class="empty">empty</span>';
+  if (b.bars){ const fill=b.fill||[], base=b.base||0, mx=Math.max(1,...b.v.map((x,i)=>x-base+(fill[i]||0)));
+    return `<div class="bars">${b.v.map((x,i)=>`<div class="bc"><div class="ptr">${esc(p[i]||'')}</div><div class="bw">${fill[i]?`<div class="water" style="height:${fill[i]/mx*100}%"></div>`:''}<div class="bar ${hi[i]||''}" style="height:${Math.max(2,(x-base)/mx*100)}%"></div></div><div class="idx">${esc(x)}</div></div>`).join('')}</div>`; }
+  return `<div class="arr">${b.v.map((x,i)=>`<div class="ac">${hasP?`<div class="ptr">${esc(p[i]||'')}</div>`:''}<div class="cell ${hi[i]||''}">${esc(x)}</div>${showIdx?`<div class="idx">${i}</div>`:''}</div>`).join('')}</div>`; }
+function rMap(b){ if (!b.e.length) return '<span class="empty">empty</span>';
+  return `<div class="chips">${b.e.map(([k,v])=>`<span class="kv ${b.hk!==undefined&&String(k)===String(b.hk)?'cur':''}"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></span>`).join('')}</div>`; }
+function rStack(b){ if (!b.v.length) return '<span class="empty">empty</span>';
+  return `<div class="stack"><span class="send">bottom</span>${b.v.map((x,i)=>`<span class="sitem ${b.top&&i===b.v.length-1?'cur':''}">${esc(x)}</span>`).join('')}<span class="send">← top</span></div>`; }
+function rVars(b){ return `<div class="vars">${Object.entries(b.o).map(([k,v])=>`<span class="var"><span class="vk">${esc(k)}</span><span class="vv">${esc(v)}</span></span>`).join('')}</div>`; }
+function rGrid(b){ let h='<table class="grid">';
+  if (b.colLabels) h+='<tr>'+(b.rowLabels?'<th></th>':'')+b.colLabels.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
+  b.g.forEach((row,r)=>{ h+='<tr>'+(b.rowLabels?`<th>${esc(b.rowLabels[r])}</th>`:'')+row.map((v,c)=>`<td class="${b.cls[r+','+c]||''}">${esc(v)}</td>`).join('')+'</tr>'; });
+  return h+'</table>'; }
+function rTree(b){ const v=b.v; let maxI=-1; v.forEach((x,i)=>{ if (x!=null) maxI=i; });
+  if (maxI<0) return '<span class="empty">empty</span>';
+  const depth=Math.floor(Math.log2(maxI+1)), leaves=2**depth, unit=b.pill?62:48, PAD=20, W=Math.max(260,leaves*unit), LH=60, H=(depth+1)*LH+6;
+  const pos=i=>{ const d=Math.floor(Math.log2(i+1)), p=i-(2**d-1); return [PAD+(p+0.5)/2**d*W, d*LH+24]; };
+  let e='', n=''; const hi=b.hi||{}, ann=b.ann||{};
+  for (let i=0;i<=maxI;i++){ if (v[i]==null) continue; const [x,y]=pos(i);
+    if (i>0){ const pi=(i-1)>>1; if (v[pi]!=null){ const [px,py]=pos(pi); e+=`<line class="edge" x1="${px}" y1="${py+15}" x2="${x}" y2="${y-15}"/>`; } }
+    const label=String(v[i]), w=Math.max(30,label.length*8.4+16);
+    n+=`<g class="tn ${hi[i]||''}"><rect x="${x-w/2}" y="${y-15}" width="${w}" height="30" rx="15"/><text x="${x}" y="${y+5}">${esc(label)}</text></g>`;
+    if (ann[i]!=null) n+=`<text class="ann" x="${x+w/2+10}" y="${y-14}">${esc(ann[i])}</text>`; }
+  const TW=W+PAD*2;
+  return `<div class="svgwrap"><svg viewBox="0 0 ${TW} ${H}" width="${TW}" style="max-width:100%" role="img" aria-label="${esc(b.label)}">${e}${n}</svg></div>`; }
+function rList(b){ const n=b.v.length, nx=b.next, p=b.ptr, hi=b.hi;
+  if (!n) return '<span class="empty">empty</span>';
+  const col=(i,content)=>`<div class="lc"><div class="ptr">${esc(p[i]||'')}</div>${content}</div>`;
+  let h='';
+  if (b.leftNull) h+=col(-1,'<div class="lnull">∅</div>')+`<div class="conn">${nx[0]===null?'←':''}</div>`;
+  for (let i=0;i<n;i++){ h+=col(i,`<div class="lnode ${hi[i]||''}">${esc(b.v[i])}</div>`);
+    if (i<n-1){ const a= nx[i]===i+1?'→' : nx[i+1]===i?'←' : ''; h+=`<div class="conn ${a?'':'cut'}">${a||'╳'}</div>`; } }
+  if (b.cycleTo!=null) h+=`<div class="conn loop">↩ to ${esc(b.v[b.cycleTo])}</div>`;
+  else if (nx[n-1]===null) h+=`<div class="conn">→</div>`+col(n,'<div class="lnull">∅</div>');
+  else if (p[n]) h+=`<div class="conn"></div>`+col(n,'<div class="lnull">∅</div>');
+  return `<div class="llist">${h}</div>`; }
+function rTrie(b){ let out=`<div class="trow"><span class="tch ${b.path===''?b.cls:''}">root</span></div>`;
+  const walk=(node,pre,d)=>Object.keys(node).filter(k=>k!=='$').sort().forEach(c=>{ const p=pre+c, on=b.path && b.path.startsWith(p), cls=on?(p===b.path?b.cls:'win'):'';
+    out+=`<div class="trow" style="padding-left:${d*20}px"><span class="tbr">└</span><span class="tch ${cls}">${esc(c)}</span>${node[c].$?`<span class="tend">● ${esc(p)}</span>`:''}</div>`; walk(node[c],p,d+1); });
+  walk(b.root,'',0); return `<div class="trie">${out}</div>`; }
+function rGraph(b){ const pos={}; b.nodes.forEach(([id,x,y])=>pos[id]=[x,y]); const hi=b.hi||{}, ann=b.ann||{}, eh=b.eh||[];
+  const on=(a,c)=>eh.some(([p,q])=>(p===a&&q===c)||(!b.directed&&p===c&&q===a));
+  let s='';
+  (b.edges||[]).forEach(([a,c,w])=>{ const [x1,y1]=pos[a], [x2,y2]=pos[c], dx=x2-x1, dy=y2-y1, Ln=Math.hypot(dx,dy), r1=19, r2=b.directed?23:19;
+    const bad=b.bad && b.bad[0]===a && b.bad[1]===c;
+    s+=`<line x1="${x1+dx/Ln*r1}" y1="${y1+dy/Ln*r1}" x2="${x2-dx/Ln*r2}" y2="${y2-dy/Ln*r2}" class="ge ${on(a,c)?'on':''} ${bad?'bad':''}" ${b.directed?'marker-end="url(#ah)"':''}/>`;
+    if (w!=null) s+=`<text class="gw" x="${(x1+x2)/2+(dx===0?10:0)}" y="${(y1+y2)/2-7}">${w}</text>`; });
+  b.nodes.forEach(([id,x,y])=>{ s+=`<g class="gn ${hi[id]||''}"><circle cx="${x}" cy="${y}" r="17"/><text x="${x}" y="${y+5}">${id}</text></g>`;
+    if (ann[id]!=null) s+=`<text class="ga" x="${x}" y="${y+33}">${esc(ann[id])}</text>`; });
+  return `<div class="svgwrap"><svg viewBox="0 0 420 195" width="420" style="max-width:100%" role="img" aria-label="${esc(b.label)}"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" class="ahp"/></marker></defs>${s}</svg></div>`; }
+function renderBlock(b){ const map={arr:rArr,map:rMap,stack:rStack,vars:rVars,grid:rGrid,tree:rTree,list:rList,trie:rTrie,graph:rGraph};
+  return `<div class="blk"><div class="blabel">${esc(b.label||'')}</div><div class="bbody">${map[b.t](b)}</div></div>`; }
+
+/* ---------- python highlighting ---------- */
+const KW=/\b(def|return|for|in|if|else|elif|while|not|and|or|class|None|True|False|is|continue|break|lambda|self)\b/g;
+function hl(line){ const i=line.indexOf('#'); const code=i>=0?line.slice(0,i):line, cm=i>=0?line.slice(i):'';
+  return esc(code).replace(KW,'<span class="kw">$1</span>')+(cm?`<span class="cm">${esc(cm)}</span>`:''); }
+
+/* ---------- views ---------- */
+function renderStats(){ const tot=PROBLEMS.length, s=PROBLEMS.filter(p=>solved.has(p.num)).length;
+  $('stat-solved').textContent=`${s} / ${tot}`; $('stat-bar').style.width=(s/tot*100)+'%';
+  ['E','M','H'].forEach(d=>{ const all=PROBLEMS.filter(p=>p.d===d); $('stat-'+d).textContent=`${all.filter(p=>solved.has(p.num)).length}/${all.length}`; }); }
+function renderTopics(){
+  $('topics').innerHTML=[`<button class="tchip ${!topic?'on':''}" data-topic="">All topics <span>${PROBLEMS.length}</span></button>`,
+    ...TOPICS.map(t=>`<button class="tchip ${topic===t.key?'on':''}" data-topic="${t.key}">${esc(t.name)} <span>${t.items.filter(p=>solved.has(p.num)).length}/${t.items.length}</span></button>`)].join(''); }
+function renderList(){ const q=query.trim().toLowerCase(); let html='', count=0;
+  TOPICS.forEach(t=>{ if (topic && t.key!==topic) return;
+    const items=t.items.filter(p=>(diff==='all'||p.d===diff) && (!q || p.title.toLowerCase().includes(q) || String(p.num).startsWith(q)));
+    if (!items.length) return; count+=items.length;
+    html+=`<div class="lgroup"><div class="lhead">${esc(t.name)}<span>${items.length}</span></div>${items.map(p=>`<button class="prow ${cur&&cur.num===p.num?'sel':''}" data-num="${p.num}" type="button"><span class="pn">${p.num}</span><span class="pt">${esc(p.title)}</span><span class="pd d${p.d}" title="${DIFF[p.d]}">${p.d}</span><span class="pc" title="${solved.has(p.num)?'Solved':''}">${solved.has(p.num)?'✓':''}</span></button>`).join('')}</div>`; });
+  $('plist').innerHTML=html || `<div class="none">No problems match "${esc(query)}". Try a number like 42 or a word like "tree".</div>`;
+  $('lcount').textContent=`${count} shown`; }
+function renderSolve(){ const s=solved.has(cur.num); const b=$('d-solve'); b.textContent=s?'✓ Solved':'Mark as solved'; b.classList.toggle('done',s); }
+function renderDetail(){ const p=cur, t=topicOf(p.topic), e=ENG[p.eng]; const base=e.problem && e.problem!==p.num ? byNum.get(e.problem) : null;
+  $('d-num').textContent='#'+p.num; $('d-title').textContent=p.title;
+  const dd=$('d-diff'); dd.className='pill d'+p.d; dd.textContent=DIFF[p.d];
+  $('d-topic').textContent=t.name; $('d-pattern').textContent=e.name;
+  $('d-insight').textContent=p.insight; $('d-time').textContent=p.time; $('d-space').textContent=p.space;
+  $('d-link').href='https://leetcode.com/problems/'+slug(p.title)+'/';
+  renderSolve();
+  $('w-title').textContent=e.name;
+  $('w-note').innerHTML = base ? `This walkthrough runs <button class="link" type="button" data-num="${base.num}">#${base.num} ${esc(base.title)}</button>, which uses the same pattern. The key insight above says what changes for this problem.`
+    : e.problem ? 'This walkthrough runs this exact problem on a small example.' : 'A plain BFS on a small graph. The same loop powers this problem; the key insight says what to add.';
+  $('c-name').textContent=(base?base.title:p.title).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'.py';
+  $('code').innerHTML=e.code.map((l,i)=>`<div class="cl"><span class="ln">${i+1}</span><span>${hl(l)||' '}</span></div>`).join('');
+  const sims=PROBLEMS.filter(q=>q.eng===p.eng && q.num!==p.num);
+  $('sims').innerHTML = sims.length ? sims.map(q=>`<button class="sim" type="button" data-num="${q.num}"><b>${q.num}</b>${esc(q.title)}</button>`).join('') : '<span class="empty">This is the only problem using this walkthrough.</span>';
+  $('pr-title').textContent=`When to reach for ${t.name}`; $('pr-when').textContent=t.when;
+  $('pr-signals').innerHTML=t.signals.map(s=>`<li>${esc(s)}</li>`).join('');
+  document.title='LeetCode Pattern Lab';
+}
+function renderFrame(){ const f=frames[fi]; if (!f) return;
+  $('stage').innerHTML=f.b.map(renderBlock).join('');
+  $('msg').textContent=f.msg; $('step').textContent=`Step ${fi+1} of ${frames.length}`;
+  $('trackbar').style.width=((fi+1)/frames.length*100)+'%';
+  const lines=$('code').children; for (let i=0;i<lines.length;i++) lines[i].classList.toggle('on',i+1===f.ln);
+  $('b-first').disabled=$('b-prev').disabled=fi===0; $('b-next').disabled=$('b-last').disabled=fi>=frames.length-1; }
+function stop(){ if (timer){ clearInterval(timer); timer=null; } $('b-play').textContent='▶ Play'; }
+function play(){ if (timer){ stop(); return; } if (fi>=frames.length-1) fi=0;
+  renderFrame(); $('b-play').textContent='❚❚ Pause';
+  timer=setInterval(()=>{ if (fi>=frames.length-1){ stop(); return; } fi++; renderFrame(); }, +$('speed').value); }
+function go(i){ stop(); fi=Math.max(0,Math.min(frames.length-1,i)); renderFrame(); }
+function select(num){ const p=byNum.get(num); if (!p) return; stop(); cur=p; const e=ENG[p.eng];
+  if (!e._f) e._f=e.run(); frames=e._f; fi=0;
+  renderDetail(); renderFrame(); renderList(); }
+
+/* ---------- events ---------- */
+document.addEventListener('click',ev=>{
+  const n=ev.target.closest('[data-num]'); if (n){ const num=+n.dataset.num; if (location.hash!=='#p'+num) location.hash='p'+num; else select(num);
+    if (window.innerWidth<900) $('detail').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); return; }
+  const t=ev.target.closest('[data-topic]'); if (t){ topic=t.dataset.topic||null; renderTopics(); renderList(); $('plist').scrollTop=0; return; }
+  const d=ev.target.closest('[data-diff]'); if (d){ diff=d.dataset.diff; document.querySelectorAll('#diffs [data-diff]').forEach(x=>x.classList.toggle('on',x===d)); renderList(); }
+});
+$('q').addEventListener('input',e=>{ query=e.target.value; renderList(); });
+$('d-solve').addEventListener('click',()=>{ if (solved.has(cur.num)) solved.delete(cur.num); else solved.add(cur.num); save(); renderSolve(); renderStats(); renderTopics(); renderList(); });
+$('b-first').addEventListener('click',()=>go(0));
+$('b-prev').addEventListener('click',()=>go(fi-1));
+$('b-next').addEventListener('click',()=>go(fi+1));
+$('b-last').addEventListener('click',()=>go(frames.length-1));
+$('b-play').addEventListener('click',play);
+$('speed').addEventListener('change',()=>{ if (timer){ stop(); play(); } });
+document.addEventListener('keydown',e=>{ const tag=(e.target.tagName||'').toLowerCase(); if (tag==='input'||tag==='select'||tag==='textarea') return;
+  if (e.key==='ArrowRight'){ e.preventDefault(); go(fi+1); }
+  else if (e.key==='ArrowLeft'){ e.preventDefault(); go(fi-1); }
+  else if (e.key===' ' && tag!=='button'){ e.preventDefault(); play(); } });
+const fromHash=()=>{ const m=/^#p(\d+)$/.exec(location.hash); return m && byNum.has(+m[1]) ? +m[1] : null; };
+window.addEventListener('hashchange',()=>{ const n=fromHash(); if (n && (!cur || cur.num!==n)) select(n); });
+
+renderStats(); renderTopics(); select(fromHash() || 1);
+})();
+</script>

@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MongoDB Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky module rail on the left, one interactive lab per module on the right; rail becomes a scroll strip on phones. */
+:root{
+  --bg:#f2f6f4; --panel:#ffffff; --ink:#0d2b24; --muted:#56726a; --line:#d5e2dc;
+  --accent:#00684a; --accent-ink:#ffffff; --spring:#00c261; --code-bg:#0b2a33; --code-ink:#d7efe6;
+  --warn:#b35a00; --bad:#b3261e; --good:#0a7a45; --soft:#e3f0ea;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#071a1f; --panel:#0e2a31; --ink:#e2f3ec; --muted:#8fb0a6; --line:#1f4048;
+  --accent:#00ed64; --accent-ink:#04231a; --spring:#00ed64; --code-bg:#041217; --code-ink:#c9eadb;
+  --warn:#ffb55c; --bad:#ff8a80; --good:#4ee08d; --soft:#123a40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#071a1f; --panel:#0e2a31; --ink:#e2f3ec; --muted:#8fb0a6; --line:#1f4048;
+  --accent:#00ed64; --accent-ink:#04231a; --spring:#00ed64; --code-bg:#041217; --code-ink:#c9eadb;
+  --warn:#ffb55c; --bad:#ff8a80; --good:#4ee08d; --soft:#123a40; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);padding-block:0}
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;max-width:1280px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+nav{position:sticky;top:20px;align-self:start;display:flex;flex-direction:column;gap:2px}
+.brand{font:700 22px var(--display);letter-spacing:-.01em;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.brand i{width:14px;height:22px;background:var(--spring);border-radius:50% 50% 50% 50%/70% 70% 30% 30%;display:inline-block}
+nav a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--muted);text-decoration:none;font-weight:500}
+nav a small{font:400 11px var(--mono);opacity:.7}
+nav a:hover{background:var(--soft);color:var(--ink)}
+nav a[aria-current=page]{background:var(--accent);color:var(--accent-ink)}
+a:focus-visible,button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--spring);outline-offset:2px}
+.themebtn{margin-top:14px;align-self:flex-start}
+main{min-width:0;display:flex;flex-direction:column;gap:20px}
+h1{font:700 clamp(28px,4vw,40px)/1.1 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font:700 18px var(--display);margin:0 0 8px}
+h3{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted);font-size:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px;min-width:0}
+button,select,input{font:500 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.on{background:var(--soft);border-color:var(--accent);color:var(--ink)}
+button.danger{color:var(--bad)}
+textarea{width:100%;font:13px/1.5 var(--mono);background:var(--code-bg);color:var(--code-ink);border:1px solid var(--line);border-radius:6px;padding:10px;resize:vertical;min-height:90px}
+pre,code{font-family:var(--mono);font-size:12.5px}
+pre.code{background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:12px;margin:0;overflow:auto;max-height:340px;white-space:pre}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+th{font:600 11px var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+td code{color:var(--accent)}
+.tag{display:inline-block;font:500 11px var(--mono);padding:2px 7px;border-radius:99px;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.tag.g{color:var(--good)} .tag.w{color:var(--warn)} .tag.b{color:var(--bad)}
+.err{color:var(--bad);font:12px var(--mono)}
+.kpi{display:flex;gap:18px;flex-wrap:wrap}
+.kpi div{display:flex;flex-direction:column}
+.kpi b{font:700 24px var(--display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.card-link{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink)}
+.card-link:hover{border-color:var(--accent)}
+.card-link h2{margin:0}
+.card-link p{color:var(--muted);font-size:14px}
+.stage{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:8px;padding:12px}
+.stage-h{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.cells{display:grid;grid-template-columns:repeat(40,1fr);gap:2px}
+.cells i{aspect-ratio:1;background:var(--line);border-radius:2px;transition:background .15s}
+.cells i.ex{background:var(--warn)} .cells i.hit{background:var(--spring)}
+.nodes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.node{border:2px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;transition:border-color .3s,opacity .3s}
+.node.P{border-color:var(--spring);background:var(--soft)}
+.node.down{opacity:.4;border-style:dashed}
+.node b{font:700 15px var(--display)}
+.oplog{font:12px var(--mono);display:flex;flex-direction:column;gap:2px}
+.bar{height:20px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar>div{height:100%;background:var(--spring);transition:width .4s}
+.bar>div.hot{background:var(--warn)}
+.log{font:12px var(--mono);color:var(--muted);max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap}
+.sqlrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border-bottom:1px solid var(--line)}
+.sqlrow>div{padding:8px 10px;font:12.5px var(--mono);overflow-x:auto;white-space:pre}
+.sqlrow>div:first-child{color:var(--muted)}
+.sqlrow.h>div{font:600 11px var(--body);letter-spacing:.07em;text-transform:uppercase}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px}
+  nav{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:6px}
+  nav a{white-space:nowrap} nav a small{display:none}
+  .brand{display:none} .themebtn{margin:0 0 0 auto}
+  .grid2,.grid3{grid-template-columns:minmax(0,1fr)}
+  .nodes{grid-template-columns:minmax(0,1fr)}
+  .cells{grid-template-columns:repeat(25,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>html{color-scheme:light}body{margin:0}</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav id="nav" aria-label="Modules"></nav>
+  <main id="view"></main>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const J=(o,n=2)=>JSON.stringify(o,null,n);
+const parse=t=>{try{return[JSON.parse(t),null]}catch(e){return[null,e.message]}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+const ORDERS=[
+ {_id:1,customer:"Linh",city:"Hanoi",status:"paid",total:120,tags:["new","promo"],items:[{sku:"A1",qty:2,price:30},{sku:"B7",qty:1,price:60}]},
+ {_id:2,customer:"Minh",city:"Saigon",status:"shipped",total:340,tags:["vip"],items:[{sku:"C3",qty:1,price:340}]},
+ {_id:3,customer:"An",city:"Hanoi",status:"pending",total:45,tags:[],items:[{sku:"A1",qty:1,price:30},{sku:"D2",qty:3,price:5}]},
+ {_id:4,customer:"Trang",city:"Da Nang",status:"paid",total:210,tags:["promo"],items:[{sku:"B7",qty:3,price:70}]},
+ {_id:5,customer:"Khoa",city:"Saigon",status:"paid",total:95,tags:["new"],items:[{sku:"D2",qty:19,price:5}]},
+ {_id:6,customer:"Linh",city:"Hanoi",status:"shipped",total:150,tags:["vip","promo"],items:[{sku:"C3",qty:1,price:150}]},
+ {_id:7,customer:"Hoa",city:"Da Nang",status:"cancelled",total:60,tags:[],items:[{sku:"B7",qty:1,price:60}]},
+ {_id:8,customer:"Minh",city:"Saigon",status:"paid",total:480,tags:["vip"],items:[{sku:"C3",qty:2,price:240}]},
+ {_id:9,customer:"Bao",city:"Hue",status:"pending",total:75,tags:["new"],items:[{sku:"A1",qty:2,price:30},{sku:"D2",qty:3,price:5}]},
+ {_id:10,customer:"An",city:"Hanoi",status:"paid",total:30,tags:[],items:[{sku:"A1",qty:1,price:30}]},
+];
+
+/* ---------- mini query engine ---------- */
+function getPath(d,p){let v=[d];for(const k of p.split('.')){v=v.flatMap(x=>x==null?[]:Array.isArray(x)&&isNaN(k)?x.map(y=>y?.[k]):[x[k]]);}return v.flatMap(x=>x);}
+function cmp(a,b){return a<b?-1:a>b?1:0}
+function matchCond(vals,c){
+  const isOp=c&&typeof c==='object'&&!Array.isArray(c)&&Object.keys(c).some(k=>k[0]==='$');
+  if(!isOp)return vals.some(v=>J(v,0)===J(c,0))||(Array.isArray(c)&&false);
+  return Object.entries(c).every(([op,x])=>{
+    switch(op){
+      case'$eq':return vals.some(v=>v===x);
+      case'$ne':return !vals.some(v=>v===x);
+      case'$gt':return vals.some(v=>v>x);
+      case'$gte':return vals.some(v=>v>=x);
+      case'$lt':return vals.some(v=>v<x);
+      case'$lte':return vals.some(v=>v<=x);
+      case'$in':return vals.some(v=>x.includes(v));
+      case'$nin':return !vals.some(v=>x.includes(v));
+      case'$exists':return (vals.length>0)===x;
+      case'$size':return vals.length===x;
+      case'$regex':return vals.some(v=>typeof v==='string'&&new RegExp(x).test(v));
+      default:throw new Error('Operator not supported in this demo: '+op);
+    }});
+}
+function matches(d,f){
+  return Object.entries(f).every(([k,c])=>{
+    if(k==='$and')return c.every(s=>matches(d,s));
+    if(k==='$or')return c.some(s=>matches(d,s));
+    if(k==='$nor')return !c.some(s=>matches(d,s));
+    if(k[0]==='$')throw new Error('Operator not supported in this demo: '+k);
+    return matchCond(getPath(d,k),c);
+  });
+}
+function project(d,p){
+  const keys=Object.keys(p).filter(k=>k!=='_id');
+  const incl=keys.some(k=>p[k]);
+  const out={};
+  if(incl){if(p._id!==0&&'_id' in d)out._id=d._id;keys.forEach(k=>{if(p[k]&&k in d)out[k]=d[k]})}
+  else{Object.assign(out,d);keys.forEach(k=>delete out[k]);if(p._id===0)delete out._id}
+  return out;
+}
+function sortDocs(a,s){const e=Object.entries(s);return [...a].sort((x,y)=>{for(const[k,d]of e){const c=cmp(getPath(x,k)[0],getPath(y,k)[0]);if(c)return c*d}return 0})}
+const ev=(d,x)=>typeof x==='string'&&x[0]==='$'?getPath(d,x.slice(1))[0]:x;
+function runStage(docs,op,spec){
+  switch(op){
+    case'$match':return docs.filter(d=>matches(d,spec));
+    case'$sort':return sortDocs(docs,spec);
+    case'$limit':return docs.slice(0,spec);
+    case'$skip':return docs.slice(spec);
+    case'$project':return docs.map(d=>project(d,spec));
+    case'$count':return [{[spec]:docs.length}];
+    case'$unwind':{const p=(typeof spec==='string'?spec:spec.path).slice(1);return docs.flatMap(d=>{const a=getPath({v:d[p]},'v');return Array.isArray(d[p])?d[p].map(x=>({...d,[p]:x})):[d]})}
+    case'$group':{
+      const m=new Map();
+      for(const d of docs){
+        const id=ev(d,spec._id);const key=J(id,0);
+        if(!m.has(key))m.set(key,{_id:id,_n:0,_a:{}});
+        const g=m.get(key);g._n++;
+        for(const[f,acc]of Object.entries(spec)){ if(f==='_id')continue;
+          const[o,x]=Object.entries(acc)[0];const v=ev(d,x);const s=g._a;
+          if(o==='$sum')s[f]=(s[f]||0)+(typeof v==='number'?v:0);
+          else if(o==='$avg'){s[f]=s[f]||[0,0];s[f][0]+=v;s[f][1]++}
+          else if(o==='$max')s[f]=s[f]===undefined?v:Math.max(s[f],v);
+          else if(o==='$min')s[f]=s[f]===undefined?v:Math.min(s[f],v);
+          else if(o==='$push')(s[f]=s[f]||[]).push(v);
+          else if(o==='$first'){if(!(f in s))s[f]=v}
+          else throw new Error('Accumulator not supported: '+o);
+        }}
+      return [...m.values()].map(g=>{const o={_id:g._id};for(const[f,v]of Object.entries(g._a))o[f]=Array.isArray(v)&&v.length===2&&typeof v[0]==='number'&&spec[f].$avg!==undefined?+(v[0]/v[1]).toFixed(2):v;return o});}
+    default:throw new Error('Stage not supported in this demo: '+op);
+  }
+}
+const rowsTable=a=>{
+  if(!a.length)return'<p class="lead">No documents.</p>';
+  const cols=[...new Set(a.flatMap(Object.keys))];
+  return `<div class="tbl"><table><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${a.slice(0,12).map(d=>`<tr>${cols.map(c=>`<td>${c in d?`<code>${esc(typeof d[c]==='object'?J(d[c],0):d[c])}</code>`:'<span class="tag">missing</span>'}</td>`).join('')}</tr>`).join('')}</table></div>${a.length>12?`<p class="lead">+${a.length-12} more</p>`:''}`;
+};
+
+/* ---------- modules ---------- */
+const MODS=[
+ ['overview','Overview','00'],['documents','Documents & BSON','01'],['query','Find & CRUD','02'],
+ ['aggregation','Aggregation','03'],['indexes','Indexes','04'],['modeling','Data modeling','05'],
+ ['replication','Replica sets','06'],['sharding','Sharding','07'],['sql','SQL ↔ MongoDB','08']
+];
+const view=$('#view');
+const R={};
+
+R.overview=()=>{
+  view.innerHTML=`<div class="stack"><h1>MongoDB, one idea per lab</h1>
+  <p class="lead">MongoDB stores data as flexible documents instead of fixed rows. Each lab below is hands-on: edit a document, run a query, build a pipeline, break a server, pick a shard key.</p></div>
+  <div class="grid3">${MODS.slice(1).map(([id,t],i)=>{
+    const d={documents:'Documents, nested data and the BSON types behind them.',query:'Filters, operators, projection, sort and the four CRUD verbs.',aggregation:'Chain stages to group, reshape and summarise data.',indexes:'See how many documents a query touches with and without an index.',modeling:'Embed or reference? Count the queries each design needs.',replication:'Primary, secondaries, oplog and automatic failover.',sharding:'Spread data across servers and see why the shard key matters.',sql:'Map the SQL you know to MongoDB operations.'}[id];
+    return`<a class="panel card-link" href="#${id}"><span class="tag">${MODS[i+1][2]}</span><h2>${t}</h2><p>${d}</p></a>`}).join('')}</div>
+  <div class="panel"><h3>The whole stack in one picture</h3>
+  <div class="grid2"><div class="stack"><p><b>Logical</b>: a <i>database</i> holds <i>collections</i>; a collection holds <i>documents</i>; a document holds <i>fields</i> (strings, numbers, arrays, sub-documents).</p>
+  <p><b>Physical</b>: a <i>replica set</i> keeps 3+ copies of the data for availability. A <i>sharded cluster</i> splits a collection over several replica sets for scale.</p></div>
+  <pre class="code">cluster
+ └─ shard 1 (replica set)
+ │    ├─ primary    ← writes
+ │    ├─ secondary  ← replicates oplog
+ │    └─ secondary
+ └─ shard 2 (replica set)
+ └─ mongos router ← your app connects here
+      db.orders  →  documents { _id, customer, items:[…] }</pre></div></div>`;
+};
+
+R.documents=()=>{
+  const init={_id:{$oid:"65f1c2a8e4b0a1d2c3f40001"},name:"Linh Tran",age:31,balance:{$numberDecimal:"1520.75"},score:98.5,active:true,joinedAt:{$date:"2024-03-01T08:30:00Z"},tags:["vip","promo"],address:{city:"Hanoi",geo:[105.85,21.03]},manager:null};
+  view.innerHTML=`<div class="stack"><h1>Documents & BSON</h1><p class="lead">You write JSON. MongoDB stores BSON, which adds types such as ObjectId, Date, Decimal128 and distinct integer sizes. Edit the document and watch the type of every path.</p></div>
+  <div class="grid2"><div class="panel stack"><h3>Document (extended JSON)</h3><textarea id="doc" rows="16" spellcheck="false"></textarea><div class="err" id="derr"></div>
+  <div class="row"><button id="bigint">Add a 64-bit number</button><button id="bad">Add an unknown field</button></div></div>
+  <div class="panel stack"><h3>Inferred BSON types</h3><div class="tbl" id="types"></div>
+  <p class="lead" style="font-size:13px">Documents in one collection need not share a shape. Add a field and the collection still accepts it. Use schema validation when you want rules.</p></div></div>`;
+  const ta=$('#doc');ta.value=J(init);
+  const typeOf=v=>{
+    if(v===null)return['null','10'];if(Array.isArray(v))return['array','4'];
+    if(typeof v==='boolean')return['bool','8'];if(typeof v==='string')return['string','2'];
+    if(typeof v==='number')return Number.isInteger(v)?(Math.abs(v)<2**31?['int','16']:['long','18']):['double','1'];
+    if(v.$oid)return['objectId','7'];if(v.$date)return['date','9'];if(v.$numberDecimal)return['decimal128','19'];
+    return['object','3'];};
+  const walk=(v,p,out)=>{const[t,c]=typeOf(v);if(p)out.push([p,t,c,t==='object'||t==='array'?'':(v&&v.$oid)||(v&&v.$date)||(v&&v.$numberDecimal)||J(v,0)]);
+    if(t==='object')Object.entries(v).forEach(([k,x])=>walk(x,p?p+'.'+k:k,out));
+    if(t==='array')v.forEach((x,i)=>walk(x,p+'.'+i,out));};
+  const upd=()=>{const[o,e]=parse(ta.value);$('#derr').textContent=e||'';if(e)return;
+    const out=[];walk(o,'',out);
+    $('#types').innerHTML=`<table><tr><th>Path</th><th>Type</th><th>Code</th><th>Value</th></tr>${out.map(r=>`<tr><td><code>${esc(r[0])}</code></td><td><span class="tag ${r[1]==='object'||r[1]==='array'?'w':'g'}">${r[1]}</span></td><td>${r[2]}</td><td>${esc(r[3])}</td></tr>`).join('')}</table>`;};
+  ta.oninput=upd;
+  const add=(k,v)=>{const[o]=parse(ta.value);if(!o)return;o[k]=v;ta.value=J(o);upd()};
+  $('#bigint').onclick=()=>add('views',9007199254740000);
+  $('#bad').onclick=()=>add('nickname',"Lin");
+  upd();
+};
+
+R.query=()=>{
+  const presets=[
+    ['All paid',`{"status":"paid"}`,`{}`,`{"_id":1}`],
+    ['Total ≥ 100, Hanoi',`{"city":"Hanoi","total":{"$gte":100}}`,`{}`,`{"_id":1}`],
+    ['Status in list',`{"status":{"$in":["shipped","pending"]}}`,`{"customer":1,"status":1}`,`{"customer":1}`],
+    ['Array contains',`{"tags":"vip"}`,`{"customer":1,"tags":1}`,`{"_id":1}`],
+    ['Nested field',`{"items.sku":"A1"}`,`{"customer":1,"items":1}`,`{"_id":1}`],
+    ['$or',`{"$or":[{"total":{"$lt":50}},{"status":"cancelled"}]}`,`{}`,`{"total":1}`]];
+  view.innerHTML=`<div class="stack"><h1>Find & CRUD</h1><p class="lead">Run queries against an <code>orders</code> collection of ${ORDERS.length} documents. Pick a preset or write your own.</p></div>
+  <div class="panel stack"><div class="row" id="pre"></div>
+  <div class="grid3"><div><h3>filter</h3><textarea id="f" rows="4" spellcheck="false"></textarea></div><div><h3>projection</h3><textarea id="p" rows="4" spellcheck="false"></textarea></div><div><h3>sort</h3><textarea id="s" rows="4" spellcheck="false"></textarea></div></div>
+  <pre class="code" id="shell"></pre><div class="err" id="qe"></div><div id="qr"></div></div>
+  <div class="grid2"><div class="panel stack"><h3>CRUD verbs on a working copy</h3><div class="row">
+  <button id="ins">insertOne</button><button id="upd">updateMany: paid → archived</button><button id="del">deleteMany: cancelled</button><button id="rst">Reset data</button></div>
+  <div class="log" id="clog"></div></div>
+  <div class="panel stack"><h3>Operators in this demo</h3><div class="pill-row">${['$eq','$ne','$gt','$gte','$lt','$lte','$in','$nin','$and','$or','$nor','$exists','$size','$regex'].map(o=>`<span class="tag">${o}</span>`).join('')}</div>
+  <p class="lead" style="font-size:13px">Dotted paths reach into sub-documents and arrays, as in <code>"items.sku"</code>. Matching a scalar against an array field tests every element.</p></div></div>`;
+  let data=structuredClone(ORDERS),next=11;
+  const F=$('#f'),P=$('#p'),S=$('#s');
+  const run=()=>{
+    const[f,e1]=parse(F.value),[p,e2]=parse(P.value),[s,e3]=parse(S.value);
+    const e=e1||e2||e3;$('#qe').textContent=e||'';if(e)return;
+    try{let r=data.filter(d=>matches(d,f));r=sortDocs(r,s);r=r.map(d=>project(d,p));
+      $('#shell').textContent=`db.orders.find(${J(f,0)}, ${J(p,0)}).sort(${J(s,0)})`;
+      $('#qr').innerHTML=`<div class="kpi" style="margin-bottom:8px"><div><b>${r.length}</b><span>returned</span></div><div><b>${data.length}</b><span>in collection</span></div></div>`+rowsTable(r);
+    }catch(x){$('#qe').textContent=x.message}
+  };
+  [F,P,S].forEach(t=>t.oninput=run);
+  $('#pre').innerHTML=presets.map((x,i)=>`<button data-i="${i}">${x[0]}</button>`).join('');
+  $('#pre').onclick=ev=>{const i=ev.target.dataset.i;if(i==null)return;[...$('#pre').children].forEach(b=>b.classList.toggle('on',b.dataset.i===i));F.value=presets[i][1];P.value=presets[i][2];S.value=presets[i][3];run()};
+  $('#pre').firstChild.click();
+  const log=m=>{$('#clog').insertAdjacentHTML('afterbegin',`<div>${esc(m)}</div>`);run()};
+  $('#ins').onclick=()=>{data.push({_id:next,customer:"New user",city:"Hue",status:"pending",total:10*next,tags:[],items:[]});log(`insertOne → _id ${next++}. Collection now has ${data.length}.`)};
+  $('#upd').onclick=()=>{let n=0;data.forEach(d=>{if(d.status==='paid'){d.status='archived';n++}});log(`updateMany({status:"paid"},{$set:{status:"archived"}}) → modified ${n}`)};
+  $('#del').onclick=()=>{const b=data.length;data=data.filter(d=>d.status!=='cancelled');log(`deleteMany({status:"cancelled"}) → deleted ${b-data.length}`)};
+  $('#rst').onclick=()=>{data=structuredClone(ORDERS);next=11;log('Data reset.')};
+};
+
+R.aggregation=()=>{
+  const PRE={
+    'Revenue by city':[['$match',{status:{$ne:"cancelled"}}],['$group',{_id:"$city",revenue:{$sum:"$total"},orders:{$sum:1}}],['$sort',{revenue:-1}]],
+    'Best-selling SKUs':[['$unwind',"$items"],['$group',{_id:"$items.sku",units:{$sum:"$items.qty"}}],['$sort',{units:-1}],['$limit',3]],
+    'Average order by status':[['$group',{_id:"$status",avg:{$avg:"$total"},max:{$max:"$total"}}],['$sort',{avg:-1}]],
+  };
+  let st=[];
+  view.innerHTML=`<div class="stack"><h1>Aggregation pipeline</h1><p class="lead">Documents flow through stages. Each stage receives the output of the one before it. Edit any stage and watch every later result change.</p></div>
+  <div class="panel stack"><div class="row" id="apre"></div><div class="row"><select id="op">${['$match','$group','$sort','$project','$unwind','$limit','$skip','$count'].map(o=>`<option>${o}</option>`).join('')}</select><button id="addst" class="pri">Add stage</button><span class="tag">input: ${ORDERS.length} orders</span></div></div>
+  <div class="stack" id="stages"></div>`;
+  const draw=()=>{
+    let docs=ORDERS;
+    $('#stages').innerHTML=st.map((s,i)=>{
+      let out='',err='';
+      const[v,e]=parse(s.body);
+      if(e)err=e;else{try{const before=docs.length;docs=runStage(docs,s.op,v);out=`<div class="kpi" style="margin:4px 0 8px"><div><b>${before}</b><span>in</span></div><div><b>${docs.length}</b><span>out</span></div></div>`+rowsTable(docs)}catch(x){err=x.message}}
+      return`<div class="stage panel"><div class="stage-h"><b style="font-family:var(--mono)">${i+1}. ${s.op}</b><button class="danger" data-rm="${i}">Remove</button></div>
+      <textarea data-i="${i}" rows="3" spellcheck="false">${esc(s.body)}</textarea>${err?`<div class="err">${esc(err)}</div>`:out}</div>`}).join('')||'<div class="panel lead">Pipeline is empty. Load an example or add a stage.</div>';
+  };
+  const load=k=>{st=PRE[k].map(([op,b])=>({op,body:J(b,0)}));draw()};
+  $('#apre').innerHTML=Object.keys(PRE).map(k=>`<button>${k}</button>`).join('');
+  $('#apre').onclick=e=>{if(e.target.tagName==='BUTTON'){[...$('#apre').children].forEach(b=>b.classList.toggle('on',b===e.target));load(e.target.textContent)}};
+  $('#addst').onclick=()=>{const op=$('#op').value;const d={'$match':'{}','$group':'{"_id":"$status","n":{"$sum":1}}','$sort':'{"_id":1}','$project':'{"customer":1,"total":1}','$unwind':'"$tags"','$limit':'3','$skip':'1','$count':'"total"'}[op];st.push({op,body:d});draw()};
+  $('#stages').onclick=e=>{const i=e.target.dataset.rm;if(i!=null){st.splice(+i,1);draw()}};
+  $('#stages').onchange=e=>{if(e.target.dataset.i!=null){st[e.target.dataset.i].body=e.target.value;draw()}};
+  $('#apre').firstChild.click();
+};
+
+R.indexes=()=>{
+  const N=400,CITIES=['Hanoi','Saigon','Da Nang','Hue'],STS=['paid','shipped','pending','cancelled'];
+  const docs=Array.from({length:N},(_,i)=>({city:CITIES[(i*7+Math.floor(i/5))%4],status:STS[(i*3+Math.floor(i/3))%4]}));
+  view.innerHTML=`<div class="stack"><h1>Indexes</h1><p class="lead">An index is a sorted structure that lets MongoDB jump to matching documents. Each square is one of ${N} documents. Orange squares were read. Green squares matched the query.</p></div>
+  <div class="panel stack"><div class="row"><label>city <select id="qc">${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></label><label>status <select id="qs"><option value="">any</option>${STS.map(c=>`<option>${c}</option>`).join('')}</select></label></div>
+  <div class="row" id="ix"></div>
+  <div class="kpi" id="ik"></div><div class="cells" id="cells"></div><pre class="code" id="plan"></pre></div>`;
+  const IX=[['No index',null],['{ city: 1 }',['city']],['{ status: 1 }',['status']],['{ city: 1, status: 1 }',['city','status']]];
+  let ix=0;
+  $('#ix').innerHTML=IX.map((x,i)=>`<button data-i="${i}">${x[0]}</button>`).join('');
+  const draw=()=>{
+    [...$('#ix').children].forEach((b,i)=>b.classList.toggle('on',i===ix));
+    const q={city:$('#qc').value};if($('#qs').value)q.status=$('#qs').value;
+    const hit=d=>Object.entries(q).every(([k,v])=>d[k]===v);
+    const keys=IX[ix][1];
+    let ex;
+    if(!keys)ex=docs.map(()=>true);
+    else{const usable=[];for(const k of keys){if(k in q)usable.push(k);else break}
+      ex=usable.length?docs.map(d=>usable.every(k=>d[k]===q[k])):docs.map(()=>true);
+      if(!usable.length)keys.used=false;}
+    const used=keys&&keys.some((k,i)=>i===0&&k in q);
+    const examined=ex.filter(Boolean).length,ret=docs.filter(hit).length;
+    $('#cells').innerHTML=docs.map((d,i)=>`<i class="${hit(d)?'hit':ex[i]?'ex':''}"></i>`).join('');
+    $('#ik').innerHTML=`<div><b>${used?'IXSCAN':'COLLSCAN'}</b><span>stage</span></div><div><b>${examined}</b><span>docs examined</span></div><div><b>${ret}</b><span>returned</span></div><div><b>${(ret/examined*100).toFixed(0)}%</b><span>efficiency</span></div>`;
+    $('#plan').textContent=`db.orders.find(${J(q,0)}).explain("executionStats")\n\n`+J({winningPlan:{stage:used?'FETCH':'COLLSCAN',...(used?{inputStage:{stage:'IXSCAN',keyPattern:IX[ix][0]}}:{})},totalDocsExamined:examined,nReturned:ret});
+  };
+  $('#ix').onclick=e=>{if(e.target.dataset.i){ix=+e.target.dataset.i;draw()}};
+  $('#qc').onchange=$('#qs').onchange=draw;draw();
+};
+
+R.modeling=()=>{
+  view.innerHTML=`<div class="stack"><h1>Data modeling</h1><p class="lead">Model data around how your app reads it. Data that is read together should usually live together.</p></div>
+  <div class="panel stack"><div class="row"><button id="m1" class="on">Embed</button><button id="m2">Reference</button><span class="tag">Task: show an order page with customer and items</span></div>
+  <div class="grid2"><pre class="code" id="mshape"></pre><div class="stack" id="mnote"></div></div></div>
+  <div class="panel"><h3>Rule of thumb</h3><div class="grid3">
+  <div><h2>Embed when</h2><p>The child belongs to one parent, is read with it, and the array stays bounded (order lines, addresses).</p></div>
+  <div><h2>Reference when</h2><p>The child is shared, grows without limit, or changes often on its own (users, comments, log events).</p></div>
+  <div><h2>Limit</h2><p>A single document is capped at 16 MB. An ever-growing embedded array eventually breaks that.</p></div></div></div>`;
+  const D={
+    1:{shape:{_id:1001,total:120,customer:{name:"Linh",email:"linh@example.com"},items:[{sku:"A1",qty:2,price:30},{sku:"B7",qty:1,price:60}]},q:1,tags:[['1 query','g'],['Atomic single-document write','g'],['Customer data duplicated per order','w']],txt:'One read returns the whole order. Updates to one order are atomic. If a customer changes their email, old orders keep the email they had at the time, which is often what you want.'},
+    2:{shape:{orders:{_id:1001,total:120,customerId:7,itemIds:[11,12]},customers:{_id:7,name:"Linh",email:"linh@example.com"},items:[{_id:11,sku:"A1",qty:2,price:30},{_id:12,sku:"B7",qty:1,price:60}]},q:3,tags:[['3 queries or $lookup','w'],['No duplication','g'],['Joins happen in the app or pipeline','w']],txt:'Each fact lives once, like in a relational schema. The order page needs the order, then the customer, then the items. Use $lookup to join on the server, at the cost of more work per read.'}};
+  const draw=k=>{$('#m1').classList.toggle('on',k===1);$('#m2').classList.toggle('on',k===2);const d=D[k];
+    $('#mshape').textContent=J(d.shape);
+    $('#mnote').innerHTML=`<div class="kpi"><div><b>${d.q}</b><span>round trips to render the page</span></div></div><div class="pill-row">${d.tags.map(t=>`<span class="tag ${t[1]}">${t[0]}</span>`).join('')}</div><p>${d.txt}</p>`};
+  $('#m1').onclick=()=>draw(1);$('#m2').onclick=()=>draw(2);draw(1);
+};
+
+R.replication=()=>{
+  let nodes,log,seq;
+  const reset=()=>{nodes=[{n:'node-a',role:'P',up:true,ops:0},{n:'node-b',role:'S',up:true,ops:0},{n:'node-c',role:'S',up:true,ops:0}];log=['Replica set rs0 started. node-a is primary.'];seq=0};
+  view.innerHTML=`<div class="stack"><h1>Replica sets</h1><p class="lead">A replica set keeps the same data on several servers. Clients write to the primary. Secondaries copy the primary's oplog. If the primary fails, the others elect a new one.</p></div>
+  <div class="panel stack"><div class="row"><button id="w1" class="pri">Write w:1</button><button id="wm" class="pri">Write w:majority</button><button id="kp" class="danger">Crash primary</button><button id="rv">Restart stopped nodes</button><button id="rs">Reset</button></div>
+  <div class="nodes" id="nodes"></div></div>
+  <div class="grid2"><div class="panel"><h3>Event log</h3><div class="log" id="elog" style="max-height:220px"></div></div>
+  <div class="panel stack"><h3>What to notice</h3><p><b>w:1</b> acknowledges after the primary alone has the write. If it crashes before copying, that write can be rolled back.</p><p><b>w:majority</b> waits for 2 of 3 nodes. It survives a failover.</p><p>With 3 nodes, losing 2 leaves no majority, so no primary can be elected and writes stop.</p></div></div>`;
+  const up=()=>nodes.filter(n=>n.up).length;
+  const draw=()=>{
+    $('#nodes').innerHTML=nodes.map(n=>`<div class="node ${n.role==='P'&&n.up?'P':''} ${n.up?'':'down'}"><b>${n.n}</b><span class="tag ${n.up?(n.role==='P'?'g':''):'b'}">${n.up?(n.role==='P'?'PRIMARY':'SECONDARY'):'DOWN'}</span><div class="kpi"><div><b>${n.ops}</b><span>oplog entries</span></div></div></div>`).join('');
+    $('#elog').innerHTML=log.slice().reverse().map(l=>`<div>${esc(l)}</div>`).join('');
+  };
+  const prim=()=>nodes.find(n=>n.role==='P'&&n.up);
+  const write=async maj=>{
+    const p=prim();if(!p){log.push('Write rejected: no primary.');return draw()}
+    seq++;p.ops++;log.push(`Op ${seq} applied on ${p.n}.`);draw();
+    if(!maj){log.push(`Op ${seq} acknowledged (w:1).`);draw()}
+    await sleep(500);
+    const sec=nodes.filter(n=>n.up&&n.role!=='P');
+    if(maj&&1+sec.length<2){log.push(`Op ${seq} waiting: majority unavailable.`);return draw()}
+    sec.forEach(n=>n.ops++);log.push(`Op ${seq} replicated to ${sec.map(s=>s.n).join(', ')||'nobody'}.`);
+    if(maj)log.push(`Op ${seq} acknowledged (w:majority).`);draw();
+  };
+  $('#w1').onclick=()=>write(false);$('#wm').onclick=()=>write(true);
+  $('#kp').onclick=async()=>{const p=prim();if(!p)return;p.up=false;log.push(`${p.n} crashed. Secondaries stop hearing heartbeats.`);draw();
+    await sleep(900);
+    const c=nodes.filter(n=>n.up);
+    if(c.length<2){log.push('Election failed: only 1 of 3 nodes alive, no majority.');return draw()}
+    p.role='S';const w=c.sort((a,b)=>b.ops-a.ops)[0];w.role='P';log.push(`Election: ${w.n} wins with the most recent oplog (${c.length} of 3 votes cast). New primary.`);draw()};
+  $('#rv').onclick=()=>{nodes.forEach(n=>{if(!n.up){n.up=true;n.role='S';const m=Math.max(...nodes.map(x=>x.ops));n.ops=m;log.push(`${n.n} restarted, rejoined as secondary and caught up.`)}});draw()};
+  $('#rs').onclick=()=>{reset();draw()};
+  reset();draw();
+};
+
+R.sharding=()=>{
+  const KEYS={
+    hashed:{n:'Hashed _id',d:'Values are hashed, so both existing data and new inserts spread evenly. Range queries on the key hit every shard.',st:[34,33,33],wr:[33,34,33],tag:['Even','g']},
+    range:{n:'Range on createdAt',d:'Range queries stay on one shard, but every new insert has the largest createdAt, so one shard takes all the writes.',st:[34,33,33],wr:[0,0,100],tag:['Hot shard on writes','w']},
+    country:{n:'Low-cardinality: country',d:'Only a few distinct values exist. A popular value cannot be split further, so one chunk grows huge ("jumbo") and one shard holds most data.',st:[72,18,10],wr:[72,18,10],tag:['Unbalanced','b']},
+    compound:{n:'Compound: {tenantId, _id}',d:'Queries for one tenant go to a single shard, and the _id suffix lets large tenants split into many chunks.',st:[30,36,34],wr:[28,40,32],tag:['Targeted and balanced','g']}
+  };
+  let k='hashed';
+  view.innerHTML=`<div class="stack"><h1>Sharding</h1><p class="lead">Sharding splits one collection across several replica sets, called shards. The shard key decides which shard owns each document. Choose it and see where storage and new writes land.</p></div>
+  <div class="panel stack"><div class="row" id="sk"></div><div id="sd"></div></div>
+  <div class="panel"><h3>Request path</h3><pre class="code">app ──► mongos (router) ──► config servers (chunk map)
+            │
+            ├─► shard 1  [ chunk 1 … chunk 4 ]
+            ├─► shard 2  [ chunk 5 … chunk 8 ]
+            └─► shard 3  [ chunk 9 … chunk 12 ]
+
+Query includes the shard key  → targeted to one shard
+Query omits the shard key     → scatter-gather to all shards</pre></div>`;
+  $('#sk').innerHTML=Object.entries(KEYS).map(([i,v])=>`<button data-k="${i}">${v.n}</button>`).join('');
+  const draw=()=>{
+    [...$('#sk').children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));const d=KEYS[k];
+    const bars=(a,t)=>`<h3>${t}</h3>`+a.map((v,i)=>`<div class="row" style="flex-wrap:nowrap"><span style="width:70px;font-size:13px">shard ${i+1}</span><div class="bar" style="flex:1"><div class="${v>50?'hot':''}" style="width:${v}%"></div></div><span style="width:40px;font-variant-numeric:tabular-nums">${v}%</span></div>`).join('');
+    $('#sd').innerHTML=`<div class="row"><span class="tag ${d.tag[1]}">${d.tag[0]}</span></div><p>${d.d}</p><div class="grid2"><div class="stack">${bars(d.st,'Data stored')}</div><div class="stack">${bars(d.wr,'Where the next 1,000 inserts go')}</div></div>`;
+  };
+  $('#sk').onclick=e=>{if(e.target.dataset.k){k=e.target.dataset.k;draw()}};draw();
+};
+
+R.sql=()=>{
+  const rows=[
+   ['database','database'],['table','collection'],['row','document'],['column','field'],['JOIN','$lookup or embedding'],['PRIMARY KEY','_id (auto ObjectId)'],
+   ['SELECT * FROM t WHERE a=1','db.t.find({a:1})'],['SELECT a,b FROM t','db.t.find({}, {a:1,b:1})'],['ORDER BY a DESC LIMIT 5','.sort({a:-1}).limit(5)'],
+   ['INSERT INTO t (a) VALUES (1)','db.t.insertOne({a:1})'],['UPDATE t SET a=2 WHERE b=1','db.t.updateMany({b:1},{$set:{a:2}})'],['DELETE FROM t WHERE a=1','db.t.deleteMany({a:1})'],
+   ['GROUP BY city, SUM(total)','{$group:{_id:"$city",s:{$sum:"$total"}}}'],['CREATE INDEX ON t(a)','db.t.createIndex({a:1})'],['BEGIN; … COMMIT;','session.withTransaction(…)'],['EXPLAIN SELECT …','.explain("executionStats")'],
+   ['read replica','secondary with readPreference'],['partitioning','sharding by a shard key'],['CHECK constraints','$jsonSchema validator']];
+  view.innerHTML=`<div class="stack"><h1>SQL ↔ MongoDB</h1><p class="lead">A translation table for the concepts and statements you already know.</p></div>
+  <div class="panel" style="padding:0"><div class="sqlrow h"><div>SQL</div><div>MongoDB</div></div>${rows.map(r=>`<div class="sqlrow"><div>${esc(r[0])}</div><div>${esc(r[1])}</div></div>`).join('')}</div>
+  <div class="panel"><h3>Also worth knowing</h3><div class="grid3"><div><h2>Transactions</h2><p>Single-document writes are atomic. Multi-document ACID transactions exist but cost more; good modeling avoids needing them.</p></div><div><h2>Schema validation</h2><p>Add a <code>$jsonSchema</code> validator to require fields and types while keeping flexibility elsewhere.</p></div><div><h2>Change streams & Atlas</h2><p>Change streams push inserts, updates and deletes to your app. Atlas is the managed cloud service with search and vector search.</p></div></div></div>`;
+};
+
+/* ---------- router, nav, theme ---------- */
+$('#nav').innerHTML=`<div class="brand"><i></i>Mongo Lab</div>`+MODS.map(([id,t,n])=>`<a href="#${id}" data-id="${id}">${t}<small>${n}</small></a>`).join('')+`<button class="themebtn" id="tb">Theme</button>`;
+const route=()=>{
+  const id=(location.hash||'#overview').slice(1);const m=R[id]?id:'overview';
+  document.querySelectorAll('nav a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.id===m)||0);
+  document.querySelectorAll('nav a').forEach(a=>a.dataset.id===m?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
+  R[m]();scrollTo(0,0);
+};
+addEventListener('hashchange',route);
+$('#tb').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'};
+route();
+</script>
+</body>
+</html>
