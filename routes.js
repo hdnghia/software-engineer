@@ -47,5 +47,6 @@ window.ROUTES = {
   "Projects": [
     { title: "Nexpos", path: "projects/nexpos/nexpos-ui-demo.html" },
     { title: "Digibird", path: "projects/digibird/index.html" },
+    { title: "Lead", path: "projects/vsf/lead-explained.html" },
   ],
 };
